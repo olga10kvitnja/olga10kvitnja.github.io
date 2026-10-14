@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Міні-гра: Логіка та Математика</title>
+    <style>
+        /* Базові стилі */
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* Модальне вікно авторизації */
+        #auth-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .auth-box {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .auth-box h2 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #2c3e50;
+        }
+
+        .auth-box input {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            margin: 20px 0;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .auth-box input:focus {
+            border-color: #3498db;
+        }
+
+        .auth-box button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        .auth-box button:hover {
+            background-color: #2980b9;
+        }
+
+        /* Режим перевірки (Плашка) */
+        #teacher-banner {
+            display: none;
+            background-color: #f39c12;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Контейнер для зуму */
+        #zoom-container {
+            transform-origin: top center;
+            transition: transform 0.3s ease;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Кнопки зуму */
+        .zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .zoom-btn {
+            width: 50px;
+            height: 50px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.1s, background-color 0.3s;
+        }
+
+        .zoom-btn:active {
+            transform: scale(0.95);
+        }
+
+        .zoom-btn:hover {
+            background-color: #34495e;
+        }
+
+        /* Ігровий інтерфейс */
+        h1.game-title {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+
+        .question-card {
+            background-color: #fafafa;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .question-text {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .option {
+            background-color: #fff;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 18px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        /* Стани відповідей */
+        .option:hover {
+            background-color: #f1f8ff;
+            border-color: #3498db;
+        }
+
+        .option.selected {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .option.correct {
+            background-color: #2ecc71 !important;
+            color: white !important;
+            border-color: #2ecc71 !important;
+        }
+
+        .option.incorrect {
+            background-color: #e74c3c !important;
+            color: white !important;
+            border-color: #e74c3c !important;
+        }
+
+        .option.missed-correct {
+            border: 4px solid #2ecc71 !important;
+        }
+
+        /* Кнопка відправки */
+        #submit-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 22px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        #submit-btn:hover {
+            background-color: #219653;
+        }
+
+        #submit-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        /* Модальне вікно результату */
+        #result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .result-box {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .result-box h2 {
+            margin-top: 0;
+            font-size: 32px;
+            color: #2c3e50;
+        }
+
+        .result-box p {
+            font-size: 24px;
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .result-box button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        /* Адаптивність */
+        @media (max-width: 600px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            #zoom-container {
+                margin: 15px;
+                padding: 15px;
+            }
+            .zoom-controls {
+                bottom: 10px;
+                right: 10px;
+            }
+            .zoom-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Модальне вікно авторизації -->
+    <div id="auth-modal">
+        <div class="auth-box">
+            <h2>👋 Привіт! Як тебе звати?</h2>
+            <input type="text" id="username-input" placeholder="Введи своє ім'я або прізвище" autocomplete="off">
+            <button onclick="startGame()">Почати гру</button>
+        </div>
+    </div>
+
+    <!-- Вікно результату -->
+    <div id="result-modal">
+        <div class="result-box">
+            <h2>Молодець!</h2>
+            <p id="result-text">Твій результат: </p>
+            <button onclick="document.getElementById('result-modal').style.display='none'">Закрити</button>
+        </div>
+    </div>
+
+    <!-- Плашка вчителя -->
+    <div id="teacher-banner">
+        👀 Режим перевірки: Робота учня <span id="teacher-student-name"></span>
+    </div>
+
+    <!-- Основний контейнер, який буде масштабуватись -->
+    <div id="zoom-container">
+        
+        <h1 class="game-title">Тренування логіки та математики</h1>
+
+        <!-- Блок ігрового контенту -->
+        <div id="gameplay-area">
+            
+            <!-- Питання 1 -->
+            <div class="question-card" id="q1">
+                <p class="question-text">1. Скільки буде 5 + 7?</p>
+                <div class="options-grid">
+                    <div class="option" onclick="selectOption('q1', '10')">10</div>
+                    <div class="option" onclick="selectOption('q1', '11')">11</div>
+                    <div class="option" onclick="selectOption('q1', '12')">12</div>
+                    <div class="option" onclick="selectOption('q1', '13')">13</div>
+                </div>
+            </div>
+
+            <!-- Питання 2 -->
+            <div class="question-card" id="q2">
+                <p class="question-text">2. Яка з цих фігур має рівно 3 кути?</p>
+                <div class="options-grid">
+                    <div class="option" onclick="selectOption('q2', 'Квадрат')">Квадрат</div>
+                    <div class="option" onclick="selectOption('q2', 'Коло')">Коло</div>
+                    <div class="option" onclick="selectOption('q2', 'Ромб')">Ромб</div>
+                    <div class="option" onclick="selectOption('q2', 'Трикутник')">Трикутник</div>
+                </div>
+            </div>
+
+            <!-- Питання 3 -->
+            <div class="question-card" id="q3">
+                <p class="question-text">3. Продовж ряд: 2, 4, 6, ... ?</p>
+                <div class="options-grid">
+                    <div class="option" onclick="selectOption('q3', '7')">7</div>
+                    <div class="option" onclick="selectOption('q3', '8')">8</div>
+                    <div class="option" onclick="selectOption('q3', '9')">9</div>
+                    <div class="option" onclick="selectOption('q3', '10')">10</div>
+                </div>
+            </div>
+
+            <button id="submit-btn" onclick="submitHomework()">Відправити роботу</button>
+
+        </div>
+    </div>
+
+    <!-- Кнопки масштабування -->
+    <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-in-btn" onclick="changeZoom(0.1)">➕</button>
+        <button class="zoom-btn" id="zoom-out-btn" onclick="changeZoom(-0.1)">➖</button>
+    </div>
+
+    <script>
+        // --- Конфігурація Firebase ---
+        const firebaseDbUrl = "https://lesson-13c44-default-rtdb.firebaseio.com/";
+
+        // --- Глобальні змінні ---
+        let currentZoom = 1;
+        let username = "";
+        let rawAnswers = {}; // Зберігає вибір дитини: { q1: "12", q2: "Трикутник", ... }
+        
+        // Правильні відповіді для перевірки на стороні клієнта та підрахунку балів
+        const correctAnswers = {
+            q1: "12",
+            q2: "Трикутник",
+            q3: "8"
+        };
+        const totalQuestions = Object.keys(correctAnswers).length;
+
+        // --- 1. Отримання gameId ---
+        // Витягуємо назву файлу з URL. Якщо її немає, використовуємо fallback
+        let pathname = window.location.pathname;
+        let filename = pathname.split('/').pop().split('.html')[0];
+        const gameId = filename ? filename : "math_logic_game_1";
+
+        // --- 2. Парсинг URL параметрів ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUser = urlParams.get('user');
+        const reportUser = urlParams.get('reportUser');
+        const reportDate = urlParams.get('reportDate');
+        const isTeacherMode = (reportUser !== null && reportDate !== null);
+
+        // --- Ініціалізація гри ---
+        window.onload = () => {
+            if (isTeacherMode) {
+                initTeacherMode();
+            } else {
+                initStudentMode();
+            }
+        };
+
+        // --- Функціонал для учня ---
+        function initStudentMode() {
+            // Перевірка імені
+            username = urlUser || sessionStorage.getItem('username');
+            
+            if (!username || username.trim() === "") {
+                // Якщо імені немає ніде - показуємо модальне вікно
+                document.getElementById('auth-modal').style.display = 'flex';
+                document.getElementById('username-input').focus();
+            } else {
+                // Якщо ім'я є, зберігаємо в сесію на всяк випадок
+                sessionStorage.setItem('username', username);
+            }
+        }
+
+        function startGame() {
+            const inputVal = document.getElementById('username-input').value.trim();
+            if (inputVal === "") {
+                alert("Будь ласка, введи своє ім'я!");
+                return;
+            }
+            username = inputVal;
+            sessionStorage.setItem('username', username);
+            document.getElementById('auth-modal').style.display = 'none';
+        }
+
+        // Логіка вибору відповіді
+        function selectOption(questionId, answer) {
+            // Якщо режим вчителя - ігноруємо кліки (додаткова безпека)
+            if (isTeacherMode) return;
+
+            // Зберігаємо відповідь
+            rawAnswers[questionId] = answer;
+
+            // Оновлюємо візуал
+            const qContainer = document.getElementById(questionId);
+            const options = qContainer.getElementsByClassName('option');
+            
+            for (let opt of options) {
+                opt.classList.remove('selected');
+                if (opt.innerText.trim() === answer) {
+                    opt.classList.add('selected');
+                }
+            }
+        }
+
+        // Логіка відправки ДЗ
+        async function submitHomework() {
+            // Перевірка чи на всі питання дана відповідь
+            if (Object.keys(rawAnswers).length < totalQuestions) {
+                alert("Будь ласка, дай відповідь на всі запитання перед відправкою!");
+                return;
+            }
+
+            // Блокуємо кнопку
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Відправка...";
+
+            // Підрахунок балів
+            let correctCount = 0;
+            for (let qId in correctAnswers) {
+                if (rawAnswers[qId] === correctAnswers[qId]) {
+                    correctCount++;
+                }
+            }
+
+            // Формування необхідних даних
+            const scoreString = `Вірно ${correctCount} із ${totalQuestions}`;
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const yearMonth = `${yyyy}-${mm}`;
+            const fullDate = `${yyyy}-${mm}-${dd}`;
+
+            const reportData = {
+                gameId: gameId,
+                studentName: username,
+                score: scoreString,
+                rawAnswers: rawAnswers,
+                timestamp: new Date().toISOString()
+            };
+
+            // Формування шляху: homework_reports / [Рік-Місяць] / [Дата_ДЗ] / [gameId] / [Ім'я_дитини]
+            const dbPath = `homework_reports/${yearMonth}/${fullDate}/${gameId}/${encodeURIComponent(username)}.json`;
+            const finalUrl = firebaseDbUrl + dbPath;
+
+            try {
+                const response = await fetch(finalUrl, {
+                    method: 'PUT', // PUT перезаписує дані по цьому шляху
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(reportData)
+                });
+
+                if (!response.ok) {
+                    throw new Error("Помилка мережі при відправці");
+                }
+
+                // Показуємо результат
+                document.getElementById('result-text').innerText = scoreString;
+                document.getElementById('result-modal').style.display = 'flex';
+                submitBtn.innerText = "Відправлено ✔";
+
+            } catch (error) {
+                console.error("Error submitting report:", error);
+                alert("Сталася помилка при відправці. Спробуй ще раз.");
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Відправити роботу";
+            }
+        }
+
+        // --- Функціонал для Вчителя (Режим перевірки) ---
+        async function initTeacherMode() {
+            // Відображення плашки
+            document.getElementById('teacher-banner').style.display = 'block';
+            document.getElementById('teacher-student-name').innerText = reportUser;
+
+            // Блокуємо ігровий процес
+            const gameplayArea = document.getElementById('gameplay-area');
+            gameplayArea.style.pointerEvents = 'none';
+            document.getElementById('submit-btn').style.display = 'none';
+
+            // Формуємо шлях для завантаження
+            // reportDate очікується у форматі YYYY-MM-DD. Витягуємо YYYY-MM
+            const tYearMonth = reportDate.substring(0, 7);
+            const dbPath = `homework_reports/${tYearMonth}/${reportDate}/${gameId}/${encodeURIComponent(reportUser)}.json`;
+            const fetchUrl = firebaseDbUrl + dbPath;
+
+            try {
+                const response = await fetch(fetchUrl);
+                const data = await response.json();
+
+                if (!data || !data.rawAnswers) {
+                    alert("Дані учня не знайдені в базі за цю дату.");
+                    return;
+                }
+
+                visualizeTeacherCheck(data.rawAnswers);
+
+            } catch (error) {
+                console.error("Error fetching report:", error);
+                alert("Помилка при завантаженні звіту з бази.");
+            }
+        }
+
+        function visualizeTeacherCheck(studentAnswers) {
+            for (let qId in correctAnswers) {
+                const qContainer = document.getElementById(qId);
+                if (!qContainer) continue;
+
+                const options = qContainer.getElementsByClassName('option');
+                const studentAnswer = studentAnswers[qId];
+                const actualCorrectAnswer = correctAnswers[qId];
+
+                for (let opt of options) {
+                    const optText = opt.innerText.trim();
+                    
+                    // Якщо учень вибрав цей варіант
+                    if (optText === studentAnswer) {
+                        if (studentAnswer === actualCorrectAnswer) {
+                            opt.classList.add('correct'); // Правильно (зелений фон)
+                        } else {
+                            opt.classList.add('incorrect'); // Неправильно (червоний фон)
+                        }
+                    } 
+                    // Якщо учень не вибрав цей варіант, але він є правильним
+                    else if (optText === actualCorrectAnswer) {
+                        opt.classList.add('missed-correct'); // Зелена рамка
+                    }
+                }
+            }
+        }
+
+        // --- Універсальний інструмент масштабування (Лупа) ---
+        function changeZoom(step) {
+            currentZoom += step;
+            // Обмежуємо зум для адекватності
+            if (currentZoom < 0.5) currentZoom = 0.5;
+            if (currentZoom > 2.0) currentZoom = 2.0;
+            
+            document.getElementById('zoom-container').style.transform = `scale(${currentZoom})`;
+        }
+    </script>
+</body>
+</html>
