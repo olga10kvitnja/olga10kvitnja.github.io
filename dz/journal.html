@@ -128,15 +128,29 @@
             border: 1px solid #334155;
             border-radius: 6px;
         }
+        .btn-group {
+            display: flex;
+            gap: 5px;
+        }
         .btn-delete {
             background: #ef4444;
-            padding: 8px 14px;
+            padding: 8px 12px;
             font-size: 13px;
             border-radius: 4px;
         }
         .btn-delete:hover {
             background: #dc2828;
             box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+        }
+        .btn-edit {
+            background: #f59e0b;
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+        .btn-edit:hover {
+            background: #d97706;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
         }
         table {
             width: 100%;
@@ -284,7 +298,13 @@
         if (studentsData.individual) {
             Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)).forEach(studentName => {
                 const studentId = Object.keys(studentsData.individual).find(key => studentsData.individual[key] === studentName);
-                individualHtml += `<div class="student-item"><span>${studentName}</span><button class="btn-delete" onclick="deleteStudent('individual', '${studentId}')">Видалити</button></div>`;
+                individualHtml += `<div class="student-item">
+                    <span>${studentName}</span>
+                    <div class="btn-group">
+                        <button class="btn-edit" onclick="editStudent('individual', '${studentId}', '${studentName}')">✏️</button>
+                        <button class="btn-delete" onclick="deleteStudent('individual', '${studentId}')">🗑️</button>
+                    </div>
+                </div>`;
             });
         }
         individualHtml += `</div></div>`;
@@ -297,7 +317,13 @@
             if (studentsData[classId]) {
                 Object.values(studentsData[classId]).sort((a,b) => a.localeCompare(b)).forEach(studentName => {
                     const studentId = Object.keys(studentsData[classId]).find(key => studentsData[classId][key] === studentName);
-                    classHtml += `<div class="student-item"><span>${studentName}</span><button class="btn-delete" onclick="deleteStudent('${classId}', '${studentId}')">Видалити</button></div>`;
+                    classHtml += `<div class="student-item">
+                        <span>${studentName}</span>
+                        <div class="btn-group">
+                            <button class="btn-edit" onclick="editStudent('${classId}', '${studentId}', '${studentName}')">✏️</button>
+                            <button class="btn-delete" onclick="deleteStudent('${classId}', '${studentId}')">🗑️</button>
+                        </div>
+                    </div>`;
                 });
             } else {
                 classHtml += `<p style="color:#64748b; font-size:14px;">Немає учнів</p>`;
@@ -331,6 +357,46 @@
 
     function deleteStudent(categoryId, studentId) {
         if (confirm("Видалити цього учня зі списку?")) db.ref(`journal_students/${categoryId}/${studentId}`).remove();
+    }
+
+    // --- НОВА ФУНКЦІЯ: ПЕРЕЙМЕНУВАННЯ УЧНЯ З ОНОВЛЕННЯМ УСІХ ЗВІТІВ ---
+    function editStudent(categoryId, studentId, oldName) {
+        const newName = prompt(`Введіть нове ім'я для "${oldName}"\n(Усі попередні роботи зі старим іменем також будуть прив'язані до нового імені):`, oldName);
+        
+        if (!newName || newName.trim() === "" || newName === oldName) return;
+        const cleanNewName = newName.trim();
+
+        // 1. Оновлюємо ім'я у списку класу
+        db.ref(`journal_students/${categoryId}/${studentId}`).set(cleanNewName).then(() => {
+            // 2. Скануємо всю базу звітів і переносимо роботи зі старого імені на нове
+            db.ref('homework_reports').once('value').then(snapshot => {
+                const allData = snapshot.val() || {};
+                let updates = {};
+
+                for (const month in allData) {
+                    for (const date in allData[month]) {
+                        for (const gameId in allData[month][date]) {
+                            if (allData[month][date][gameId][oldName]) {
+                                // Беремо дані старої роботи
+                                const reportData = allData[month][date][gameId][oldName];
+                                // Записуємо їх під новим іменем
+                                updates[`homework_reports/${month}/${date}/${gameId}/${cleanNewName}`] = reportData;
+                                // Видаляємо стару гілку
+                                updates[`homework_reports/${month}/${date}/${gameId}/${oldName}`] = null;
+                            }
+                        }
+                    }
+                }
+
+                // Виконуємо всі оновлення звітів одним пакетом (якщо вони є)
+                if (Object.keys(updates).length > 0) {
+                    db.ref().update(updates).then(() => {
+                        alert(`Ім'я успішно змінено на "${cleanNewName}"! Усі старі роботи також оновлено.`);
+                        loadReports(); // Оновлюємо таблицю, якщо вона відкрита
+                    }).catch(err => alert("Помилка оновлення робіт: " + err.message));
+                }
+            });
+        }).catch(err => alert("Помилка зміни імені: " + err.message));
     }
 
     function buildRow(date, gameId, studentName, report, month, isGuest=false) {
