@@ -285,7 +285,7 @@
             Object.keys(classesData).forEach(classId => {
                 if (studentsData[classId]) Object.values(studentsData[classId]).forEach(n => allStudentsNames.add(n));
             });
-            allStudentsNames.forEach(name => {
+            Array.from(allStudentsNames).sort((a,b) => a.localeCompare(b)).forEach(name => {
                 datalist.innerHTML += `<option value="${name}">`;
             });
         }
@@ -310,7 +310,6 @@
         individualHtml += `</div></div>`;
         container.innerHTML += individualHtml;
 
-        // Сортування класів за алфавітом
         Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
             const className = classesData[classId].name;
             let classHtml = `<div class="class-section"><div class="class-header"><h3>👥 ${className}</h3><button class="btn-delete" onclick="deleteClass('${classId}', '${className}')">Видалити клас</button></div><div id="list-${classId}">`;
@@ -359,44 +358,33 @@
         if (confirm("Видалити цього учня зі списку?")) db.ref(`journal_students/${categoryId}/${studentId}`).remove();
     }
 
-    // --- НОВА ФУНКЦІЯ: ПЕРЕЙМЕНУВАННЯ УЧНЯ З ОНОВЛЕННЯМ УСІХ ЗВІТІВ ---
     function editStudent(categoryId, studentId, oldName) {
-        const newName = prompt(`Введіть нове ім'я для "${oldName}"\n(Усі попередні роботи зі старим іменем також будуть прив'язані до нового імені):`, oldName);
-        
+        const newName = prompt(`Введіть нове ім'я для "${oldName}"\n(Усі попередні роботи також будуть перейменовані):`, oldName);
         if (!newName || newName.trim() === "" || newName === oldName) return;
         const cleanNewName = newName.trim();
 
-        // 1. Оновлюємо ім'я у списку класу
         db.ref(`journal_students/${categoryId}/${studentId}`).set(cleanNewName).then(() => {
-            // 2. Скануємо всю базу звітів і переносимо роботи зі старого імені на нове
             db.ref('homework_reports').once('value').then(snapshot => {
                 const allData = snapshot.val() || {};
                 let updates = {};
-
                 for (const month in allData) {
                     for (const date in allData[month]) {
                         for (const gameId in allData[month][date]) {
                             if (allData[month][date][gameId][oldName]) {
-                                // Беремо дані старої роботи
-                                const reportData = allData[month][date][gameId][oldName];
-                                // Записуємо їх під новим іменем
-                                updates[`homework_reports/${month}/${date}/${gameId}/${cleanNewName}`] = reportData;
-                                // Видаляємо стару гілку
+                                updates[`homework_reports/${month}/${date}/${gameId}/${cleanNewName}`] = allData[month][date][gameId][oldName];
                                 updates[`homework_reports/${month}/${date}/${gameId}/${oldName}`] = null;
                             }
                         }
                     }
                 }
-
-                // Виконуємо всі оновлення звітів одним пакетом (якщо вони є)
                 if (Object.keys(updates).length > 0) {
                     db.ref().update(updates).then(() => {
-                        alert(`Ім'я успішно змінено на "${cleanNewName}"! Усі старі роботи також оновлено.`);
-                        loadReports(); // Оновлюємо таблицю, якщо вона відкрита
-                    }).catch(err => alert("Помилка оновлення робіт: " + err.message));
+                        alert(`Ім'я змінено на "${cleanNewName}"!`);
+                        loadReports(); 
+                    });
                 }
             });
-        }).catch(err => alert("Помилка зміни імені: " + err.message));
+        });
     }
 
     function buildRow(date, gameId, studentName, report, month, isGuest=false) {
@@ -447,7 +435,17 @@
                 <tbody>`;
             let resultCount = 0;
 
-            // Будуємо список учнів, яких ми очікуємо (для пошуку "лінтяїв")
+            // 1. Формуємо список учнів відповідно до вибраного класу (filterId)
+            let baseRosterNames = new Set();
+            if (filterId === 'all') {
+                Object.keys(classesData).forEach(classId => {
+                    if (studentsData[classId]) Object.values(studentsData[classId]).forEach(n => baseRosterNames.add(n));
+                });
+                if (studentsData.individual) Object.values(studentsData.individual).forEach(n => baseRosterNames.add(n));
+            } else {
+                if (studentsData[filterId]) Object.values(studentsData[filterId]).forEach(n => baseRosterNames.add(n));
+            }
+
             let roster = [];
             if (filterId === 'all') {
                 Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
@@ -468,71 +466,74 @@
 
             if (studentQ) roster = roster.filter(s => s.name.toLowerCase().includes(studentQ));
 
-            // Збираємо всі виконані роботи в один масив
+            // 2. Збираємо всі виконані роботи та визначаємо цільові ігри для обраного класу
             let submissions = [];
+            let gameDates = {}; 
+
             for (const month in allData) {
                 for (const date in allData[month]) {
                     for (const gameId in allData[month][date]) {
                         for (const studentName in allData[month][date][gameId]) {
                             submissions.push({ month, date, gameId, studentName, report: allData[month][date][gameId][studentName] });
+                            if (baseRosterNames.has(studentName)) {
+                                if (!gameDates[gameId] || date > gameDates[gameId]) {
+                                    gameDates[gameId] = date;
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            // Якщо ви шукаєте конкретну гру - виводимо весь клас і показуємо, хто зробив, а хто "лінтяй"
+            let targetGames = [];
             if (gameQ !== "") {
-                let gameSubmissions = submissions.filter(s => s.gameId.toLowerCase().includes(gameQ));
-                let matchedGameIds = [...new Set(gameSubmissions.map(s => s.gameId))];
-                if (matchedGameIds.length === 0) matchedGameIds = [document.getElementById('search-game').value.trim()];
+                let matched = [...new Set(submissions.map(s => s.gameId))].filter(g => g.toLowerCase().includes(gameQ));
+                if (matched.length === 0) matched = [gameQ]; 
+                targetGames = matched.map(g => ({ id: g, date: gameDates[g] || '0000-00-00' }));
+            } else {
+                targetGames = Object.keys(gameDates).map(g => ({ id: g, date: gameDates[g] }));
+            }
 
-                matchedGameIds.forEach(targetGameId => {
-                    html += `<tr><td colspan="5" class="group-header" style="background:#334155; color:#38bdf8; text-align:center; font-size:18px;">Гра: ${targetGameId}</td></tr>`;
+            targetGames.sort((a, b) => b.date.localeCompare(a.date));
+
+            // 3. Відмальовуємо результати: Групуємо по іграх
+            targetGames.forEach(gameObj => {
+                const targetGameId = gameObj.id;
+                let gameSubmissions = submissions.filter(s => s.gameId === targetGameId);
+                
+                let willShowSomething = roster.length > 0 || gameSubmissions.some(s => (!studentQ || s.studentName.toLowerCase().includes(studentQ)));
+                if (!willShowSomething) return;
+
+                html += `<tr><td colspan="5" class="group-header" style="background:#334155; color:#38bdf8; text-align:center; font-size:18px;">Гра: ${targetGameId} <span style="font-size:12px; color:#94a3b8;">(Остання активність: ${gameObj.date !== '0000-00-00' ? gameObj.date : 'Немає даних'})</span></td></tr>`;
+                
+                let currentCategory = null;
+                let processedGuests = new Set();
+                
+                roster.forEach(student => {
+                    if (currentCategory !== student.category) {
+                        html += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${student.categoryName}</td></tr>`;
+                        currentCategory = student.category;
+                    }
                     
-                    let currentCategory = null;
-                    let processedGuests = new Set();
-                    
-                    roster.forEach(student => {
-                        if (currentCategory !== student.category) {
-                            html += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${student.categoryName}</td></tr>`;
-                            currentCategory = student.category;
-                        }
-                        
-                        let sub = gameSubmissions.find(s => s.studentName === student.name && s.gameId === targetGameId);
-                        if (sub) {
-                            html += buildRow(sub.date, targetGameId, student.name, sub.report, sub.month, false);
-                            processedGuests.add(student.name);
-                            resultCount++;
-                        } else {
-                            html += buildMissingRow(targetGameId, student.name);
-                            resultCount++;
-                        }
-                    });
-                    
-                    // Додаємо Гостей, які грали в цю гру, але не закріплені за класом
-                    let guests = gameSubmissions.filter(s => s.gameId === targetGameId && !processedGuests.has(s.studentName) && (!studentQ || s.studentName.toLowerCase().includes(studentQ)));
-                    if (guests.length > 0) {
-                        html += `<tr><td colspan="5" style="background:#b45309; color:#fff; font-weight:bold; font-size:14px; padding: 8px 15px;">🕵️ Гості / Поза списком</td></tr>`;
-                        guests.forEach(g => { html += buildRow(g.date, targetGameId, g.studentName, g.report, g.month, true); resultCount++; });
+                    let sub = gameSubmissions.find(s => s.studentName === student.name);
+                    if (sub) {
+                        html += buildRow(sub.date, targetGameId, student.name, sub.report, sub.month, false);
+                        processedGuests.add(student.name);
+                        resultCount++;
+                    } else {
+                        html += buildMissingRow(targetGameId, student.name);
+                        resultCount++;
                     }
                 });
-            } else {
-                // Якщо гру не введено - виводимо просто всі виконані роботи за фільтром
-                let validNames = new Set(roster.map(s => s.name));
-                let filteredSubs = submissions.filter(s => {
-                    if (studentQ && !s.studentName.toLowerCase().includes(studentQ)) return false;
-                    if (filterId !== 'all' && !validNames.has(s.studentName)) return false;
-                    return true;
-                });
                 
-                filteredSubs.sort((a,b) => b.date.localeCompare(a.date)); // Найновіші зверху
+                let guests = gameSubmissions.filter(s => !processedGuests.has(s.studentName) && (!studentQ || s.studentName.toLowerCase().includes(studentQ)));
                 
-                filteredSubs.forEach(sub => {
-                    let isGuest = !roster.some(r => r.name === sub.studentName);
-                    html += buildRow(sub.date, sub.gameId, sub.studentName, sub.report, sub.month, isGuest);
-                    resultCount++;
-                });
-            }
+                // Показуємо гостей тільки якщо обрано "Всі категорії"
+                if (filterId === 'all' && guests.length > 0) {
+                    html += `<tr><td colspan="5" style="background:#b45309; color:#fff; font-weight:bold; font-size:14px; padding: 8px 15px;">🕵️ Гості / Поза списком</td></tr>`;
+                    guests.forEach(g => { html += buildRow(g.date, targetGameId, g.studentName, g.report, g.month, true); resultCount++; });
+                }
+            });
 
             if (resultCount === 0) {
                 html += `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">За вашим запитом нічого не знайдено.</td></tr>`;
