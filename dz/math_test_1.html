@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вхідний тест з математики - 1 клас</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            overflow-x: hidden;
+        }
+
+        /* Контейнер для масштабування (Лупа) */
+        #zoom-container {
+            transform-origin: top center;
+            transition: transform 0.3s ease;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Головний контейнер гри (напівпрозорий, щоб видно було фон) */
+        #game-container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(5px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            position: relative;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .question-block {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .question-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2980b9;
+            margin-bottom: 15px;
+        }
+
+        .options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .option-btn {
+            background: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            border-radius: 10px;
+            padding: 10px 25px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover {
+            background: #d4e6f1;
+            border-color: #3498db;
+        }
+
+        .option-btn.selected {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        #submit-btn {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
+        }
+
+        #submit-btn:hover {
+            background: #27ae60;
+        }
+
+        /* --- UI Controls (Zoom, Theme, Draw) --- */
+        .global-controls {
+            position: fixed;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 91000;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            color: white;
+            transition: transform 0.2s;
+        }
+        .control-btn:hover { transform: scale(1.1); }
+
+        #zoom-in-btn { background: #3498db; bottom: 215px; position: fixed; right: 20px;}
+        #zoom-out-btn { background: #e67e22; bottom: 150px; position: fixed; right: 20px;}
+        #toggle-draw-btn-global { background: #8e44ad; bottom: 85px; position: fixed; right: 20px; border-radius: 25px; width: auto; padding: 0 15px; font-size: 16px; font-weight: bold;}
+        #theme-btn { background: #34495e; bottom: 20px; position: fixed; right: 20px;}
+
+        /* --- Theme Manager Modal --- */
+        #theme-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            z-index: 95000;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .theme-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .theme-modal-header h2 { margin: 0; font-size: 20px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #e74c3c; }
+        #theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .theme-thumbnail {
+            height: 100px;
+            border-radius: 10px;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px black;
+            text-align: center;
+            background-color: #bdc3c7; /* Для опції "Без фону" */
+            transition: transform 0.2s;
+        }
+        .theme-thumbnail:hover { transform: scale(1.05); border-color: #3498db; }
+
+        /* --- Drawing Panel --- */
+        #draw-panel-global {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #8e44ad;
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 95000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 250px;
+        }
+        .draw-header {
+            cursor: grab;
+            background: #8e44ad;
+            color: white;
+            padding: 5px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .draw-controls { display: flex; flex-direction: column; gap: 10px; }
+        .draw-row { display: flex; justify-content: space-between; gap: 5px; }
+        .draw-btn {
+            flex: 1; padding: 5px; border: 1px solid #ccc; background: #eee; cursor: pointer; border-radius: 5px; font-weight: bold;
+        }
+        .draw-btn.active { background: #8e44ad; color: white; border-color: #8e44ad; }
+        #draw-canvas {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 90000;
+        }
+
+        /* --- Block Overlay --- */
+        #block-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85); z-index: 99999;
+            justify-content: center; align-items: center;
+            color: #ff4757; font-size: 40px; font-weight: bold; text-align: center;
+            flex-direction: column;
+        }
+
+        /* Адаптивність */
+        @media (max-width: 600px) {
+            .option-btn { font-size: 18px; padding: 8px 15px; }
+            .question-text { font-size: 20px; }
+            #submit-btn { font-size: 20px; padding: 12px 30px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Global Drawing Canvas -->
+<canvas id="draw-canvas"></canvas>
+
+<div id="zoom-container">
+    <div id="game-container">
+        <h1>🔢 Математика (1 клас)</h1>
+        <p style="color: #7f8c8d; margin-bottom: 20px;">Обери правильну відповідь до кожного завдання.</p>
+        
+        <div class="question-block" id="q1">
+            <div class="question-text">1. Скільки буде 2 + 3 ?</div>
+            <div class="options">
+                <button class="option-btn" onclick="selectAnswer(1, 4)">4</button>
+                <button class="option-btn" onclick="selectAnswer(1, 5)">5</button>
+                <button class="option-btn" onclick="selectAnswer(1, 6)">6</button>
+            </div>
+        </div>
+
+        <div class="question-block" id="q2">
+            <div class="question-text">2. Скільки буде 5 - 1 ?</div>
+            <div class="options">
+                <button class="option-btn" onclick="selectAnswer(2, 3)">3</button>
+                <button class="option-btn" onclick="selectAnswer(2, 4)">4</button>
+                <button class="option-btn" onclick="selectAnswer(2, 5)">5</button>
+            </div>
+        </div>
+
+        <div class="question-block" id="q3">
+            <div class="question-text">3. 🍎🍎 + 🍎🍎 = ?</div>
+            <div class="options">
+                <button class="option-btn" onclick="selectAnswer(3, 3)">3</button>
+                <button class="option-btn" onclick="selectAnswer(3, 4)">4</button>
+                <button class="option-btn" onclick="selectAnswer(3, 5)">5</button>
+            </div>
+        </div>
+
+        <button id="submit-btn" onclick="submitTest()">Відправити результат</button>
+    </div>
+</div>
+
+<!-- Controls -->
+<button class="control-btn" id="zoom-in-btn" onclick="changeZoom(0.1)">➕</button>
+<button class="control-btn" id="zoom-out-btn" onclick="changeZoom(-0.1)">➖</button>
+<button class="control-btn" id="toggle-draw-btn-global" onclick="toggleDrawPanel()">✏️ Малювати</button>
+<button class="control-btn" id="theme-btn" onclick="openThemeManager()">⚙️</button>
+
+<!-- Theme Manager Modal -->
+<div id="theme-modal">
+    <div class="theme-modal-header">
+        <h2>Оберіть фон для цієї гри</h2>
+        <button class="close-btn" onclick="closeThemeManager()">✕</button>
+    </div>
+    <div id="theme-grid"></div>
+</div>
+
+<!-- Drawing Panel -->
+<div id="draw-panel-global">
+    <div class="draw-header" id="draw-header">Перемістити <span>✕</span></div>
+    <div class="draw-controls">
+        <div class="draw-row">
+            <button class="draw-btn active" id="tool-pencil" onclick="setDrawTool('pencil')">✏️ Олівець</button>
+            <button class="draw-btn" id="tool-eraser" onclick="setDrawTool('eraser')">🧽 Гумка</button>
+        </div>
+        <input type="range" id="draw-size" min="1" max="50" value="5">
+        <input type="color" id="draw-color" value="#ff0000">
+        <button class="draw-btn" style="background:#e74c3c; color:white;" onclick="clearCanvas(true)">🗑️ Очистити</button>
+    </div>
+</div>
+
+<!-- Block Overlay -->
+<div id="block-overlay">
+    <span>Зачекай! Зараз не твій урок.</span>
+</div>
+
+<script>
+    // --- Конфігурація гри ---
+    const CONFIG = {
+        gameId: 'math_test_grade1', // Унікальний ID гри для фонів та звітів
+        correctAnswers: { 1: 5, 2: 4, 3: 4 }
+    };
+    let userAnswers = { 1: null, 2: null, 3: null };
+
+    // --- Firebase Ініціалізація ---
+    const firebaseConfig = {
+        databaseURL: "https://lesson-13c44-default-rtdb.firebaseio.com",
+        projectId: "lesson-13c44"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // --- Ідентифікація (Отримання імені) ---
+    function getUserName() {
+        const params = new URLSearchParams(window.location.search);
+        let name = params.get('user');
+        if (name) {
+            sessionStorage.setItem('userName', name);
+            return name;
+        }
+        name = sessionStorage.getItem('userName');
+        if (name) return name;
+        name = 'Гість_' + Math.floor(Math.random() * 1000);
+        sessionStorage.setItem('userName', name);
+        return name;
+    }
+    const myName = getUserName();
+    const tabId = 'tab_' + Math.random().toString(36).substr(2, 9);
+
+    // --- Радар, Блокування та Лобі ---
+    const connectedRef = db.ref('.info/connected');
+    const myPresenceRef = db.ref(`online_users/${myName}/${tabId}`);
+    
+    connectedRef.on('value', (snap) => {
+        if (snap.val() === true) {
+            myPresenceRef.set(true);
+            myPresenceRef.onDisconnect().remove();
+        }
+    });
+    window.addEventListener('beforeunload', () => myPresenceRef.remove());
+
+    db.ref(`force_refresh/${myName}`).on('value', (snap) => {
+        if (snap.val()) {
+            db.ref(`force_refresh/${myName}`).remove().then(() => window.location.reload());
+        }
+    });
+
+    db.ref(`blocked_users/${myName}`).on('value', (snap) => {
+        document.getElementById('block-overlay').style.display = snap.val() ? 'flex' : 'none';
+    });
+
+    let isStartup = true;
+    setTimeout(() => { isStartup = false; }, 1500); // Імунітет 1.5 секунди
+    db.ref('current_activity').on('value', (snap) => {
+        if (!isStartup && snap.val() === 'lobby') {
+            window.location.href = 'https://olgazheltvai2.github.io/rizne/lobby.html?user=' + encodeURIComponent(myName);
+        }
+    });
+
+    // --- Логіка Тесту та Відправка ДЗ ---
+    function selectAnswer(qId, val) {
+        userAnswers[qId] = val;
+        // Оновлення UI
+        const block = document.getElementById('q' + qId);
+        const btns = block.getElementsByClassName('option-btn');
+        for(let btn of btns) btn.classList.remove('selected');
+        event.target.classList.add('selected');
+
+        // Синхронізація кліку (щоб вчитель міг бачити в реальному часі, якщо онлайн)
+        db.ref('game_action').set({
+            senderId: myName, timestamp: Date.now(),
+            type: 'answer_select', data: { qId, val }
+        });
+    }
+
+    db.ref('game_action').on('value', (snap) => {
+        const action = snap.val();
+        if(action && action.type === 'answer_select' && action.senderId !== myName) {
+            // Візуальне відображення для інших (опціонально, зазвичай в тестах кожен робить сам, 
+            // але виконано вимогу синхронізації дій)
+        }
+    });
+
+    function submitTest() {
+        if(Object.values(userAnswers).includes(null)) {
+            alert("Будь ласка, дай відповідь на всі запитання!");
+            return;
+        }
+
+        let score = 0;
+        let mistakes = 0;
+        if(userAnswers[1] === CONFIG.correctAnswers[1]) score++; else mistakes++;
+        if(userAnswers[2] === CONFIG.correctAnswers[2]) score++; else mistakes++;
+        if(userAnswers[3] === CONFIG.correctAnswers[3]) score++; else mistakes++;
+
+        // Формування звіту для Firebase (Журнал ДЗ)
+        const now = new Date();
+        const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2, '0');
+        const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+
+        const btn = document.getElementById('submit-btn');
+        btn.innerText = "Відправка...";
+        btn.disabled = true;
+
+        // Запис у базу звітів
+        db.ref(`homework_reports/${monthKey}/${dateStr}/${CONFIG.gameId}/${myName}`).set({
+            score: `${score} з 3`,
+            mistakes: mistakes,
+            timestamp: timeStr,
+            details: `Відповіді: 1(${userAnswers[1]}), 2(${userAnswers[2]}), 3(${userAnswers[3]})`
+        }).then(() => {
+            btn.innerText = "✅ Відправлено!";
+            btn.style.background = "#27ae60";
+            setTimeout(() => {
+                alert(`Молодець! Твій результат: ${score} з 3.\nДані успішно відправлені вчителю.`);
+            }, 500);
+        }).catch(err => {
+            alert('Помилка відправки: ' + err.message);
+            btn.innerText = "Відправити результат";
+            btn.disabled = false;
+        });
+    }
+
+    // --- Система Динамічних Фонів (Theme Manager) ---
+    function openThemeManager() {
+        document.getElementById('theme-modal').style.display = 'block';
+        if (document.getElementById('theme-grid').innerHTML === '') {
+            loadThemesSequentially();
+        }
+    }
+    function closeThemeManager() {
+        document.getElementById('theme-modal').style.display = 'none';
+    }
+
+    async function loadThemesSequentially() {
+        const themeGrid = document.getElementById('theme-grid');
+        themeGrid.innerHTML = '';
+        
+        // Опція "Без фону"
+        const noBg = document.createElement('div');
+        noBg.className = 'theme-thumbnail';
+        noBg.innerHTML = 'Без фону';
+        noBg.onclick = () => selectTheme('none');
+        themeGrid.appendChild(noBg);
+
+        let i = 1;
+        while (true) {
+            const url = `https://olgazheltvai2.github.io/images/backgrounds/background_${i}.webp`;
+            const exists = await checkImage(url);
+            if (!exists) break; // Зупинка при помилці 404
+
+            const el = document.createElement('div');
+            el.className = 'theme-thumbnail';
+            el.style.backgroundImage = `url(${url})`;
+            el.innerHTML = `<span>Фон ${i}</span>`;
+            el.onclick = () => selectTheme(url);
+            themeGrid.appendChild(el);
+            i++;
+        }
+    }
+
+    function checkImage(url) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = url;
+        });
+    }
+
+    function selectTheme(url) {
+        // Збереження ЛОКАЛЬНО для конкретної гри за унікальним ключем
+        localStorage.setItem('mySavedBg_' + CONFIG.gameId, url);
+        // Синхронізація для всіх (опціонально, але за промптом зберігаємо в базу)
+        db.ref('game_theme').set(url);
+        closeThemeManager();
+        applyThemeLocal(url);
+    }
+
+    function applyThemeLocal(url) {
+        if(url === 'none') {
+            document.body.style.backgroundImage = 'none';
+            document.body.style.backgroundColor = '#f0f8ff';
+        } else {
+            document.body.style.backgroundImage = `url(${url})`;
+        }
+    }
+
+    // Слухач загальної теми (якщо вчитель змінює з іншого вікна)
+    db.ref('game_theme').on('value', (snap) => {
+        const globalTheme = snap.val();
+        // Якщо є збережений індивідуальний фон, він має пріоритет (за правилом промпту)
+        const savedTheme = localStorage.getItem('mySavedBg_' + CONFIG.gameId);
+        if (savedTheme) {
+            applyThemeLocal(savedTheme);
+        } else if (globalTheme) {
+            applyThemeLocal(globalTheme);
+        }
+    });
+
+    // --- Масштабування (Лупа) ---
+    let currentScale = 1;
+    function changeZoom(delta) {
+        currentScale += delta;
+        if(currentScale < 0.5) currentScale = 0.5;
+        if(currentScale > 2) currentScale = 2;
+        document.getElementById('zoom-container').style.transform = `scale(${currentScale})`;
+        resizeCanvas(); // Оновлення полотна при зумі
+    }
+
+    // --- Глобальний інструмент малювання ---
+    const canvas = document.getElementById('draw-canvas');
+    const ctx = canvas.getContext('2d');
+    const drawPanel = document.getElementById('draw-panel-global');
+    let isDrawing = false;
+    let currentTool = 'pencil';
+    let lastX = 0, lastY = 0;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function toggleDrawPanel() {
+        if(drawPanel.style.display === 'block') {
+            drawPanel.style.display = 'none';
+            canvas.style.pointerEvents = 'none'; // Вимикаємо малювання
+        } else {
+            drawPanel.style.display = 'block';
+            setDrawTool('pencil'); // Автоматична активація олівця
+        }
+    }
+
+    // Закриття панелі через шапку
+    document.getElementById('draw-header').querySelector('span').onclick = (e) => {
+        e.stopPropagation();
+        toggleDrawPanel();
+    };
+
+    function setDrawTool(tool) {
+        currentTool = tool;
+        document.getElementById('tool-pencil').classList.remove('active');
+        document.getElementById('tool-eraser').classList.remove('active');
+        document.getElementById('tool-' + tool).classList.add('active');
+        canvas.style.pointerEvents = 'auto'; // Вмикаємо малювання
+    }
+
+    function getCoords(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    }
+
+    function startDraw(e) {
+        if(canvas.style.pointerEvents === 'none') return;
+        isDrawing = true;
+        const coords = getCoords(e);
+        lastX = coords.x; lastY = coords.y;
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const coords = getCoords(e);
+        const size = document.getElementById('draw-size').value;
+        const color = currentTool === 'eraser' ? 'eraser' : document.getElementById('draw-color').value;
+
+        drawLineLocal(lastX, lastY, coords.x, coords.y, color, size);
+        
+        // Синхронізація (throttle можна додати для оптимізації, але за промптом робимо прямо)
+        db.ref('game_action').set({
+            senderId: myName, timestamp: Date.now(),
+            type: 'draw_line',
+            data: { x0: lastX / canvas.width, y0: lastY / canvas.height, x1: coords.x / canvas.width, y1: coords.y / canvas.height, color, size }
+        });
+
+        lastX = coords.x; lastY = coords.y;
+    }
+
+    function stopDraw() { isDrawing = false; }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('touchstart', startDraw, {passive: false});
+    canvas.addEventListener('touchmove', draw, {passive: false});
+    window.addEventListener('touchend', stopDraw);
+
+    function drawLineLocal(x0, y0, x1, y1, color, size) {
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.lineWidth = size;
+        ctx.lineCap = 'round';
+        if (color === 'eraser') {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.strokeStyle = 'rgba(0,0,0,1)';
+        } else {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = color;
+        }
+        ctx.stroke();
+    }
+
+    function clearCanvas(sync = false) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if(sync) {
+            db.ref('game_action').set({ senderId: myName, timestamp: Date.now(), type: 'clear_canvas' });
+        }
+    }
+
+    // Синхронізація малювання з Firebase
+    db.ref('game_action').on('value', (snap) => {
+        const action = snap.val();
+        if (!action || action.senderId === myName) return;
+        
+        if (action.type === 'draw_line') {
+            const d = action.data;
+            drawLineLocal(d.x0 * canvas.width, d.y0 * canvas.height, d.x1 * canvas.width, d.y1 * canvas.height, d.color, d.size);
+        } else if (action.type === 'clear_canvas') {
+            clearCanvas(false);
+        }
+    });
+
+    // Перетягування панелі малювання
+    let dragItem = document.getElementById("draw-panel-global");
+    let dragHeader = document.getElementById("draw-header");
+    let active = false;
+    let currentX, currentY, initialX, initialY;
+    let xOffset = 0, yOffset = 0;
+
+    dragHeader.addEventListener("touchstart", dragStart, {passive: false});
+    document.addEventListener("touchend", dragEnd, {passive: false});
+    document.addEventListener("touchmove", drag, {passive: false});
+    dragHeader.addEventListener("mousedown", dragStart);
+    document.addEventListener("mouseup", dragEnd);
+    document.addEventListener("mousemove", drag);
+
+    function dragStart(e) {
+        if (e.type === "touchstart") { initialX = e.touches[0].clientX - xOffset; initialY = e.touches[0].clientY - yOffset; } 
+        else { initialX = e.clientX - xOffset; initialY = e.clientY - yOffset; }
+        if (e.target === dragHeader) active = true;
+    }
+    function dragEnd(e) { active = false; }
+    function drag(e) {
+        if (active) {
+            e.preventDefault();
+            if (e.type === "touchmove") { currentX = e.touches[0].clientX - initialX; currentY = e.touches[0].clientY - initialY; } 
+            else { currentX = e.clientX - initialX; currentY = e.clientY - initialY; }
+            xOffset = currentX; yOffset = currentY;
+            setTranslate(currentX, currentY, dragItem);
+        }
+    }
+    function setTranslate(xPos, yPos, el) { el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`; }
+
+    // --- Ініціалізація теми при старті ---
+    const startTheme = localStorage.getItem('mySavedBg_' + CONFIG.gameId);
+    if(startTheme) applyThemeLocal(startTheme);
+</script>
+</body>
+</html>
