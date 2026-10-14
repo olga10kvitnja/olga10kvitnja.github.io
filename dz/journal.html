@@ -185,11 +185,10 @@
     <div id="tab-reports" class="tab-content active">
         <div class="control-group">
             <input type="date" id="report-date" title="Оберіть дату">
-            <input type="text" id="report-game" placeholder="Назва гри (ID)" title="Введіть ID гри">
+            <input type="text" id="report-game" placeholder="Назва файлу гри (ID)" title="Введіть ID гри">
             <select id="report-category">
                 <option value="all">Всі учні (всі класи)</option>
                 <option value="individual">Тільки Індивідуальні</option>
-                <!-- Динамічні класи додадуться сюди -->
             </select>
             <button onclick="loadReports()">🔍 Шукати звіти</button>
         </div>
@@ -210,7 +209,6 @@
             <input type="text" id="new-student-name" placeholder="Ім'я учня">
             <select id="new-student-category">
                 <option value="individual">Індивідуально</option>
-                <!-- Динамічні класи додадуться сюди -->
             </select>
             <button onclick="addStudent()">➕ Додати учня</button>
         </div>
@@ -253,16 +251,14 @@
         });
     }
 
-    // 2. Оновлення випадаючих списків (Select)
+    // 2. Оновлення випадаючих списків
     function updateSelectDropdowns() {
         const studentSelect = document.getElementById('new-student-category');
         const reportSelect = document.getElementById('report-category');
         
-        // Зберігаємо поточний вибір, щоб не скидалося
         const currentStudentVal = studentSelect.value;
         const currentReportVal = reportSelect.value;
 
-        // Очищаємо та додаємо базові опції
         studentSelect.innerHTML = `<option value="individual">Індивідуально</option>`;
         reportSelect.innerHTML = `<option value="all">Всі учні (всі класи)</option><option value="individual">Тільки Індивідуальні</option>`;
 
@@ -272,7 +268,6 @@
             reportSelect.innerHTML += `<option value="${classId}">${className}</option>`;
         });
 
-        // Відновлюємо вибір, якщо він досі існує
         if (document.querySelector(`#new-student-category option[value="${currentStudentVal}"]`)) {
             studentSelect.value = currentStudentVal;
         }
@@ -281,12 +276,11 @@
         }
     }
 
-    // 3. Відмальовка блоків класів та учнів
+    // 3. Відмальовка блоків класів
     function renderStudentsUI() {
         const container = document.getElementById('classes-container');
         container.innerHTML = '';
 
-        // Блок "Індивідуальні"
         let individualHtml = `<div class="class-section">
             <div class="class-header">
                 <h3>👤 Індивідуальні учні</h3>
@@ -304,7 +298,6 @@
         individualHtml += `</div></div>`;
         container.innerHTML += individualHtml;
 
-        // Блоки для кожного створеного класу
         Object.keys(classesData).forEach(classId => {
             const className = classesData[classId].name;
             let classHtml = `<div class="class-section">
@@ -330,25 +323,21 @@
         });
     }
 
-    // 4. Додавання та видалення класів
     function addClass() {
         const input = document.getElementById('new-class-name');
         const className = input.value.trim();
         if (className === "") return alert("Введіть назву класу!");
 
-        db.ref('journal_classes').push({ name: className }).then(() => {
-            input.value = '';
-        });
+        db.ref('journal_classes').push({ name: className }).then(() => { input.value = ''; });
     }
 
     function deleteClass(classId, className) {
         if (confirm(`Ви впевнені, що хочете видалити "${className}" та всіх його учнів?`)) {
             db.ref(`journal_classes/${classId}`).remove();
-            db.ref(`journal_students/${classId}`).remove(); // Видаляємо учнів цього класу
+            db.ref(`journal_students/${classId}`).remove(); 
         }
     }
 
-    // 5. Додавання та видалення учнів
     function addStudent() {
         const input = document.getElementById('new-student-name');
         const categoryId = document.getElementById('new-student-category').value;
@@ -356,9 +345,7 @@
 
         if (studentName === "") return alert("Введіть ім'я учня!");
 
-        db.ref(`journal_students/${categoryId}`).push(studentName).then(() => {
-            input.value = '';
-        });
+        db.ref(`journal_students/${categoryId}`).push(studentName).then(() => { input.value = ''; });
     }
 
     function deleteStudent(categoryId, studentId) {
@@ -367,7 +354,7 @@
         }
     }
 
-    // 6. Формування та пошук звітів
+    // 6. Формування та пошук звітів (З ОНОВЛЕННЯМ ДЛЯ ГОСТЕЙ)
     function loadReports() {
         const dateVal = document.getElementById('report-date').value;
         const gameId = document.getElementById('report-game').value.trim();
@@ -383,7 +370,6 @@
         
         output.innerHTML = "<p style='text-align:center;'>Завантаження даних...</p>";
 
-        // Завантажуємо звіти за конкретний день і гру
         db.ref(`homework_reports/${monthKey}/${dateVal}/${gameId}`).once('value').then(snapshot => {
             const reports = snapshot.val() || {};
             let html = `<table>
@@ -399,19 +385,19 @@
                 <tbody>`;
 
             let hasAnyStudents = false;
+            let processedNames = new Set(); // Зберігаємо всіх, кого вже показали
 
-            // Функція для відмальовки рядків однієї групи
             const renderGroupRows = (groupId, groupTitle) => {
                 const groupStudents = studentsData[groupId];
                 if (!groupStudents || Object.keys(groupStudents).length === 0) return;
                 
                 hasAnyStudents = true;
-                // Додаємо роздільник групи, якщо вибрано "Всі класи"
                 if (filterId === 'all') {
                     html += `<tr><td colspan="5" class="group-header">${groupTitle}</td></tr>`;
                 }
 
                 Object.values(groupStudents).forEach(studentName => {
+                    processedNames.add(studentName); // Фіксуємо, що учень зі списку перевірений
                     const report = reports[studentName];
                     if (report) {
                         html += `<tr>
@@ -433,7 +419,6 @@
                 });
             };
 
-            // Визначаємо, які групи показувати
             if (filterId === 'all') {
                 renderGroupRows('individual', 'Індивідуальні учні');
                 Object.keys(classesData).forEach(classId => {
@@ -445,8 +430,33 @@
                 renderGroupRows(filterId, classesData[filterId].name);
             }
 
+            // --- НОВИЙ БЛОК: ДОДАВАННЯ ГОСТЕЙ ---
+            let guestHtml = '';
+            let hasGuests = false;
+            
+            Object.keys(reports).forEach(submittedName => {
+                if (!processedNames.has(submittedName)) {
+                    if (!hasGuests) {
+                        guestHtml += `<tr><td colspan="5" class="group-header" style="background-color: #f39c12; color: white;">🕵️ Гості / Незареєстровані учні</td></tr>`;
+                        hasGuests = true;
+                        hasAnyStudents = true;
+                    }
+                    const report = reports[submittedName];
+                    guestHtml += `<tr>
+                        <td><strong>${submittedName}</strong></td>
+                        <td class="status-done" style="color: #d35400;">✅ Виконано (Гість)</td>
+                        <td>${report.score !== undefined ? report.score : '-'}</td>
+                        <td>${report.mistakes !== undefined ? report.mistakes : '-'}</td>
+                        <td>${report.timestamp || '-'}</td>
+                    </tr>`;
+                }
+            });
+            
+            html += guestHtml;
+            // ------------------------------------
+
             if (!hasAnyStudents) {
-                html += `<tr><td colspan="5" style="text-align:center;">У цій категорії немає доданих учнів.</td></tr>`;
+                html += `<tr><td colspan="5" style="text-align:center;">У цій категорії немає доданих учнів і немає жодного звіту.</td></tr>`;
             }
 
             html += `</tbody></table>`;
@@ -454,7 +464,6 @@
         });
     }
 
-    // Перемикання вкладок інтерфейсу
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -462,7 +471,6 @@
         event.currentTarget.classList.add('active');
     }
 
-    // Запуск системи при завантаженні сторінки
     loadSchoolData();
 </script>
 </body>
