@@ -3,53 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Журнал Вчителя - ДЗ</title>
+    <title>Журнал Вчителя - ДЗ (Темна Тема)</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
+        /* Темний стильний дизайн */
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
             margin: 0;
             padding: 20px;
-            color: #333;
+            color: #f8fafc;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #334155;
         }
         h1 {
             text-align: center;
-            color: #2c3e50;
-            margin-bottom: 20px;
+            color: #38bdf8;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
         }
         .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 10px;
+            gap: 15px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 15px;
         }
         .tab-btn {
             padding: 12px 25px;
-            background: #e0e6ed;
+            background: #334155;
+            color: #94a3b8;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
-            transition: background 0.3s;
+            transition: all 0.3s;
         }
         .tab-btn:hover {
-            background: #d1d8e0;
+            background: #475569;
+            color: #f8fafc;
         }
         .tab-btn.active {
-            background: #3498db;
-            color: #fff;
+            background: #6366f1;
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
         }
         .tab-content {
             display: none;
@@ -60,52 +67,59 @@
         .control-group {
             display: flex;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             align-items: center;
             flex-wrap: wrap;
-            background: #f8f9fa;
-            padding: 15px;
+            background: #0f172a;
+            padding: 18px;
             border-radius: 8px;
-            border: 1px solid #e9ecef;
+            border: 1px solid #334155;
         }
         input, select, button {
-            padding: 10px 15px;
+            padding: 12px 18px;
             font-size: 15px;
-            border: 1px solid #ced4da;
-            border-radius: 5px;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            background-color: #1e293b;
+            color: #f8fafc;
+        }
+        input::placeholder {
+            color: #64748b;
         }
         input:focus, select:focus {
             outline: none;
-            border-color: #3498db;
+            border-color: #38bdf8;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
         }
         button {
-            background: #2ecc71;
+            background: #10b981;
             color: white;
             cursor: pointer;
             border: none;
             font-weight: bold;
-            transition: background 0.3s;
+            transition: all 0.3s;
         }
         button:hover {
-            background: #27ae60;
+            background: #059669;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
         }
         .btn-blue {
-            background: #3498db;
+            background: #3b82f6;
         }
         .btn-blue:hover {
-            background: #2980b9;
+            background: #2563eb;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
         }
         .students-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 20px;
         }
         .class-section {
-            background: #fff;
-            padding: 15px;
+            background: #0f172a;
+            padding: 18px;
             border-radius: 8px;
-            border: 1px solid #ddd;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #334155;
         }
         .class-header {
             display: flex;
@@ -113,87 +127,89 @@
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 1px solid #334155;
         }
         .class-header h3 {
             margin: 0;
-            color: #2c3e50;
+            color: #38bdf8;
         }
         .student-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #f8f9fa;
-            padding: 10px;
+            background: #1e293b;
+            padding: 12px;
             margin-bottom: 8px;
-            border: 1px solid #e9ecef;
-            border-radius: 5px;
+            border: 1px solid #334155;
+            border-radius: 6px;
         }
         .btn-delete {
-            background: #e74c3c;
-            padding: 6px 12px;
-            font-size: 12px;
+            background: #ef4444;
+            padding: 8px 14px;
+            font-size: 13px;
             border-radius: 4px;
         }
         .btn-delete:hover {
-            background: #c0392b;
+            background: #dc2828;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
-            background: #fff;
+            background: #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
         }
         th, td {
-            border: 1px solid #dee2e6;
-            padding: 12px 15px;
+            border: 1px solid #334155;
+            padding: 15px;
             text-align: left;
         }
         th {
-            background-color: #34495e;
-            color: white;
+            background-color: #0f172a;
+            color: #38bdf8;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 14px;
         }
         tr:nth-child(even) {
-            background-color: #f8f9fa;
+            background-color: #0f172a;
         }
-        .status-done {
-            color: #27ae60;
-            font-weight: bold;
+        tr:hover {
+            background-color: #334155;
         }
-        .status-missing {
-            color: #e74c3c;
-            font-weight: bold;
-        }
-        .group-header {
-            background-color: #e0e6ed;
-            font-weight: bold;
-            text-align: center;
+        .details-cell {
+            color: #94a3b8;
+            font-size: 14px;
+            white-space: pre-wrap; /* Зберігає перенесення рядків */
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📚 Журнал Вчителя</h1>
+    <h1>📚 Журнал Вчителя (ДЗ)</h1>
     
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('reports')">📊 Звіти ДЗ</button>
+        <button class="tab-btn active" onclick="switchTab('reports')">📊 Звіти ДЗ та Пошук</button>
         <button class="tab-btn" onclick="switchTab('students')">👥 Учні та Класи</button>
     </div>
 
-    <!-- Вкладка Звітів -->
+    <!-- Вкладка Звітів та Пошуку -->
     <div id="tab-reports" class="tab-content active">
         <div class="control-group">
-            <input type="date" id="report-date" title="Оберіть дату">
-            <input type="text" id="report-game" placeholder="Назва файлу гри (ID)" title="Введіть ID гри">
+            <input type="text" id="search-student" placeholder="Ім'я учня (або порожньо для всіх)" style="flex: 1;">
+            <input type="text" id="search-game" placeholder="ID гри (або порожньо для всіх)" style="flex: 1;">
             <select id="report-category">
-                <option value="all">Всі учні (всі класи)</option>
+                <option value="all">Всі категорії</option>
                 <option value="individual">Тільки Індивідуальні</option>
+                <!-- Динамічні класи додадуться сюди -->
             </select>
-            <button onclick="loadReports()">🔍 Шукати звіти</button>
+            <button onclick="loadReports()" class="btn-blue">🔍 Знайти роботи</button>
         </div>
         <div id="reports-output">
-            <p style="text-align: center; color: #7f8c8d; font-size: 18px; margin-top: 30px;">Оберіть дату та гру для перегляду результатів.</p>
+            <p style="text-align: center; color: #64748b; font-size: 18px; margin-top: 30px;">Введіть параметри пошуку або просто натисніть "Знайти роботи", щоб побачити все.</p>
         </div>
     </div>
 
@@ -230,9 +246,6 @@
     }
     const db = firebase.database();
 
-    // Встановлюємо сьогоднішню дату за замовчуванням
-    document.getElementById('report-date').valueAsDate = new Date();
-
     let classesData = {}; 
     let studentsData = { individual: {} };
 
@@ -260,7 +273,7 @@
         const currentReportVal = reportSelect.value;
 
         studentSelect.innerHTML = `<option value="individual">Індивідуально</option>`;
-        reportSelect.innerHTML = `<option value="all">Всі учні (всі класи)</option><option value="individual">Тільки Індивідуальні</option>`;
+        reportSelect.innerHTML = `<option value="all">Всі категорії</option><option value="individual">Тільки Індивідуальні</option>`;
 
         Object.keys(classesData).forEach(classId => {
             const className = classesData[classId].name;
@@ -315,7 +328,7 @@
                     </div>`;
                 });
             } else {
-                classHtml += `<p style="color:#7f8c8d; font-size:14px;">Немає учнів</p>`;
+                classHtml += `<p style="color:#64748b; font-size:14px;">Немає учнів</p>`;
             }
             
             classHtml += `</div></div>`;
@@ -327,7 +340,6 @@
         const input = document.getElementById('new-class-name');
         const className = input.value.trim();
         if (className === "") return alert("Введіть назву класу!");
-
         db.ref('journal_classes').push({ name: className }).then(() => { input.value = ''; });
     }
 
@@ -342,126 +354,105 @@
         const input = document.getElementById('new-student-name');
         const categoryId = document.getElementById('new-student-category').value;
         const studentName = input.value.trim();
-
         if (studentName === "") return alert("Введіть ім'я учня!");
-
         db.ref(`journal_students/${categoryId}`).push(studentName).then(() => { input.value = ''; });
     }
 
     function deleteStudent(categoryId, studentId) {
-        if (confirm("Видалити цього учня?")) {
+        if (confirm("Видалити цього учня зі списку?")) {
             db.ref(`journal_students/${categoryId}/${studentId}`).remove();
         }
     }
 
-    // 6. Формування та пошук звітів (З ОНОВЛЕННЯМ ДЛЯ ГОСТЕЙ)
+    // 4. ГЛОБАЛЬНИЙ ПОШУК ТА ВІДОБРАЖЕННЯ ЗВІТІВ
     function loadReports() {
-        const dateVal = document.getElementById('report-date').value;
-        const gameId = document.getElementById('report-game').value.trim();
+        const studentQ = document.getElementById('search-student').value.trim().toLowerCase();
+        const gameQ = document.getElementById('search-game').value.trim().toLowerCase();
         const filterId = document.getElementById('report-category').value;
         const output = document.getElementById('reports-output');
 
-        if (!dateVal || !gameId) {
-            return alert("Оберіть дату та введіть ID гри (назву)!");
-        }
+        output.innerHTML = "<p style='text-align:center; color: #38bdf8;'>Завантаження даних...</p>";
 
-        const dateObj = new Date(dateVal);
-        const monthKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
-        
-        output.innerHTML = "<p style='text-align:center;'>Завантаження даних...</p>";
-
-        db.ref(`homework_reports/${monthKey}/${dateVal}/${gameId}`).once('value').then(snapshot => {
-            const reports = snapshot.val() || {};
+        db.ref('homework_reports').once('value').then(snapshot => {
+            const allData = snapshot.val() || {};
             let html = `<table>
                 <thead>
                     <tr>
+                        <th>Дата та Час</th>
+                        <th>Гра (ID)</th>
                         <th>Ім'я учня</th>
-                        <th>Статус</th>
-                        <th>Бали / Результат</th>
+                        <th>Бали</th>
                         <th>Помилки</th>
-                        <th>Час здачі</th>
+                        <th>Деталі роботи (Відповіді)</th>
+                        <th>Дії</th>
                     </tr>
                 </thead>
                 <tbody>`;
 
-            let hasAnyStudents = false;
-            let processedNames = new Set(); // Зберігаємо всіх, кого вже показали
+            let resultCount = 0;
 
-            const renderGroupRows = (groupId, groupTitle) => {
-                const groupStudents = studentsData[groupId];
-                if (!groupStudents || Object.keys(groupStudents).length === 0) return;
-                
-                hasAnyStudents = true;
-                if (filterId === 'all') {
-                    html += `<tr><td colspan="5" class="group-header">${groupTitle}</td></tr>`;
-                }
+            // Перебираємо всю базу: місяць -> дата -> гра -> учень
+            for (const month in allData) {
+                for (const date in allData[month]) {
+                    for (const gameId in allData[month][date]) {
+                        
+                        // Фільтр по грі
+                        if (gameQ && !gameId.toLowerCase().includes(gameQ)) continue;
 
-                Object.values(groupStudents).forEach(studentName => {
-                    processedNames.add(studentName); // Фіксуємо, що учень зі списку перевірений
-                    const report = reports[studentName];
-                    if (report) {
-                        html += `<tr>
-                            <td>${studentName}</td>
-                            <td class="status-done">✅ Виконано</td>
-                            <td>${report.score !== undefined ? report.score : '-'}</td>
-                            <td>${report.mistakes !== undefined ? report.mistakes : '-'}</td>
-                            <td>${report.timestamp || '-'}</td>
-                        </tr>`;
-                    } else {
-                        html += `<tr>
-                            <td>${studentName}</td>
-                            <td class="status-missing">❌ Не виконано</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>-</td>
-                        </tr>`;
+                        for (const studentName in allData[month][date][gameId]) {
+                            
+                            // Фільтр по імені учня
+                            if (studentQ && !studentName.toLowerCase().includes(studentQ)) continue;
+
+                            // Фільтр по категорії (класу)
+                            if (filterId !== 'all') {
+                                let belongsToCategory = false;
+                                if (filterId === 'individual' && studentsData.individual && Object.values(studentsData.individual).includes(studentName)) {
+                                    belongsToCategory = true;
+                                } else if (studentsData[filterId] && Object.values(studentsData[filterId]).includes(studentName)) {
+                                    belongsToCategory = true;
+                                }
+                                if (!belongsToCategory) continue; // Пропускаємо, якщо не в цій категорії
+                            }
+
+                            const report = allData[month][date][gameId][studentName];
+                            resultCount++;
+                            
+                            html += `<tr>
+                                <td>${date} <br><small style="color:#94a3b8">${report.timestamp || ''}</small></td>
+                                <td style="color:#38bdf8;">${gameId}</td>
+                                <td style="font-size: 16px; font-weight: bold; color: #f8fafc;">${studentName}</td>
+                                <td><span style="color:#10b981; font-weight:bold;">${report.score || '-'}</span></td>
+                                <td><span style="color:#ef4444; font-weight:bold;">${report.mistakes !== undefined ? report.mistakes : '-'}</span></td>
+                                <td class="details-cell">${report.details || 'Немає деталей'}</td>
+                                <td>
+                                    <button class="btn-delete" onclick="deleteReportRecord('${month}', '${date}', '${gameId}', '${studentName}')">🗑️ Видалити</button>
+                                </td>
+                            </tr>`;
+                        }
                     }
-                });
-            };
-
-            if (filterId === 'all') {
-                renderGroupRows('individual', 'Індивідуальні учні');
-                Object.keys(classesData).forEach(classId => {
-                    renderGroupRows(classId, classesData[classId].name);
-                });
-            } else if (filterId === 'individual') {
-                renderGroupRows('individual', 'Індивідуальні учні');
-            } else {
-                renderGroupRows(filterId, classesData[filterId].name);
+                }
             }
 
-            // --- НОВИЙ БЛОК: ДОДАВАННЯ ГОСТЕЙ ---
-            let guestHtml = '';
-            let hasGuests = false;
-            
-            Object.keys(reports).forEach(submittedName => {
-                if (!processedNames.has(submittedName)) {
-                    if (!hasGuests) {
-                        guestHtml += `<tr><td colspan="5" class="group-header" style="background-color: #f39c12; color: white;">🕵️ Гості / Незареєстровані учні</td></tr>`;
-                        hasGuests = true;
-                        hasAnyStudents = true;
-                    }
-                    const report = reports[submittedName];
-                    guestHtml += `<tr>
-                        <td><strong>${submittedName}</strong></td>
-                        <td class="status-done" style="color: #d35400;">✅ Виконано (Гість)</td>
-                        <td>${report.score !== undefined ? report.score : '-'}</td>
-                        <td>${report.mistakes !== undefined ? report.mistakes : '-'}</td>
-                        <td>${report.timestamp || '-'}</td>
-                    </tr>`;
-                }
-            });
-            
-            html += guestHtml;
-            // ------------------------------------
-
-            if (!hasAnyStudents) {
-                html += `<tr><td colspan="5" style="text-align:center;">У цій категорії немає доданих учнів і немає жодного звіту.</td></tr>`;
+            if (resultCount === 0) {
+                html += `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">За вашим запитом нічого не знайдено.</td></tr>`;
             }
 
             html += `</tbody></table>`;
             output.innerHTML = html;
         });
+    }
+
+    // 5. ВИДАЛЕННЯ ЗВІТУ З БАЗИ
+    function deleteReportRecord(month, date, gameId, studentName) {
+        if (confirm(`Ви впевнені, що хочете видалити роботу учня "${studentName}" за гру "${gameId}"?`)) {
+            db.ref(`homework_reports/${month}/${date}/${gameId}/${studentName}`).remove().then(() => {
+                // Оновлюємо пошук після видалення
+                loadReports();
+            }).catch(err => {
+                alert("Помилка при видаленні: " + err.message);
+            });
+        }
     }
 
     function switchTab(tabId) {
