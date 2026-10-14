@@ -7,7 +7,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        /* Темний стильний дизайн */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #0f172a;
@@ -103,13 +102,8 @@
             background: #059669;
             box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
         }
-        .btn-blue {
-            background: #3b82f6;
-        }
-        .btn-blue:hover {
-            background: #2563eb;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
-        }
+        .btn-blue { background: #3b82f6; }
+        .btn-blue:hover { background: #2563eb; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
         .students-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -129,10 +123,7 @@
             padding-bottom: 10px;
             border-bottom: 1px solid #334155;
         }
-        .class-header h3 {
-            margin: 0;
-            color: #38bdf8;
-        }
+        .class-header h3 { margin: 0; color: #38bdf8; }
         .student-item {
             display: flex;
             justify-content: space-between;
@@ -173,16 +164,22 @@
             text-transform: uppercase;
             font-size: 14px;
         }
-        tr:nth-child(even) {
-            background-color: #0f172a;
+        tr:nth-child(even) { background-color: #0f172a; }
+        tr:hover { background-color: #334155; }
+        
+        /* Стиль для посилання на гру */
+        .game-link {
+            color: #38bdf8;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: 0.3s;
         }
-        tr:hover {
-            background-color: #334155;
-        }
-        .details-cell {
-            color: #94a3b8;
-            font-size: 14px;
-            white-space: pre-wrap; /* Зберігає перенесення рядків */
+        .game-link:hover {
+            color: #818cf8;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -200,27 +197,24 @@
     <div id="tab-reports" class="tab-content active">
         <div class="control-group">
             <input type="text" id="search-student" placeholder="Ім'я учня (або порожньо для всіх)" style="flex: 1;">
-            <input type="text" id="search-game" placeholder="ID гри (або порожньо для всіх)" style="flex: 1;">
+            <input type="text" id="search-game" placeholder="Назва гри (або порожньо для всіх)" style="flex: 1;">
             <select id="report-category">
                 <option value="all">Всі категорії</option>
                 <option value="individual">Тільки Індивідуальні</option>
-                <!-- Динамічні класи додадуться сюди -->
             </select>
             <button onclick="loadReports()" class="btn-blue">🔍 Знайти роботи</button>
         </div>
         <div id="reports-output">
-            <p style="text-align: center; color: #64748b; font-size: 18px; margin-top: 30px;">Введіть параметри пошуку або просто натисніть "Знайти роботи", щоб побачити все.</p>
+            <p style="text-align: center; color: #64748b; font-size: 18px; margin-top: 30px;">Введіть ім'я учня або назву гри та натисніть "Знайти роботи".</p>
         </div>
     </div>
 
     <!-- Вкладка Учнів -->
     <div id="tab-students" class="tab-content">
-        
         <div class="control-group">
             <input type="text" id="new-class-name" placeholder="Назва нового класу (напр. 5-А)">
             <button class="btn-blue" onclick="addClass()">➕ Створити клас</button>
         </div>
-
         <div class="control-group">
             <input type="text" id="new-student-name" placeholder="Ім'я учня">
             <select id="new-student-category">
@@ -228,35 +222,27 @@
             </select>
             <button onclick="addStudent()">➕ Додати учня</button>
         </div>
-
-        <div class="students-grid" id="classes-container">
-            <!-- Сюди будуть генеруватися блоки з класами та індивідуальними учнями -->
-        </div>
+        <div class="students-grid" id="classes-container"></div>
     </div>
 </div>
 
 <script>
-    // Ініціалізація Firebase (ваш проект)
     const firebaseConfig = {
         databaseURL: "https://lesson-13c44-default-rtdb.firebaseio.com",
         projectId: "lesson-13c44"
     };
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.database();
 
     let classesData = {}; 
     let studentsData = { individual: {} };
 
-    // 1. Завантаження даних про класи та учнів
     function loadSchoolData() {
         db.ref('journal_classes').on('value', (snapshot) => {
             classesData = snapshot.val() || {};
             updateSelectDropdowns();
             renderStudentsUI();
         });
-
         db.ref('journal_students').on('value', (snapshot) => {
             studentsData = snapshot.val() || { individual: {} };
             if (!studentsData.individual) studentsData.individual = {};
@@ -264,11 +250,9 @@
         });
     }
 
-    // 2. Оновлення випадаючих списків
     function updateSelectDropdowns() {
         const studentSelect = document.getElementById('new-student-category');
         const reportSelect = document.getElementById('report-category');
-        
         const currentStudentVal = studentSelect.value;
         const currentReportVal = reportSelect.value;
 
@@ -281,31 +265,17 @@
             reportSelect.innerHTML += `<option value="${classId}">${className}</option>`;
         });
 
-        if (document.querySelector(`#new-student-category option[value="${currentStudentVal}"]`)) {
-            studentSelect.value = currentStudentVal;
-        }
-        if (document.querySelector(`#report-category option[value="${currentReportVal}"]`)) {
-            reportSelect.value = currentReportVal;
-        }
+        if (document.querySelector(`#new-student-category option[value="${currentStudentVal}"]`)) studentSelect.value = currentStudentVal;
+        if (document.querySelector(`#report-category option[value="${currentReportVal}"]`)) reportSelect.value = currentReportVal;
     }
 
-    // 3. Відмальовка блоків класів
     function renderStudentsUI() {
         const container = document.getElementById('classes-container');
         container.innerHTML = '';
-
-        let individualHtml = `<div class="class-section">
-            <div class="class-header">
-                <h3>👤 Індивідуальні учні</h3>
-            </div>
-            <div id="list-individual">`;
-        
+        let individualHtml = `<div class="class-section"><div class="class-header"><h3>👤 Індивідуальні учні</h3></div><div id="list-individual">`;
         if (studentsData.individual) {
             Object.keys(studentsData.individual).forEach(studentId => {
-                individualHtml += `<div class="student-item">
-                    <span>${studentsData.individual[studentId]}</span>
-                    <button class="btn-delete" onclick="deleteStudent('individual', '${studentId}')">Видалити</button>
-                </div>`;
+                individualHtml += `<div class="student-item"><span>${studentsData.individual[studentId]}</span><button class="btn-delete" onclick="deleteStudent('individual', '${studentId}')">Видалити</button></div>`;
             });
         }
         individualHtml += `</div></div>`;
@@ -313,24 +283,14 @@
 
         Object.keys(classesData).forEach(classId => {
             const className = classesData[classId].name;
-            let classHtml = `<div class="class-section">
-                <div class="class-header">
-                    <h3>👥 ${className}</h3>
-                    <button class="btn-delete" onclick="deleteClass('${classId}', '${className}')">Видалити клас</button>
-                </div>
-                <div id="list-${classId}">`;
-            
+            let classHtml = `<div class="class-section"><div class="class-header"><h3>👥 ${className}</h3><button class="btn-delete" onclick="deleteClass('${classId}', '${className}')">Видалити клас</button></div><div id="list-${classId}">`;
             if (studentsData[classId]) {
                 Object.keys(studentsData[classId]).forEach(studentId => {
-                    classHtml += `<div class="student-item">
-                        <span>${studentsData[classId][studentId]}</span>
-                        <button class="btn-delete" onclick="deleteStudent('${classId}', '${studentId}')">Видалити</button>
-                    </div>`;
+                    classHtml += `<div class="student-item"><span>${studentsData[classId][studentId]}</span><button class="btn-delete" onclick="deleteStudent('${classId}', '${studentId}')">Видалити</button></div>`;
                 });
             } else {
                 classHtml += `<p style="color:#64748b; font-size:14px;">Немає учнів</p>`;
             }
-            
             classHtml += `</div></div>`;
             container.innerHTML += classHtml;
         });
@@ -364,7 +324,6 @@
         }
     }
 
-    // 4. ГЛОБАЛЬНИЙ ПОШУК ТА ВІДОБРАЖЕННЯ ЗВІТІВ
     function loadReports() {
         const studentQ = document.getElementById('search-student').value.trim().toLowerCase();
         const gameQ = document.getElementById('search-game').value.trim().toLowerCase();
@@ -378,53 +337,42 @@
             let html = `<table>
                 <thead>
                     <tr>
-                        <th>Дата та Час</th>
-                        <th>Гра (ID)</th>
+                        <th>Дата</th>
+                        <th>Гра (Натисни для перевірки)</th>
                         <th>Ім'я учня</th>
-                        <th>Бали</th>
-                        <th>Помилки</th>
-                        <th>Деталі роботи (Відповіді)</th>
+                        <th>Результат</th>
                         <th>Дії</th>
                     </tr>
                 </thead>
                 <tbody>`;
-
             let resultCount = 0;
 
-            // Перебираємо всю базу: місяць -> дата -> гра -> учень
             for (const month in allData) {
                 for (const date in allData[month]) {
                     for (const gameId in allData[month][date]) {
-                        
-                        // Фільтр по грі
                         if (gameQ && !gameId.toLowerCase().includes(gameQ)) continue;
 
                         for (const studentName in allData[month][date][gameId]) {
-                            
-                            // Фільтр по імені учня
                             if (studentQ && !studentName.toLowerCase().includes(studentQ)) continue;
-
-                            // Фільтр по категорії (класу)
                             if (filterId !== 'all') {
-                                let belongsToCategory = false;
-                                if (filterId === 'individual' && studentsData.individual && Object.values(studentsData.individual).includes(studentName)) {
-                                    belongsToCategory = true;
-                                } else if (studentsData[filterId] && Object.values(studentsData[filterId]).includes(studentName)) {
-                                    belongsToCategory = true;
-                                }
-                                if (!belongsToCategory) continue; // Пропускаємо, якщо не в цій категорії
+                                let belongs = false;
+                                if (filterId === 'individual' && studentsData.individual && Object.values(studentsData.individual).includes(studentName)) belongs = true;
+                                else if (studentsData[filterId] && Object.values(studentsData[filterId]).includes(studentName)) belongs = true;
+                                if (!belongs) continue; 
                             }
 
                             const report = allData[month][date][gameId][studentName];
                             resultCount++;
                             
+                            // ФОРМУВАННЯ КЛІКАБЕЛЬНОГО ПОСИЛАННЯ
+                            // Передаємо параметри reportUser та reportDate у саму гру
+                            const gameUrl = `${gameId}.html?reportUser=${encodeURIComponent(studentName)}&reportDate=${date}`;
+                            
                             html += `<tr>
-                                <td>${date} <br><small style="color:#94a3b8">${report.timestamp || ''}</small></td>
-                                <td style="color:#38bdf8;">${gameId}</td>
+                                <td>${date}</td>
+                                <td><a href="${gameUrl}" target="_blank" class="game-link">🎮 ${gameId}</a></td>
                                 <td style="font-size: 16px; font-weight: bold; color: #f8fafc;">${studentName}</td>
-                                <td><span style="color:#10b981; font-weight:bold;">${report.score || '-'}</span></td>
-                                <td><span style="color:#ef4444; font-weight:bold;">${report.mistakes !== undefined ? report.mistakes : '-'}</span></td>
-                                <td class="details-cell">${report.details || 'Немає деталей'}</td>
+                                <td><span style="color:#10b981; font-weight:bold; font-size:16px;">${report.score || '-'}</span></td>
                                 <td>
                                     <button class="btn-delete" onclick="deleteReportRecord('${month}', '${date}', '${gameId}', '${studentName}')">🗑️ Видалити</button>
                                 </td>
@@ -433,25 +381,19 @@
                     }
                 }
             }
-
             if (resultCount === 0) {
-                html += `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">За вашим запитом нічого не знайдено.</td></tr>`;
+                html += `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">За вашим запитом нічого не знайдено.</td></tr>`;
             }
-
             html += `</tbody></table>`;
             output.innerHTML = html;
         });
     }
 
-    // 5. ВИДАЛЕННЯ ЗВІТУ З БАЗИ
     function deleteReportRecord(month, date, gameId, studentName) {
         if (confirm(`Ви впевнені, що хочете видалити роботу учня "${studentName}" за гру "${gameId}"?`)) {
             db.ref(`homework_reports/${month}/${date}/${gameId}/${studentName}`).remove().then(() => {
-                // Оновлюємо пошук після видалення
                 loadReports();
-            }).catch(err => {
-                alert("Помилка при видаленні: " + err.message);
-            });
+            }).catch(err => alert("Помилка: " + err.message));
         }
     }
 
