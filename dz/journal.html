@@ -57,12 +57,8 @@
             color: #ffffff;
             box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
         }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         .control-group {
             display: flex;
             gap: 15px;
@@ -82,9 +78,7 @@
             background-color: #1e293b;
             color: #f8fafc;
         }
-        input::placeholder {
-            color: #64748b;
-        }
+        input::placeholder { color: #64748b; }
         input:focus, select:focus {
             outline: none;
             border-color: #38bdf8;
@@ -167,7 +161,6 @@
         tr:nth-child(even) { background-color: #0f172a; }
         tr:hover { background-color: #334155; }
         
-        /* Стиль для посилання на гру */
         .game-link {
             color: #38bdf8;
             text-decoration: none;
@@ -177,10 +170,7 @@
             gap: 5px;
             transition: 0.3s;
         }
-        .game-link:hover {
-            color: #818cf8;
-            text-decoration: underline;
-        }
+        .game-link:hover { color: #818cf8; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -196,16 +186,19 @@
     <!-- Вкладка Звітів та Пошуку -->
     <div id="tab-reports" class="tab-content active">
         <div class="control-group">
-            <input type="text" id="search-student" placeholder="Ім'я учня (або порожньо для всіх)" style="flex: 1;">
+            <datalist id="students-datalist"></datalist>
+            <input type="text" id="search-student" list="students-datalist" placeholder="Ім'я учня (оберіть або введіть...)" style="flex: 1;">
+            
             <input type="text" id="search-game" placeholder="Назва гри (або порожньо для всіх)" style="flex: 1;">
+            
             <select id="report-category">
-                <option value="all">Всі категорії</option>
+                <option value="all">Всі категорії (всі класи)</option>
                 <option value="individual">Тільки Індивідуальні</option>
             </select>
             <button onclick="loadReports()" class="btn-blue">🔍 Знайти роботи</button>
         </div>
         <div id="reports-output">
-            <p style="text-align: center; color: #64748b; font-size: 18px; margin-top: 30px;">Введіть ім'я учня або назву гри та натисніть "Знайти роботи".</p>
+            <p style="text-align: center; color: #64748b; font-size: 18px; margin-top: 30px;">Введіть ім'я учня, назву гри або оберіть клас, а потім натисніть "Знайти роботи".</p>
         </div>
     </div>
 
@@ -246,6 +239,7 @@
         db.ref('journal_students').on('value', (snapshot) => {
             studentsData = snapshot.val() || { individual: {} };
             if (!studentsData.individual) studentsData.individual = {};
+            updateSelectDropdowns();
             renderStudentsUI();
         });
     }
@@ -257,7 +251,7 @@
         const currentReportVal = reportSelect.value;
 
         studentSelect.innerHTML = `<option value="individual">Індивідуально</option>`;
-        reportSelect.innerHTML = `<option value="all">Всі категорії</option><option value="individual">Тільки Індивідуальні</option>`;
+        reportSelect.innerHTML = `<option value="all">Всі категорії (всі класи)</option><option value="individual">Тільки Індивідуальні</option>`;
 
         Object.keys(classesData).forEach(classId => {
             const className = classesData[classId].name;
@@ -267,6 +261,20 @@
 
         if (document.querySelector(`#new-student-category option[value="${currentStudentVal}"]`)) studentSelect.value = currentStudentVal;
         if (document.querySelector(`#report-category option[value="${currentReportVal}"]`)) reportSelect.value = currentReportVal;
+
+        // Оновлюємо випадаючий список імен (datalist)
+        const datalist = document.getElementById('students-datalist');
+        if (datalist) {
+            datalist.innerHTML = '';
+            let allStudentsNames = new Set();
+            if (studentsData.individual) Object.values(studentsData.individual).forEach(n => allStudentsNames.add(n));
+            Object.keys(classesData).forEach(classId => {
+                if (studentsData[classId]) Object.values(studentsData[classId]).forEach(n => allStudentsNames.add(n));
+            });
+            allStudentsNames.forEach(name => {
+                datalist.innerHTML += `<option value="${name}">`;
+            });
+        }
     }
 
     function renderStudentsUI() {
@@ -274,19 +282,22 @@
         container.innerHTML = '';
         let individualHtml = `<div class="class-section"><div class="class-header"><h3>👤 Індивідуальні учні</h3></div><div id="list-individual">`;
         if (studentsData.individual) {
-            Object.keys(studentsData.individual).forEach(studentId => {
-                individualHtml += `<div class="student-item"><span>${studentsData.individual[studentId]}</span><button class="btn-delete" onclick="deleteStudent('individual', '${studentId}')">Видалити</button></div>`;
+            Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)).forEach(studentName => {
+                const studentId = Object.keys(studentsData.individual).find(key => studentsData.individual[key] === studentName);
+                individualHtml += `<div class="student-item"><span>${studentName}</span><button class="btn-delete" onclick="deleteStudent('individual', '${studentId}')">Видалити</button></div>`;
             });
         }
         individualHtml += `</div></div>`;
         container.innerHTML += individualHtml;
 
-        Object.keys(classesData).forEach(classId => {
+        // Сортування класів за алфавітом
+        Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
             const className = classesData[classId].name;
             let classHtml = `<div class="class-section"><div class="class-header"><h3>👥 ${className}</h3><button class="btn-delete" onclick="deleteClass('${classId}', '${className}')">Видалити клас</button></div><div id="list-${classId}">`;
             if (studentsData[classId]) {
-                Object.keys(studentsData[classId]).forEach(studentId => {
-                    classHtml += `<div class="student-item"><span>${studentsData[classId][studentId]}</span><button class="btn-delete" onclick="deleteStudent('${classId}', '${studentId}')">Видалити</button></div>`;
+                Object.values(studentsData[classId]).sort((a,b) => a.localeCompare(b)).forEach(studentName => {
+                    const studentId = Object.keys(studentsData[classId]).find(key => studentsData[classId][key] === studentName);
+                    classHtml += `<div class="student-item"><span>${studentName}</span><button class="btn-delete" onclick="deleteStudent('${classId}', '${studentId}')">Видалити</button></div>`;
                 });
             } else {
                 classHtml += `<p style="color:#64748b; font-size:14px;">Немає учнів</p>`;
@@ -319,9 +330,32 @@
     }
 
     function deleteStudent(categoryId, studentId) {
-        if (confirm("Видалити цього учня зі списку?")) {
-            db.ref(`journal_students/${categoryId}/${studentId}`).remove();
-        }
+        if (confirm("Видалити цього учня зі списку?")) db.ref(`journal_students/${categoryId}/${studentId}`).remove();
+    }
+
+    function buildRow(date, gameId, studentName, report, month, isGuest=false) {
+        let scoreText = report.score ? (report.score.includes("Вірно") ? report.score : "Вірно " + report.score) : '-';
+        const gameUrl = `${gameId}.html?reportUser=${encodeURIComponent(studentName)}&reportDate=${date}`;
+        let guestTag = isGuest ? `<span style="font-size:12px; color:#f59e0b; display:block;">(Гість / Поза класом)</span>` : '';
+        
+        return `<tr>
+            <td>${date} <br><small style="color:#94a3b8">${report.timestamp || ''}</small></td>
+            <td><a href="${gameUrl}" target="_blank" class="game-link">🎮 ${gameId}</a></td>
+            <td style="font-size: 16px; font-weight: bold; color: #f8fafc;">${studentName} ${guestTag}</td>
+            <td><span style="color:#10b981; font-weight:bold; font-size:16px;">${scoreText}</span></td>
+            <td>
+                <button class="btn-delete" onclick="deleteReportRecord('${month}', '${date}', '${gameId}', '${studentName}')">🗑️ Видалити</button>
+            </td>
+        </tr>`;
+    }
+
+    function buildMissingRow(gameId, studentName) {
+        return `<tr style="opacity: 0.6; background-color: rgba(15, 23, 42, 0.5);">
+            <td style="color:#64748b;">-</td>
+            <td style="color:#64748b;">${gameId}</td>
+            <td style="font-size: 16px; font-weight: bold; color: #94a3b8;">${studentName}</td>
+            <td colspan="2"><span style="color:#ef4444; font-weight:bold; font-size:14px;">❌ Не виконав</span></td>
+        </tr>`;
     }
 
     function loadReports() {
@@ -337,7 +371,7 @@
             let html = `<table>
                 <thead>
                     <tr>
-                        <th>Дата</th>
+                        <th>Дата та Час</th>
                         <th>Гра (Натисни для перевірки)</th>
                         <th>Ім'я учня</th>
                         <th>Результат</th>
@@ -347,42 +381,95 @@
                 <tbody>`;
             let resultCount = 0;
 
+            // Будуємо список учнів, яких ми очікуємо (для пошуку "лінтяїв")
+            let roster = [];
+            if (filterId === 'all') {
+                Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
+                    const cName = classesData[classId].name;
+                    if (studentsData[classId]) {
+                        Object.values(studentsData[classId]).sort((a,b) => a.localeCompare(b)).forEach(sName => { roster.push({ name: sName, category: classId, categoryName: cName }); });
+                    }
+                });
+                if (studentsData.individual) {
+                    Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)).forEach(sName => { roster.push({ name: sName, category: 'individual', categoryName: 'Індивідуальні' }); });
+                }
+            } else {
+                let cName = filterId === 'individual' ? 'Індивідуальні' : classesData[filterId]?.name;
+                if (studentsData[filterId]) {
+                    Object.values(studentsData[filterId]).sort((a,b) => a.localeCompare(b)).forEach(sName => { roster.push({ name: sName, category: filterId, categoryName: cName }); });
+                }
+            }
+
+            if (studentQ) roster = roster.filter(s => s.name.toLowerCase().includes(studentQ));
+
+            // Збираємо всі виконані роботи в один масив
+            let submissions = [];
             for (const month in allData) {
                 for (const date in allData[month]) {
                     for (const gameId in allData[month][date]) {
-                        if (gameQ && !gameId.toLowerCase().includes(gameQ)) continue;
-
                         for (const studentName in allData[month][date][gameId]) {
-                            if (studentQ && !studentName.toLowerCase().includes(studentQ)) continue;
-                            if (filterId !== 'all') {
-                                let belongs = false;
-                                if (filterId === 'individual' && studentsData.individual && Object.values(studentsData.individual).includes(studentName)) belongs = true;
-                                else if (studentsData[filterId] && Object.values(studentsData[filterId]).includes(studentName)) belongs = true;
-                                if (!belongs) continue; 
-                            }
-
-                            const report = allData[month][date][gameId][studentName];
-                            resultCount++;
-                            
-                            // ФОРМУВАННЯ КЛІКАБЕЛЬНОГО ПОСИЛАННЯ
-                            // Передаємо параметри reportUser та reportDate у саму гру
-                            const gameUrl = `${gameId}.html?reportUser=${encodeURIComponent(studentName)}&reportDate=${date}`;
-                            
-                            html += `<tr>
-                                <td>${date}</td>
-                                <td><a href="${gameUrl}" target="_blank" class="game-link">🎮 ${gameId}</a></td>
-                                <td style="font-size: 16px; font-weight: bold; color: #f8fafc;">${studentName}</td>
-                                <td><span style="color:#10b981; font-weight:bold; font-size:16px;">${report.score || '-'}</span></td>
-                                <td>
-                                    <button class="btn-delete" onclick="deleteReportRecord('${month}', '${date}', '${gameId}', '${studentName}')">🗑️ Видалити</button>
-                                </td>
-                            </tr>`;
+                            submissions.push({ month, date, gameId, studentName, report: allData[month][date][gameId][studentName] });
                         }
                     }
                 }
             }
+
+            // Якщо ви шукаєте конкретну гру - виводимо весь клас і показуємо, хто зробив, а хто "лінтяй"
+            if (gameQ !== "") {
+                let gameSubmissions = submissions.filter(s => s.gameId.toLowerCase().includes(gameQ));
+                let matchedGameIds = [...new Set(gameSubmissions.map(s => s.gameId))];
+                if (matchedGameIds.length === 0) matchedGameIds = [document.getElementById('search-game').value.trim()];
+
+                matchedGameIds.forEach(targetGameId => {
+                    html += `<tr><td colspan="5" class="group-header" style="background:#334155; color:#38bdf8; text-align:center; font-size:18px;">Гра: ${targetGameId}</td></tr>`;
+                    
+                    let currentCategory = null;
+                    let processedGuests = new Set();
+                    
+                    roster.forEach(student => {
+                        if (currentCategory !== student.category) {
+                            html += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${student.categoryName}</td></tr>`;
+                            currentCategory = student.category;
+                        }
+                        
+                        let sub = gameSubmissions.find(s => s.studentName === student.name && s.gameId === targetGameId);
+                        if (sub) {
+                            html += buildRow(sub.date, targetGameId, student.name, sub.report, sub.month, false);
+                            processedGuests.add(student.name);
+                            resultCount++;
+                        } else {
+                            html += buildMissingRow(targetGameId, student.name);
+                            resultCount++;
+                        }
+                    });
+                    
+                    // Додаємо Гостей, які грали в цю гру, але не закріплені за класом
+                    let guests = gameSubmissions.filter(s => s.gameId === targetGameId && !processedGuests.has(s.studentName) && (!studentQ || s.studentName.toLowerCase().includes(studentQ)));
+                    if (guests.length > 0) {
+                        html += `<tr><td colspan="5" style="background:#b45309; color:#fff; font-weight:bold; font-size:14px; padding: 8px 15px;">🕵️ Гості / Поза списком</td></tr>`;
+                        guests.forEach(g => { html += buildRow(g.date, targetGameId, g.studentName, g.report, g.month, true); resultCount++; });
+                    }
+                });
+            } else {
+                // Якщо гру не введено - виводимо просто всі виконані роботи за фільтром
+                let validNames = new Set(roster.map(s => s.name));
+                let filteredSubs = submissions.filter(s => {
+                    if (studentQ && !s.studentName.toLowerCase().includes(studentQ)) return false;
+                    if (filterId !== 'all' && !validNames.has(s.studentName)) return false;
+                    return true;
+                });
+                
+                filteredSubs.sort((a,b) => b.date.localeCompare(a.date)); // Найновіші зверху
+                
+                filteredSubs.forEach(sub => {
+                    let isGuest = !roster.some(r => r.name === sub.studentName);
+                    html += buildRow(sub.date, sub.gameId, sub.studentName, sub.report, sub.month, isGuest);
+                    resultCount++;
+                });
+            }
+
             if (resultCount === 0) {
-                html += `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">За вашим запитом нічого не знайдено.</td></tr>`;
+                html += `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">За вашим запитом нічого не знайдено.</td></tr>`;
             }
             html += `</tbody></table>`;
             output.innerHTML = html;
