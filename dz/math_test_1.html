@@ -22,6 +22,31 @@
             overflow-x: hidden;
         }
 
+        /* --- Авторизація --- */
+        #auth-overlay {
+            display: none; 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 999999;
+            justify-content: center; align-items: center;
+            flex-direction: column;
+        }
+        .auth-box {
+            background: white; padding: 40px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; border: 3px solid #3498db;
+        }
+        .auth-box h2 { color: #2c3e50; margin-bottom: 20px; font-size: 28px; }
+        .auth-box input {
+            padding: 15px; font-size: 20px; border: 2px solid #bdc3c7;
+            border-radius: 10px; width: 80%; margin-bottom: 20px; text-align: center;
+        }
+        .auth-box button {
+            background: #2ecc71; color: white; border: none; padding: 15px 40px;
+            font-size: 22px; font-weight: bold; border-radius: 10px; cursor: pointer; transition: 0.3s;
+        }
+        .auth-box button:hover { background: #27ae60; }
+
         /* Контейнер для масштабування (Лупа) */
         #zoom-container {
             transform-origin: top center;
@@ -35,7 +60,7 @@
             box-sizing: border-box;
         }
 
-        /* Головний контейнер гри (напівпрозорий, щоб видно було фон) */
+        /* Головний контейнер гри */
         #game-container {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(5px);
@@ -49,102 +74,42 @@
             position: relative;
         }
 
-        h1 {
-            color: #2c3e50;
-            font-size: 28px;
-            margin-bottom: 20px;
-        }
+        h1 { color: #2c3e50; font-size: 28px; margin-bottom: 20px; }
 
         .question-block {
             background: rgba(255, 255, 255, 0.9);
             border: 2px solid #3498db;
             border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 20px; margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
 
-        .question-text {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2980b9;
-            margin-bottom: 15px;
-        }
-
-        .options {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
+        .question-text { font-size: 24px; font-weight: bold; color: #2980b9; margin-bottom: 15px; }
+        .options { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        
         .option-btn {
-            background: #ecf0f1;
-            border: 2px solid #bdc3c7;
-            border-radius: 10px;
-            padding: 10px 25px;
-            font-size: 22px;
-            font-weight: bold;
-            color: #2c3e50;
-            cursor: pointer;
-            transition: all 0.2s;
+            background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 10px;
+            padding: 10px 25px; font-size: 22px; font-weight: bold; color: #2c3e50;
+            cursor: pointer; transition: all 0.2s;
         }
-
-        .option-btn:hover {
-            background: #d4e6f1;
-            border-color: #3498db;
-        }
-
-        .option-btn.selected {
-            background: #3498db;
-            color: white;
-            border-color: #2980b9;
-        }
+        .option-btn:hover { background: #d4e6f1; border-color: #3498db; }
+        .option-btn.selected { background: #3498db; color: white; border-color: #2980b9; }
 
         #submit-btn {
-            background: #2ecc71;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 15px 40px;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: background 0.3s;
-            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
+            background: #2ecc71; color: white; border: none; border-radius: 10px;
+            padding: 15px 40px; font-size: 24px; font-weight: bold; cursor: pointer;
+            margin-top: 10px; transition: background 0.3s; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
         }
-
-        #submit-btn:hover {
-            background: #27ae60;
-        }
+        #submit-btn:hover { background: #27ae60; }
 
         /* --- UI Controls (Zoom, Theme, Draw) --- */
-        .global-controls {
-            position: fixed;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            z-index: 91000;
-        }
-
+        .global-controls { position: fixed; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 91000; }
         .control-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            font-size: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            color: white;
-            transition: transform 0.2s;
+            width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer;
+            font-size: 24px; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); color: white; transition: transform 0.2s;
         }
         .control-btn:hover { transform: scale(1.1); }
-
         #zoom-in-btn { background: #3498db; bottom: 215px; position: fixed; right: 20px;}
         #zoom-out-btn { background: #e67e22; bottom: 150px; position: fixed; right: 20px;}
         #toggle-draw-btn-global { background: #8e44ad; bottom: 85px; position: fixed; right: 20px; border-radius: 25px; width: auto; padding: 0 15px; font-size: 16px; font-weight: bold;}
@@ -152,101 +117,46 @@
 
         /* --- Theme Manager Modal --- */
         #theme-modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            z-index: 95000;
-            width: 90%;
-            max-width: 600px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 20px; border-radius: 15px; z-index: 95000;
+            width: 90%; max-width: 600px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
-        .theme-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+        .theme-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .theme-modal-header h2 { margin: 0; font-size: 20px; }
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #e74c3c; }
-        #theme-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 15px;
-            max-height: 60vh;
-            overflow-y: auto;
-            padding-right: 5px;
-        }
+        #theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; max-height: 60vh; overflow-y: auto; padding-right: 5px; }
+        
         .theme-thumbnail {
-            height: 100px;
-            border-radius: 10px;
-            background-size: cover;
-            background-position: center;
-            cursor: pointer;
-            border: 2px solid transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            text-shadow: 1px 1px 3px black;
-            text-align: center;
-            background-color: #bdc3c7; /* Для опції "Без фону" */
-            transition: transform 0.2s;
+            height: 100px; border-radius: 10px; background-size: cover; background-position: center;
+            cursor: pointer; border: 2px solid transparent; display: flex; align-items: center;
+            justify-content: center; color: white; font-weight: bold; text-shadow: 1px 1px 3px black;
+            text-align: center; background-color: #bdc3c7; transition: transform 0.2s;
         }
         .theme-thumbnail:hover { transform: scale(1.05); border-color: #3498db; }
 
         /* --- Drawing Panel --- */
         #draw-panel-global {
-            display: none;
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 2px solid #8e44ad;
-            border-radius: 10px;
-            padding: 10px;
-            z-index: 95000;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            width: 250px;
+            display: none; position: fixed; top: 20px; left: 20px;
+            background: rgba(255, 255, 255, 0.95); border: 2px solid #8e44ad; border-radius: 10px;
+            padding: 10px; z-index: 95000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 250px;
         }
         .draw-header {
-            cursor: grab;
-            background: #8e44ad;
-            color: white;
-            padding: 5px;
-            text-align: center;
-            font-weight: bold;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
+            cursor: grab; background: #8e44ad; color: white; padding: 5px; text-align: center;
+            font-weight: bold; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between;
         }
         .draw-controls { display: flex; flex-direction: column; gap: 10px; }
         .draw-row { display: flex; justify-content: space-between; gap: 5px; }
-        .draw-btn {
-            flex: 1; padding: 5px; border: 1px solid #ccc; background: #eee; cursor: pointer; border-radius: 5px; font-weight: bold;
-        }
+        .draw-btn { flex: 1; padding: 5px; border: 1px solid #ccc; background: #eee; cursor: pointer; border-radius: 5px; font-weight: bold; }
         .draw-btn.active { background: #8e44ad; color: white; border-color: #8e44ad; }
-        #draw-canvas {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            pointer-events: none; z-index: 90000;
-        }
+        #draw-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 90000; }
 
         /* --- Block Overlay --- */
         #block-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.85); z-index: 99999;
-            justify-content: center; align-items: center;
-            color: #ff4757; font-size: 40px; font-weight: bold; text-align: center;
-            flex-direction: column;
+            background: rgba(0, 0, 0, 0.85); z-index: 99999; justify-content: center; align-items: center;
+            color: #ff4757; font-size: 40px; font-weight: bold; text-align: center; flex-direction: column;
         }
 
-        /* Адаптивність */
         @media (max-width: 600px) {
             .option-btn { font-size: 18px; padding: 8px 15px; }
             .question-text { font-size: 20px; }
@@ -255,6 +165,17 @@
     </style>
 </head>
 <body>
+
+<!-- Вікно Авторизації -->
+<div id="auth-overlay">
+    <div class="auth-box">
+        <h2>👋 Привіт! Як тебе звати?</h2>
+        <p style="color: #7f8c8d; margin-bottom: 20px;">Введи своє ім'я, щоб вчитель побачив твою роботу.</p>
+        <input type="text" id="auth-name-input" placeholder="Твоє ім'я (напр. Сашко)">
+        <br>
+        <button onclick="saveAuthName()">Почати гру</button>
+    </div>
+</div>
 
 <!-- Global Drawing Canvas -->
 <canvas id="draw-canvas"></canvas>
@@ -330,12 +251,19 @@
 </div>
 
 <script>
-    // --- Конфігурація гри ---
+    // --- Конфігурація гри (Автоматичний ID з файлу) ---
+    let urlPath = window.location.pathname;
+    let filename = urlPath.substring(urlPath.lastIndexOf('/') + 1);
+    let autoGameId = filename ? filename.replace('.html', '') : 'math_test_1';
+    
     const CONFIG = {
-        gameId: 'math_test_grade1', // Унікальний ID гри для фонів та звітів
+        gameId: autoGameId,
         correctAnswers: { 1: 5, 2: 4, 3: 4 }
     };
+    
     let userAnswers = { 1: null, 2: null, 3: null };
+    let myName = "";
+    const tabId = 'tab_' + Math.random().toString(36).substr(2, 9);
 
     // --- Firebase Ініціалізація ---
     const firebaseConfig = {
@@ -345,76 +273,92 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- Ідентифікація (Отримання імені) ---
-    function getUserName() {
+    // --- Система Авторизації ---
+    function checkAuth() {
         const params = new URLSearchParams(window.location.search);
-        let name = params.get('user');
-        if (name) {
-            sessionStorage.setItem('userName', name);
-            return name;
+        let nameFromUrl = params.get('user');
+        
+        if (nameFromUrl) {
+            myName = nameFromUrl;
+            sessionStorage.setItem('userName', myName);
+            startGameLogic();
+        } else {
+            let nameFromStorage = sessionStorage.getItem('userName');
+            if (nameFromStorage) {
+                myName = nameFromStorage;
+                startGameLogic();
+            } else {
+                // Якщо імені немає, показуємо вікно авторизації
+                document.getElementById('auth-overlay').style.display = 'flex';
+            }
         }
-        name = sessionStorage.getItem('userName');
-        if (name) return name;
-        name = 'Гість_' + Math.floor(Math.random() * 1000);
-        sessionStorage.setItem('userName', name);
-        return name;
     }
-    const myName = getUserName();
-    const tabId = 'tab_' + Math.random().toString(36).substr(2, 9);
 
-    // --- Радар, Блокування та Лобі ---
-    const connectedRef = db.ref('.info/connected');
-    const myPresenceRef = db.ref(`online_users/${myName}/${tabId}`);
-    
-    connectedRef.on('value', (snap) => {
-        if (snap.val() === true) {
-            myPresenceRef.set(true);
-            myPresenceRef.onDisconnect().remove();
+    function saveAuthName() {
+        const inputVal = document.getElementById('auth-name-input').value.trim();
+        if (inputVal.length < 2) {
+            alert("Будь ласка, введи справжнє ім'я!");
+            return;
         }
-    });
-    window.addEventListener('beforeunload', () => myPresenceRef.remove());
+        myName = inputVal;
+        sessionStorage.setItem('userName', myName);
+        document.getElementById('auth-overlay').style.display = 'none';
+        startGameLogic();
+    }
 
-    db.ref(`force_refresh/${myName}`).on('value', (snap) => {
-        if (snap.val()) {
-            db.ref(`force_refresh/${myName}`).remove().then(() => window.location.reload());
-        }
-    });
+    // Запуск авторизації при завантаженні сторінки
+    window.onload = checkAuth;
 
-    db.ref(`blocked_users/${myName}`).on('value', (snap) => {
-        document.getElementById('block-overlay').style.display = snap.val() ? 'flex' : 'none';
-    });
+    // --- Основна логіка після авторизації ---
+    function startGameLogic() {
+        // Радар, Блокування та Лобі
+        const connectedRef = db.ref('.info/connected');
+        const myPresenceRef = db.ref(`online_users/${myName}/${tabId}`);
+        
+        connectedRef.on('value', (snap) => {
+            if (snap.val() === true) {
+                myPresenceRef.set(true);
+                myPresenceRef.onDisconnect().remove();
+            }
+        });
+        window.addEventListener('beforeunload', () => myPresenceRef.remove());
 
-    let isStartup = true;
-    setTimeout(() => { isStartup = false; }, 1500); // Імунітет 1.5 секунди
-    db.ref('current_activity').on('value', (snap) => {
-        if (!isStartup && snap.val() === 'lobby') {
-            window.location.href = 'https://olgazheltvai2.github.io/rizne/lobby.html?user=' + encodeURIComponent(myName);
-        }
-    });
+        db.ref(`force_refresh/${myName}`).on('value', (snap) => {
+            if (snap.val()) {
+                db.ref(`force_refresh/${myName}`).remove().then(() => window.location.reload());
+            }
+        });
+
+        db.ref(`blocked_users/${myName}`).on('value', (snap) => {
+            document.getElementById('block-overlay').style.display = snap.val() ? 'flex' : 'none';
+        });
+
+        let isStartup = true;
+        setTimeout(() => { isStartup = false; }, 1500); 
+        db.ref('current_activity').on('value', (snap) => {
+            if (!isStartup && snap.val() === 'lobby') {
+                window.location.href = 'https://olgazheltvai2.github.io/rizne/lobby.html?user=' + encodeURIComponent(myName);
+            }
+        });
+
+        // Ініціалізація теми
+        const startTheme = localStorage.getItem('mySavedBg_' + CONFIG.gameId);
+        if(startTheme) applyThemeLocal(startTheme);
+    }
 
     // --- Логіка Тесту та Відправка ДЗ ---
     function selectAnswer(qId, val) {
         userAnswers[qId] = val;
-        // Оновлення UI
         const block = document.getElementById('q' + qId);
         const btns = block.getElementsByClassName('option-btn');
         for(let btn of btns) btn.classList.remove('selected');
         event.target.classList.add('selected');
 
-        // Синхронізація кліку (щоб вчитель міг бачити в реальному часі, якщо онлайн)
         db.ref('game_action').set({
             senderId: myName, timestamp: Date.now(),
             type: 'answer_select', data: { qId, val }
         });
     }
-
-    db.ref('game_action').on('value', (snap) => {
-        const action = snap.val();
-        if(action && action.type === 'answer_select' && action.senderId !== myName) {
-            // Візуальне відображення для інших (опціонально, зазвичай в тестах кожен робить сам, 
-            // але виконано вимогу синхронізації дій)
-        }
-    });
 
     function submitTest() {
         if(Object.values(userAnswers).includes(null)) {
@@ -428,7 +372,6 @@
         if(userAnswers[2] === CONFIG.correctAnswers[2]) score++; else mistakes++;
         if(userAnswers[3] === CONFIG.correctAnswers[3]) score++; else mistakes++;
 
-        // Формування звіту для Firebase (Журнал ДЗ)
         const now = new Date();
         const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
         const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2, '0');
@@ -438,7 +381,6 @@
         btn.innerText = "Відправка...";
         btn.disabled = true;
 
-        // Запис у базу звітів
         db.ref(`homework_reports/${monthKey}/${dateStr}/${CONFIG.gameId}/${myName}`).set({
             score: `${score} з 3`,
             mistakes: mistakes,
@@ -448,7 +390,7 @@
             btn.innerText = "✅ Відправлено!";
             btn.style.background = "#27ae60";
             setTimeout(() => {
-                alert(`Молодець! Твій результат: ${score} з 3.\nДані успішно відправлені вчителю.`);
+                alert(`Молодець, ${myName}! Твій результат: ${score} з 3.\nДані успішно відправлені вчителю.`);
             }, 500);
         }).catch(err => {
             alert('Помилка відправки: ' + err.message);
@@ -464,15 +406,12 @@
             loadThemesSequentially();
         }
     }
-    function closeThemeManager() {
-        document.getElementById('theme-modal').style.display = 'none';
-    }
+    function closeThemeManager() { document.getElementById('theme-modal').style.display = 'none'; }
 
     async function loadThemesSequentially() {
         const themeGrid = document.getElementById('theme-grid');
         themeGrid.innerHTML = '';
         
-        // Опція "Без фону"
         const noBg = document.createElement('div');
         noBg.className = 'theme-thumbnail';
         noBg.innerHTML = 'Без фону';
@@ -483,7 +422,7 @@
         while (true) {
             const url = `https://olgazheltvai2.github.io/images/backgrounds/background_${i}.webp`;
             const exists = await checkImage(url);
-            if (!exists) break; // Зупинка при помилці 404
+            if (!exists) break; 
 
             const el = document.createElement('div');
             el.className = 'theme-thumbnail';
@@ -505,9 +444,7 @@
     }
 
     function selectTheme(url) {
-        // Збереження ЛОКАЛЬНО для конкретної гри за унікальним ключем
         localStorage.setItem('mySavedBg_' + CONFIG.gameId, url);
-        // Синхронізація для всіх (опціонально, але за промптом зберігаємо в базу)
         db.ref('game_theme').set(url);
         closeThemeManager();
         applyThemeLocal(url);
@@ -522,10 +459,8 @@
         }
     }
 
-    // Слухач загальної теми (якщо вчитель змінює з іншого вікна)
     db.ref('game_theme').on('value', (snap) => {
         const globalTheme = snap.val();
-        // Якщо є збережений індивідуальний фон, він має пріоритет (за правилом промпту)
         const savedTheme = localStorage.getItem('mySavedBg_' + CONFIG.gameId);
         if (savedTheme) {
             applyThemeLocal(savedTheme);
@@ -541,7 +476,7 @@
         if(currentScale < 0.5) currentScale = 0.5;
         if(currentScale > 2) currentScale = 2;
         document.getElementById('zoom-container').style.transform = `scale(${currentScale})`;
-        resizeCanvas(); // Оновлення полотна при зумі
+        resizeCanvas(); 
     }
 
     // --- Глобальний інструмент малювання ---
@@ -562,14 +497,13 @@
     function toggleDrawPanel() {
         if(drawPanel.style.display === 'block') {
             drawPanel.style.display = 'none';
-            canvas.style.pointerEvents = 'none'; // Вимикаємо малювання
+            canvas.style.pointerEvents = 'none';
         } else {
             drawPanel.style.display = 'block';
-            setDrawTool('pencil'); // Автоматична активація олівця
+            setDrawTool('pencil');
         }
     }
 
-    // Закриття панелі через шапку
     document.getElementById('draw-header').querySelector('span').onclick = (e) => {
         e.stopPropagation();
         toggleDrawPanel();
@@ -580,7 +514,7 @@
         document.getElementById('tool-pencil').classList.remove('active');
         document.getElementById('tool-eraser').classList.remove('active');
         document.getElementById('tool-' + tool).classList.add('active');
-        canvas.style.pointerEvents = 'auto'; // Вмикаємо малювання
+        canvas.style.pointerEvents = 'auto'; 
     }
 
     function getCoords(e) {
@@ -606,7 +540,6 @@
 
         drawLineLocal(lastX, lastY, coords.x, coords.y, color, size);
         
-        // Синхронізація (throttle можна додати для оптимізації, але за промптом робимо прямо)
         db.ref('game_action').set({
             senderId: myName, timestamp: Date.now(),
             type: 'draw_line',
@@ -648,7 +581,6 @@
         }
     }
 
-    // Синхронізація малювання з Firebase
     db.ref('game_action').on('value', (snap) => {
         const action = snap.val();
         if (!action || action.senderId === myName) return;
@@ -661,7 +593,6 @@
         }
     });
 
-    // Перетягування панелі малювання
     let dragItem = document.getElementById("draw-panel-global");
     let dragHeader = document.getElementById("draw-header");
     let active = false;
@@ -691,10 +622,6 @@
         }
     }
     function setTranslate(xPos, yPos, el) { el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`; }
-
-    // --- Ініціалізація теми при старті ---
-    const startTheme = localStorage.getItem('mySavedBg_' + CONFIG.gameId);
-    if(startTheme) applyThemeLocal(startTheme);
 </script>
 </body>
 </html>
