@@ -100,11 +100,17 @@
             border-color: #ff0000;
         }
         .shape-item svg { width: 100%; height: 100%; }
-        svg line { stroke: black; stroke-width: 2; z-index: 10; pointer-events: none;}
+        /* Змінено для можливості кліку по лінії */
+        svg line { stroke: black; stroke-width: 3; z-index: 10; cursor: pointer; transition: stroke 0.2s; }
+        svg line:hover { stroke: #e74c3c; }
         .lines-canvas {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
+        }
+        /* Вмикаємо події миші тільки для самих ліній всередині canvas */
+        .lines-canvas line {
+            pointer-events: auto;
         }
 
         /* Завдання 2 - Множини */
@@ -727,6 +733,13 @@
             selectedShape = { el: el, isLeft: isLeft, groupId: groupId };
             el.classList.add('selected');
         } else {
+            // Додано: зняття виділення, якщо клікнути ще раз на ту ж саму фігуру
+            if (selectedShape.el === el) {
+                selectedShape.el.classList.remove('selected');
+                selectedShape = null;
+                return;
+            }
+
             if (selectedShape.groupId !== groupId || selectedShape.isLeft === isLeft) {
                 selectedShape.el.classList.remove('selected');
                 selectedShape = { el: el, isLeft: isLeft, groupId: groupId };
@@ -775,6 +788,14 @@
             line.setAttribute("x1", x1); line.setAttribute("y1", y1);
             line.setAttribute("x2", x2); line.setAttribute("y2", y2);
             line.dataset.leftId = conn.left;
+
+            // Додано: можливість видалити лінію при кліку на неї
+            line.onclick = function() {
+                if (document.body.style.pointerEvents === 'none') return;
+                connections[groupId] = connections[groupId].filter(c => c.left !== conn.left);
+                drawLines(groupId);
+            };
+
             svg.appendChild(line);
         });
     }
