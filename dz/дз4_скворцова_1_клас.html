@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Домашнє завдання</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        #zoom-container {
+            transform-origin: top center;
+            transition: transform 0.3s ease;
+            padding: 20px;
+            flex-grow: 1;
+            padding-bottom: 80px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .task {
+            margin-bottom: 30px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .task-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        /* Task 1 */
+        .task1-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .house {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .roof {
+            width: 40px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin-bottom: 5px;
+            border: 2px solid;
+            background-color: #f9f9f9;
+        }
+        .roof.blue { border-color: #4a90e2; }
+        .roof.purple { border-color: #9b59b6; }
+        .roof.green { border-color: #2ecc71; }
+        
+        .floors {
+            border: 2px solid;
+            display: flex;
+            flex-direction: column;
+        }
+        .floors.blue { border-color: #4a90e2; }
+        .floors.purple { border-color: #9b59b6; }
+        .floors.green { border-color: #2ecc71; }
+
+        .floor { display: flex; }
+        .floor > div {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .floor input, .eq-row input {
+            width: 100%; height: 100%; border: none; text-align: center; font-size: 16px; outline: none; background: transparent;
+        }
+
+        .equations { display: flex; flex-direction: column; margin-left: 10px; justify-content: space-between; }
+        .eq-row { display: flex; align-items: center; gap: 2px; margin-bottom: 5px; }
+        .eq-row input { width: 25px; height: 25px; border: 1px solid #ccc; border-radius: 4px; }
+
+        /* Task 2 */
+        .task2-numbers { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 20px; flex-wrap: wrap; }
+        .task2-numbers span { cursor: pointer; padding: 5px 10px; border-radius: 5px; user-select: none; border: 2px solid transparent; }
+        .task2-numbers input { width: 30px; height: 30px; text-align: center; font-size: 18px; border: 1px solid #ccc; border-radius: 4px; color: red;}
+        .task2-numbers span.default-red { color: red; }
+        .task2-numbers span.selected-red { color: red; border-color: red; }
+        .task2-numbers span.selected-blue { color: blue; border-color: blue; }
+
+        /* Task 3 */
+        .task3-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            justify-items: center;
+        }
+        .comparison-item { display: flex; align-items: center; gap: 5px; font-size: 20px; cursor: pointer; padding: 5px; border-radius: 5px; border: 2px solid transparent;}
+        .comparison-item.error-clickable:hover { background-color: #ffeeee; }
+        .comparison-item.marked-error { border-color: red; background-color: #ffdddd; }
+        .comparison-item select { font-size: 18px; padding: 2px; }
+
+        /* Task 4 */
+        .task4-beads { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px; }
+        .bead-group { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .bead-img { height: 40px; display: flex; align-items: flex-end; position: relative; }
+        .string { width: 60px; height: 30px; border-bottom: 2px solid pink; border-radius: 0 0 50% 50%; position: absolute; bottom: 5px; z-index: 1; }
+        .beads-row { display: flex; z-index: 2; }
+        .bead { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #333; margin: 0 1px; }
+        .bead.blue { background-color: #00bfff; } .bead.red { background-color: #ff4500; } .bead.yellow { background-color: #ffd700; } .bead.purple { background-color: #8a2be2; } .bead.green { background-color: #32cd32; }
+        .bead-group input { width: 40px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+
+        /* Task 5 */
+        .task5-schemas { display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .schema-option { display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 15px; border: 2px solid transparent; border-radius: 8px; }
+        .schema-option.selected { border-color: #4CAF50; background-color: #f0fdf4; }
+        .schema-container { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .schema-img { display: flex; justify-content: center; align-items: center; }
+        
+        .task5-answer { margin-top: 20px; text-align: center; font-size: 18px;}
+        .task5-answer input { width: 50px; text-align: center; padding: 5px; margin: 0 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 18px;}
+
+        /* Task 6 */
+        .task6-grid { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .math-problem { display: flex; align-items: center; font-size: 20px; }
+        .math-problem input { width: 40px; height: 30px; text-align: center; font-size: 20px; margin-left: 5px; border: 1px solid #ccc; border-radius: 4px; }
+
+        /* Controls */
+        #submit-btn { display: block; width: 200px; margin: 30px auto; padding: 15px; background-color: #4CAF50; color: white; border: none; border-radius: 25px; font-size: 18px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: background-color 0.3s; }
+        #submit-btn:hover { background-color: #45a049; }
+
+        .zoom-controls { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
+        .zoom-btn { width: 40px; height: 40px; background-color: #fff; border: 1px solid #ccc; border-radius: 50%; font-size: 20px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: center; align-items: center; }
+
+        /* Modals & Overlays */
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .auth-modal { background: white; padding: 30px; border-radius: 10px; text-align: center; width: 90%; max-width: 300px; }
+        .auth-modal input { width: 80%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;}
+        .auth-modal button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;}
+
+        #report-banner { display: none; background-color: #ffeb3b; color: #333; text-align: center; padding: 10px; font-weight: bold; position: sticky; top: 0; z-index: 1500; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        #success-message { display: none; text-align: center; padding: 50px 20px; font-size: 24px; color: #4CAF50; background: white; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 100; align-items: center; justify-content: center; }
+
+        /* Check Mode Styles */
+        .check-mode { pointer-events: none; }
+        .check-mode .zoom-controls { pointer-events: auto; } 
+        
+        .correct-input { background-color: #c8e6c9 !important; border-color: #4CAF50 !important; }
+        .incorrect-input { background-color: #ffcdd2 !important; border-color: #f44336 !important; }
+        .missed-correct { border: 2px solid #4CAF50 !important; }
+        
+        .task2-numbers .check-mode-correct-red { color: red; border: 2px solid #4CAF50; }
+        .task2-numbers .check-mode-correct-blue { color: blue; border: 2px solid #4CAF50; }
+        .task2-numbers .check-mode-incorrect { text-decoration: line-through; text-decoration-color: #f44336; text-decoration-thickness: 2px; opacity: 0.7;}
+
+        @media (max-width: 600px) {
+            .task1-container, .task4-beads, .task5-schemas { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-overlay">
+        <div class="auth-modal">
+            <h2>👋 Привіт! Як тебе звати?</h2>
+            <input type="text" id="student-name-input" placeholder="Введіть ім'я...">
+            <button onclick="startGame()">Почати гру</button>
+        </div>
+    </div>
+
+    <div id="app-container">
+        <div id="report-banner">👀 Режим перевірки: Робота учня <span id="report-student-name"></span></div>
+        
+        <div id="zoom-container">
+            <h1>Домашнє завдання</h1>
+
+            <!-- Завдання 1 -->
+            <div class="task" id="task1">
+                <div class="task-title">1. Запиши склад числа і рівності.</div>
+                <div class="task1-container">
+                    <div class="house-group" style="display:flex;">
+                        <div class="house">
+                            <div class="roof blue">5</div>
+                            <div class="floors blue">
+                                <div class="floor"><div>3</div><div><input type="text" data-id="t1_5_1"></div></div>
+                                <div class="floor"><div><input type="text" data-id="t1_5_2"></div><div>1</div></div>
+                                <div class="floor"><div>2</div><div><input type="text" data-id="t1_5_3"></div></div>
+                                <div class="floor"><div><input type="text" data-id="t1_5_4"></div><div>4</div></div>
+                            </div>
+                        </div>
+                        <div class="equations">
+                            <div class="eq-row"><input type="text" data-id="t1_eq5_1_1">+<input type="text" data-id="t1_eq5_1_2">=<input type="text" data-id="t1_eq5_1_3"></div>
+                            <div class="eq-row"><input type="text" data-id="t1_eq5_2_1">+<input type="text" data-id="t1_eq5_2_2">=<input type="text" data-id="t1_eq5_2_3"></div>
+                            <div class="eq-row"><input type="text" data-id="t1_eq5_3_1">+<input type="text" data-id="t1_eq5_3_2">=<input type="text" data-id="t1_eq5_3_3"></div>
+                            <div class="eq-row"><input type="text" data-id="t1_eq5_4_1">+<input type="text" data-id="t1_eq5_4_2">=<input type="text" data-id="t1_eq5_4_3"></div>
+                        </div>
+                    </div>
+
+                    <div class="house-group" style="display:flex;">
+                        <div class="house">
+                            <div class="roof purple">6</div>
+                            <div class="floors purple">
+                                <div class="floor"><div>4</div><div><input type="text" data-id="t1_6_1"></div></div>
+                                <div class="floor"><div><input type="text" data-id="t1_6_2"></div><div>1</div></div>
+                                <div class="floor"><div>3</div><div><input type="text" data-id="t1_6_3"></div></div>
+                                <div class="floor"><div><input type="text" data-id="t1_6_4"></div><div>5</div></div>
+                                <div class="floor"><div>2</div><div><input type="text" data-id="t1_6_5"></div></div>
+                            </div>
+                        </div>
+                        <div class="equations">
+                            <div class="eq-row"><input type="text" data-id="t1_eq6_1_1">+<input type="text" data-id="t1_eq6_1_2">=<input type="text" data-id="t1_eq6_1_3"></div>
+                            <div class="eq-row"><input type="text" data-id="t1_eq6_2_1">+<input type="text" data-id="t1_eq6_2_2">=<input type="text" data-id="t1_eq6_2_3"></div>
+                            <div class="eq-row"><input type="text" data-id="t1_eq6_3_1">+<input type="text" data-id="t1_eq6_3_2">=<input type="text" data-id="t1_eq6_3_3"></div>
+                            <div class="eq-row"><input type="text" data-id="t1_eq6_4_1">+<input type="text" data-id="t1_eq6_4_2">=<input type="text" data-id="t1_eq6_4_3"></div>
+                            <div class="eq-row"><input type="text" data-id="t1_eq6_5_1">+<input type="text" data-id="t1_eq6_5_2">=<input type="text" data-id="t1_eq6_5_3"></div>
+                        </div>
+                    </div>
+
+                    <div class="house-group" style="display:flex;">
+                        <div class="house">
+                            <div class="roof green">4</div>
+                            <div class="floors green">
+                                <div class="floor"><div>1</div><div><input type="text" data-id="t1_4_1"></div></div>
+                                <div class="floor"><div><input type="text" data-id="t1_4_2"></div><div>2</div></div>
+                                <div class="floor"><div>3</div><div><input type="text" data-id="t1_4_3"></div></div>
+                            </div>
+                        </div>
+                        <div class="equations">
+                            <div class="eq-row"><input type="text" data-id="t1_eq4_1_1">+<input type="text" data-id="t1_eq4_1_2">=<input type="text" data-id="t1_eq4_1_3"></div>
+                            <div class="eq-row"><input type="text" data-id="t1_eq4_2_1">+<input type="text" data-id="t1_eq4_2_2">=<input type="text" data-id="t1_eq4_2_3"></div>
+                            <div class="eq-row"><input type="text" data-id="t1_eq4_3_1">+<input type="text" data-id="t1_eq4_3_2">=<input type="text" data-id="t1_eq4_3_3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Завдання 2 -->
+            <div class="task" id="task2">
+                <div class="task-title">2. Познач червоним числа, менші за 6, а синім - більші за 6. (Клікай для зміни кольору, відсутні впиши)</div>
+                <div class="task2-numbers" id="t2-container">
+                    <span data-val="1">1</span>
+                    <input type="text" data-id="t2_input_2">
+                    <span data-val="3">3</span>
+                    <input type="text" data-id="t2_input_4">
+                    <input type="text" data-id="t2_input_5">
+                    <span class="default-red" data-val="6">6</span>
+                    <span data-val="7">7</span>
+                    <span data-val="8">8</span>
+                    <span data-val="9">9</span>
+                    <span data-val="10">10</span>
+                </div>
+            </div>
+
+            <!-- Завдання 3 -->
+            <div class="task" id="task3">
+                <div class="task-title">3. Знайди помилки. Порівняй числа. (Натисни на неправильну нерівність, вибери знак там де пусто)</div>
+                <div class="task3-grid">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div class="comparison-item error-clickable" data-id="t3_err_1">7 &gt; 5</div>
+                        <div class="comparison-item error-clickable" data-id="t3_err_2">3 &lt; 4</div>
+                        <div class="comparison-item error-clickable" data-id="t3_err_3">5 &gt; 6</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div class="comparison-item error-clickable" data-id="t3_err_4">7 &lt; 3</div>
+                        <div class="comparison-item error-clickable" data-id="t3_err_5">6 &gt; 3</div>
+                        <div class="comparison-item error-clickable" data-id="t3_err_6">4 &lt; 7</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div class="comparison-item">
+                            7 <select data-id="t3_sel_1"><option value=""></option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select> 1
+                        </div>
+                        <div class="comparison-item">
+                            5 <select data-id="t3_sel_2"><option value=""></option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select> 3
+                        </div>
+                        <div class="comparison-item">
+                            2 <select data-id="t3_sel_3"><option value=""></option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select> 3
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div class="comparison-item">
+                            7 <select data-id="t3_sel_4"><option value=""></option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select> 10
+                        </div>
+                        <div class="comparison-item">
+                            6 <select data-id="t3_sel_5"><option value=""></option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select> 7
+                        </div>
+                        <div class="comparison-item">
+                            5 <select data-id="t3_sel_6"><option value=""></option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select> 2
+                        </div>
+                    </div>
+                     <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div class="comparison-item">
+                            1 <select data-id="t3_sel_7"><option value=""></option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select> 4
+                        </div>
+                        <div class="comparison-item">
+                            6 <select data-id="t3_sel_8"><option value=""></option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select> 5
+                        </div>
+                        <div class="comparison-item">
+                            5 <select data-id="t3_sel_9"><option value=""></option><option value=">">&gt;</option><option value="<">&lt;</option><option value="=">=</option></select> 8
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Завдання 4 -->
+            <div class="task" id="task4">
+                <div class="task-title">4. Скільки додати, щоб стало 7?</div>
+                <div class="task4-beads">
+                    <div class="bead-group"><div class="bead-img"><div class="string"></div><div class="beads-row"><div class="bead blue"></div><div class="bead blue"></div><div class="bead blue"></div><div class="bead blue"></div></div></div><input type="text" data-id="t4_1"></div>
+                    <div class="bead-group"><div class="bead-img"><div class="string"></div><div class="beads-row"><div class="bead red"></div><div class="bead red"></div><div class="bead red"></div></div></div><input type="text" data-id="t4_2"></div>
+                    <div class="bead-group"><div class="bead-img"><div class="string"></div><div class="beads-row"><div class="bead yellow"></div><div class="bead yellow"></div><div class="bead yellow"></div><div class="bead yellow"></div><div class="bead yellow"></div></div></div><input type="text" data-id="t4_3"></div>
+                    <div class="bead-group"><div class="bead-img"><div class="string"></div><div class="beads-row"><div class="bead purple"></div><div class="bead purple"></div><div class="bead purple"></div><div class="bead purple"></div><div class="bead purple"></div><div class="bead purple"></div></div></div><input type="text" data-id="t4_4"></div>
+                    <div class="bead-group"><div class="bead-img"><div class="string"></div><div class="beads-row"><div class="bead green"></div><div class="bead green"></div></div></div><input type="text" data-id="t4_5"></div>
+                </div>
+            </div>
+
+            <!-- Завдання 5 -->
+            <div class="task" id="task5">
+                <div class="task-title">5. У Олі 7 груш. Вона з'їла 4. Чия схема правильна? Скільки залишилось?</div>
+                <div class="task5-schemas">
+                    <div class="schema-option" data-id="schema1" onclick="selectSchema('schema1')">
+                        <div class="schema-container">
+                            <div style="font-size: 40px; margin-right: 10px;">👩</div>
+                            <div class="schema-img">
+                                <svg width="260" height="120" viewBox="0 0 260 120" xmlns="http://www.w3.org/2000/svg">
+                                    <text x="86" y="15" font-family="Arial" font-size="14" font-weight="bold" fill="black" text-anchor="middle">7</text>
+                                    <text x="204" y="15" font-family="Arial" font-size="14" font-weight="bold" fill="black" text-anchor="middle">4</text>
+                                    <text x="130" y="115" font-family="Arial" font-size="14" font-weight="bold" fill="#ff007f" text-anchor="middle">?</text>
+
+                                    <!-- Top Arcs (Blue) -->
+                                    <path d="M 12 28 Q 86 5 156 28" fill="none" stroke="#4a90e2" stroke-width="1.5" />
+                                    <path d="M 160 28 Q 204 10 248 28" fill="none" stroke="#4a90e2" stroke-width="1.5" />
+                                    
+                                    <!-- Bottom Arc (Pink) -->
+                                    <path d="M 12 82 Q 130 105 248 82" fill="none" stroke="#ff007f" stroke-width="1.5" />
+
+                                    <!-- Enclosing Blue Pill -->
+                                    <rect x="6" y="40" width="248" height="30" rx="15" fill="none" stroke="#4a90e2" stroke-width="1.5"/>
+
+                                    <!-- Yellow Circles (Pears) -->
+                                    <g fill="#fff000" stroke="#333" stroke-width="1">
+                                        <circle cx="18" cy="55" r="10"/><circle cx="40" cy="55" r="10"/><circle cx="62" cy="55" r="10"/><circle cx="84" cy="55" r="10"/>
+                                        <circle cx="106" cy="55" r="10"/><circle cx="128" cy="55" r="10"/><circle cx="150" cy="55" r="10"/><circle cx="172" cy="55" r="10"/>
+                                        <circle cx="194" cy="55" r="10"/><circle cx="216" cy="55" r="10"/><circle cx="238" cy="55" r="10"/>
+                                    </g>
+                                </svg>
+                            </div>
+                        </div>
+                        <span>Схема 1</span>
+                    </div>
+
+                    <div class="schema-option" data-id="schema2" onclick="selectSchema('schema2')">
+                        <div class="schema-container">
+                            <div class="schema-img">
+                                <svg width="260" height="120" viewBox="0 0 260 120" xmlns="http://www.w3.org/2000/svg">
+                                    <text x="130" y="15" font-family="Arial" font-size="14" font-weight="bold" fill="black" text-anchor="middle">7</text>
+                                    <text x="70" y="115" font-family="Arial" font-size="14" font-weight="bold" fill="#ff007f" text-anchor="middle">?</text>
+                                    <text x="185" y="115" font-family="Arial" font-size="14" font-weight="bold" fill="black" text-anchor="middle">4</text>
+
+                                    <!-- Top arc (Blue) -->
+                                    <path d="M 20 35 Q 130 -10 240 35" fill="none" stroke="#4a90e2" stroke-width="1.5" />
+                                    
+                                    <!-- Bottom arcs -->
+                                    <!-- Pink left arc -->
+                                    <path d="M 20 75 Q 70 100 120 75" fill="none" stroke="#ff007f" stroke-width="1.5" />
+                                    <!-- Black right arc -->
+                                    <path d="M 120 75 Q 180 100 240 75" fill="none" stroke="#333" stroke-width="1.5" />
+
+                                    <!-- Main pink line -->
+                                    <line x1="20" y1="55" x2="240" y2="55" stroke="#ff007f" stroke-width="2" />
+                                    
+                                    <!-- Pink Tick marks -->
+                                    <g stroke="#ff007f" stroke-width="2">
+                                        <line x1="20" y1="50" x2="20" y2="60" />
+                                        <line x1="51" y1="50" x2="51" y2="60" />
+                                        <line x1="83" y1="50" x2="83" y2="60" />
+                                        <line x1="146" y1="50" x2="146" y2="60" />
+                                        <line x1="177" y1="50" x2="177" y2="60" />
+                                        <line x1="209" y1="50" x2="209" y2="60" />
+                                        <line x1="240" y1="50" x2="240" y2="60" />
+                                    </g>
+
+                                    <!-- Blue dividing dot and its tick -->
+                                    <circle cx="114" cy="55" r="4" fill="#4a90e2" stroke="#4a90e2"/>
+                                    <line x1="114" y1="50" x2="114" y2="60" stroke="#4a90e2" stroke-width="2" />
+                                </svg>
+                            </div>
+                            <div style="font-size: 40px; margin-left: 10px;">👦</div>
+                        </div>
+                        <span>Схема 2</span>
+                    </div>
+                </div>
+                <div class="task5-answer">
+                    Відповідь: <input type="text" data-id="t5_ans"> груш залишилось.
+                </div>
+            </div>
+
+            <!-- Завдання 6 -->
+            <div class="task" id="task6">
+                <div class="task-title">6. Виріши приклади.</div>
+                <div class="task6-grid">
+                    <div class="math-problem">6 + 1 = <input type="text" data-id="t6_1"></div>
+                    <div class="math-problem">9 - 1 = <input type="text" data-id="t6_2"></div>
+                    <div class="math-problem">4 + 1 = <input type="text" data-id="t6_3"></div>
+                    <div class="math-problem">6 - 1 = <input type="text" data-id="t6_4"></div>
+                    <div class="math-problem">7 + 1 = <input type="text" data-id="t6_5"></div>
+                    <div class="math-problem">3 + 1 = <input type="text" data-id="t6_6"></div>
+                    <div class="math-problem">2 - 1 = <input type="text" data-id="t6_7"></div>
+                    <div class="math-problem">5 + 1 = <input type="text" data-id="t6_8"></div>
+                </div>
+            </div>
+
+            <button id="submit-btn" onclick="submitGame()">Відправити</button>
+        </div>
+        
+        <div id="success-message">Твоя робота відправлена на перевірку.</div>
+    </div>
+
+    <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-in-btn" onclick="zoom(0.1)">➕</button>
+        <button class="zoom-btn" id="zoom-out-btn" onclick="zoom(-0.1)">➖</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            databaseURL: "https://lesson-13c44-default-rtdb.firebaseio.com/",
+            projectId: "lesson-13c44"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let userName = "";
+        let isCheckMode = false;
+        let zoomLevel = 1;
+        
+        let t2Selections = {}; 
+        let t3Errors = {};
+        let selectedSchema = null;
+
+        const gameId = window.location.pathname.split('/').pop().replace('.html', '') || 'homework_default';
+
+        const correctAnswers = {
+            // T1
+            t1_5_1: '2', t1_5_2: '4', t1_5_3: '3', t1_5_4: '1',
+            t1_eq5_1_1: '3', t1_eq5_1_2: '2', t1_eq5_1_3: '5',
+            t1_eq5_2_1: '4', t1_eq5_2_2: '1', t1_eq5_2_3: '5',
+            t1_eq5_3_1: '2', t1_eq5_3_2: '3', t1_eq5_3_3: '5',
+            t1_eq5_4_1: '1', t1_eq5_4_2: '4', t1_eq5_4_3: '5',
+            
+            t1_6_1: '2', t1_6_2: '5', t1_6_3: '3', t1_6_4: '1', t1_6_5: '4',
+            t1_eq6_1_1: '4', t1_eq6_1_2: '2', t1_eq6_1_3: '6',
+            t1_eq6_2_1: '5', t1_eq6_2_2: '1', t1_eq6_2_3: '6',
+            t1_eq6_3_1: '3', t1_eq6_3_2: '3', t1_eq6_3_3: '6',
+            t1_eq6_4_1: '1', t1_eq6_4_2: '5', t1_eq6_4_3: '6',
+            t1_eq6_5_1: '2', t1_eq6_5_2: '4', t1_eq6_5_3: '6',
+
+            t1_4_1: '3', t1_4_2: '2', t1_4_3: '1',
+            t1_eq4_1_1: '1', t1_eq4_1_2: '3', t1_eq4_1_3: '4',
+            t1_eq4_2_1: '2', t1_eq4_2_2: '2', t1_eq4_2_3: '4',
+            t1_eq4_3_1: '3', t1_eq4_3_2: '1', t1_eq4_3_3: '4',
+
+            // T2 Inputs
+            t2_input_2: '2', t2_input_4: '4', t2_input_5: '5',
+            // T2 Colors
+            t2_col_1: 'red', t2_col_3: 'red',
+            t2_col_7: 'blue', t2_col_8: 'blue', t2_col_9: 'blue', t2_col_10: 'blue',
+
+            // T3 Errors
+            t3_err_3: true, // 5>6 is wrong
+            t3_err_4: true, // 7<3 is wrong
+            
+            // T3 Selects
+            t3_sel_1: '>', t3_sel_2: '>', t3_sel_3: '<',
+            t3_sel_4: '<', t3_sel_5: '<', t3_sel_6: '>',
+            t3_sel_7: '<', t3_sel_8: '>', t3_sel_9: '<',
+
+            // T4
+            t4_1: '3', t4_2: '4', t4_3: '2', t4_4: '1', t4_5: '5',
+
+            // T5
+            schema_selected: 'schema2',
+            t5_ans: '3',
+
+            // T6
+            t6_1: '7', t6_2: '8', t6_3: '5', t6_4: '5',
+            t6_5: '8', t6_6: '4', t6_7: '1', t6_8: '6'
+        };
+
+        let totalItems = Object.keys(correctAnswers).length;
+
+        window.onload = () => {
+            setupTask2();
+            setupTask3();
+            checkAuth();
+        };
+
+        window.zoom = (step) => {
+            zoomLevel += step;
+            if (zoomLevel < 0.4) zoomLevel = 0.4;
+            if (zoomLevel > 2) zoomLevel = 2;
+            document.getElementById('zoom-container').style.transform = `scale(${zoomLevel})`;
+        };
+
+        function setupTask2() {
+            const spans = document.querySelectorAll('#t2-container span[data-val]');
+            spans.forEach(span => {
+                span.addEventListener('click', () => {
+                    if (isCheckMode) return;
+                    const val = span.dataset.val;
+                    if(val == 6) return;
+                    if (!t2Selections[val]) {
+                        t2Selections[val] = 'red';
+                        span.className = 'selected-red';
+                    } else if (t2Selections[val] === 'red') {
+                        t2Selections[val] = 'blue';
+                        span.className = 'selected-blue';
+                    } else {
+                        delete t2Selections[val];
+                        span.className = '';
+                    }
+                });
+            });
+        }
+
+        function setupTask3() {
+            const errors = document.querySelectorAll('.error-clickable');
+            errors.forEach(item => {
+                item.addEventListener('click', () => {
+                    if(isCheckMode) return;
+                    const id = item.dataset.id;
+                    if(t3Errors[id]) {
+                        delete t3Errors[id];
+                        item.classList.remove('marked-error');
+                    } else {
+                        t3Errors[id] = true;
+                        item.classList.add('marked-error');
+                    }
+                });
+            });
+        }
+
+        window.selectSchema = (id) => {
+            if (isCheckMode) return;
+            selectedSchema = id;
+            document.querySelectorAll('.schema-option').forEach(el => el.classList.remove('selected'));
+            document.querySelector(`.schema-option[data-id="${id}"]`).classList.add('selected');
+        };
+
+        function checkAuth() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const reportUser = urlParams.get('reportUser');
+            const reportDate = urlParams.get('reportDate');
+
+            if (reportUser && reportDate) {
+                isCheckMode = true;
+                userName = reportUser;
+                document.getElementById('report-student-name').textContent = userName;
+                document.getElementById('report-banner').style.display = 'block';
+                document.getElementById('submit-btn').style.display = 'none';
+                document.getElementById('app-container').classList.add('check-mode');
+                document.getElementById('auth-overlay').style.display = 'none';
+                loadReport(reportUser, reportDate);
+            } else {
+                let urlName = urlParams.get('user');
+                let sessionName = sessionStorage.getItem('studentName');
+                
+                if (urlName) {
+                    userName = urlName;
+                    sessionStorage.setItem('studentName', userName);
+                    document.getElementById('auth-overlay').style.display = 'none';
+                } else if (sessionName) {
+                    userName = sessionName;
+                    document.getElementById('auth-overlay').style.display = 'none';
+                } else {
+                    document.getElementById('auth-overlay').style.display = 'flex';
+                }
+            }
+        }
+
+        window.startGame = () => {
+            const nameInput = document.getElementById('student-name-input').value.trim();
+            if (nameInput) {
+                userName = nameInput;
+                sessionStorage.setItem('studentName', userName);
+                document.getElementById('auth-overlay').style.display = 'none';
+            } else {
+                alert("Будь ласка, введіть своє ім'я.");
+            }
+        };
+
+        window.submitGame = async () => {
+            if (!userName) return;
+
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').textContent = "Відправка...";
+
+            let rawAnswers = {};
+            let score = 0;
+
+            // Inputs
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+                const id = input.dataset.id;
+                if(id && correctAnswers[id] !== undefined) {
+                    let val = input.value.trim();
+                    rawAnswers[id] = val;
+                    if(val === correctAnswers[id]) score++;
+                }
+            });
+
+            // Selects
+            document.querySelectorAll('select').forEach(sel => {
+                const id = sel.dataset.id;
+                if(id && correctAnswers[id] !== undefined) {
+                    let val = sel.value;
+                    rawAnswers[id] = val;
+                    if(val === correctAnswers[id]) score++;
+                }
+            });
+
+            // T2 Colors
+            rawAnswers['t2_colors'] = t2Selections;
+            for(let key in correctAnswers) {
+                if(key.startsWith('t2_col_')) {
+                    let num = key.split('_')[2];
+                    if(t2Selections[num] === correctAnswers[key]) score++;
+                }
+            }
+
+            // T3 Errors
+            rawAnswers['t3_errors'] = t3Errors;
+            if(t3Errors['t3_err_3']) score++;
+            if(t3Errors['t3_err_4']) score++;
+
+            // T5 Schema
+            rawAnswers['schema_selected'] = selectedSchema || '';
+            if(selectedSchema === correctAnswers.schema_selected) score++;
+
+            const now = new Date();
+            const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+
+            const reportData = {
+                score: `Вірно ${score} із ${totalItems}`,
+                rawAnswers: rawAnswers,
+                timestamp: now.toISOString()
+            };
+
+            const path = `homework_reports/${yearMonth}/${dateStr}/${gameId}/${userName}`;
+
+            try {
+                await set(ref(db, path), reportData);
+                document.getElementById('zoom-container').style.display = 'none';
+                document.getElementById('success-message').style.display = 'flex';
+            } catch (e) {
+                console.error("Error saving to Firebase:", e);
+                alert("Помилка при відправці. Спробуйте ще раз.");
+                document.getElementById('submit-btn').disabled = false;
+                document.getElementById('submit-btn').textContent = "Відправити";
+            }
+        };
+
+        async function loadReport(user, date) {
+            let parts = date.split('.');
+            if(parts.length !== 3) return;
+            let yearMonth = `${parts[2]}-${parts[1]}`;
+            const path = `homework_reports/${yearMonth}/${date}/${gameId}/${user}`;
+
+            try {
+                const snapshot = await get(ref(db, path));
+                if (snapshot.exists()) {
+                    applyCheckVisuals(snapshot.val().rawAnswers);
+                } else {
+                    alert("Звіт не знайдено.");
+                }
+            } catch (e) {}
+        }
+
+        function applyCheckVisuals(raw) {
+            // Inputs
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+                const id = input.dataset.id;
+                if (!id || correctAnswers[id] === undefined) return;
+                const userVal = raw[id] || '';
+                input.value = userVal;
+                
+                if (userVal === correctAnswers[id]) {
+                    input.classList.add('correct-input');
+                } else {
+                    input.classList.add('incorrect-input');
+                    input.title = `Правильно: ${correctAnswers[id]}`;
+                }
+            });
+
+            // Selects
+            document.querySelectorAll('select').forEach(sel => {
+                const id = sel.dataset.id;
+                if (!id || correctAnswers[id] === undefined) return;
+                const userVal = raw[id] || '';
+                sel.value = userVal;
+                
+                if (userVal === correctAnswers[id]) {
+                    sel.classList.add('correct-input');
+                } else {
+                    sel.classList.add('incorrect-input');
+                    sel.title = `Правильно: ${correctAnswers[id]}`;
+                }
+            });
+
+            // T2 Colors
+            const t2Cols = raw['t2_colors'] || {};
+            const spans = document.querySelectorAll('#t2-container span[data-val]');
+            spans.forEach(span => {
+                const val = span.dataset.val;
+                if(val == 6) return;
+                const userChoice = t2Cols[val];
+                const correctChoice = correctAnswers['t2_col_'+val];
+
+                if (userChoice) {
+                    span.classList.add(`selected-${userChoice}`);
+                    if (userChoice === correctChoice) {
+                        span.classList.add(`check-mode-correct-${userChoice}`);
+                    } else {
+                        span.classList.add('check-mode-incorrect');
+                    }
+                } else if (correctChoice) {
+                    span.classList.add('missed-correct');
+                }
+            });
+
+            // T3 Errors
+            const t3Err = raw['t3_errors'] || {};
+            document.querySelectorAll('.error-clickable').forEach(item => {
+                const id = item.dataset.id;
+                if(t3Err[id]) item.classList.add('marked-error');
+                
+                if(t3Err[id] && !correctAnswers[id]) {
+                    item.style.borderColor = 'red';
+                    item.style.backgroundColor = '#ffcdd2'; // incorrect pick
+                } else if(!t3Err[id] && correctAnswers[id]) {
+                    item.classList.add('missed-correct'); // missed error
+                } else if(t3Err[id] && correctAnswers[id]) {
+                    item.style.borderColor = '#4CAF50';
+                    item.style.backgroundColor = '#c8e6c9'; // correct pick
+                }
+            });
+
+            // T5 Schema
+            const userSchema = raw['schema_selected'];
+            if (userSchema) {
+                const el = document.querySelector(`.schema-option[data-id="${userSchema}"]`);
+                if(el) {
+                    el.classList.add('selected');
+                    if (userSchema === correctAnswers.schema_selected) {
+                        el.style.backgroundColor = '#c8e6c9';
+                    } else {
+                        el.style.backgroundColor = '#ffcdd2';
+                        el.style.borderColor = 'red';
+                    }
+                }
+            }
+            if (userSchema !== correctAnswers.schema_selected) {
+                const correctEl = document.querySelector(`.schema-option[data-id="${correctAnswers.schema_selected}"]`);
+                if(correctEl) correctEl.classList.add('missed-correct');
+            }
+        }
+    </script>
+</body>
+</html>
