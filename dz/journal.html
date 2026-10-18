@@ -1,1269 +1,819 @@
 <!DOCTYPE html>
-
 <html lang="uk">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Журнал Вчителя - ДЗ (Темна Тема)</title>
-
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
+    <!-- Підключаємо бібліотеку для графіків -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-
         body {
-
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
             background-color: #0f172a;
-
             margin: 0;
-
             padding: 20px;
-
             color: #f8fafc;
-
         }
-
         .container {
-
             max-width: 1200px;
-
             margin: 0 auto;
-
             background: #1e293b;
-
             padding: 25px;
-
             border-radius: 12px;
-
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-
             border: 1px solid #334155;
-
         }
-
         h1 {
-
             text-align: center;
-
             color: #38bdf8;
-
             margin-bottom: 25px;
-
             text-transform: uppercase;
-
             letter-spacing: 1.5px;
-
         }
-
         .tabs {
-
             display: flex;
-
             gap: 15px;
-
             margin-bottom: 25px;
-
             border-bottom: 2px solid #334155;
-
             padding-bottom: 15px;
-
         }
-
         .tab-btn {
-
             padding: 12px 25px;
-
             background: #334155;
-
             color: #94a3b8;
-
             border: none;
-
             border-radius: 6px;
-
             cursor: pointer;
-
             font-size: 16px;
-
             font-weight: bold;
-
             transition: all 0.3s;
-
         }
-
         .tab-btn:hover {
-
             background: #475569;
-
             color: #f8fafc;
-
         }
-
         .tab-btn.active {
-
             background: #6366f1;
-
             color: #ffffff;
-
             box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-
         }
-
         .tab-content { display: none; }
-
         .tab-content.active { display: block; }
-
         .control-group {
-
             display: flex;
-
             gap: 15px;
-
             margin-bottom: 25px;
-
             align-items: center;
-
             flex-wrap: wrap;
-
             background: #0f172a;
-
             padding: 18px;
-
             border-radius: 8px;
-
             border: 1px solid #334155;
-
         }
-
         input, select, button {
-
             padding: 12px 18px;
-
             font-size: 15px;
-
             border: 1px solid #475569;
-
             border-radius: 6px;
-
             background-color: #1e293b;
-
             color: #f8fafc;
-
         }
-
         input::placeholder { color: #64748b; }
-
         input:focus, select:focus {
-
             outline: none;
-
             border-color: #38bdf8;
-
             box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
-
         }
-
         button {
-
             background: #10b981;
-
             color: white;
-
             cursor: pointer;
-
             border: none;
-
             font-weight: bold;
-
             transition: all 0.3s;
-
         }
-
         button:hover {
-
             background: #059669;
-
             box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
-
         }
-
         .btn-blue { background: #3b82f6; }
-
         .btn-blue:hover { background: #2563eb; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
-
         .students-grid {
-
             display: grid;
-
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-
             gap: 20px;
-
         }
-
         .class-section {
-
             background: #0f172a;
-
             padding: 18px;
-
             border-radius: 8px;
-
             border: 1px solid #334155;
-
         }
-
         .class-header {
-
             display: flex;
-
             justify-content: space-between;
-
             align-items: center;
-
             margin-bottom: 15px;
-
             padding-bottom: 10px;
-
             border-bottom: 1px solid #334155;
-
         }
-
         .class-header h3 { margin: 0; color: #38bdf8; }
-
         .student-item {
-
             display: flex;
-
             justify-content: space-between;
-
             align-items: center;
-
             background: #1e293b;
-
             padding: 12px;
-
             margin-bottom: 8px;
-
             border: 1px solid #334155;
-
             border-radius: 6px;
-
         }
-
         .btn-group {
-
             display: flex;
-
             gap: 5px;
-
         }
-
         .btn-delete {
-
             background: #ef4444;
-
             padding: 8px 12px;
-
             font-size: 13px;
-
             border-radius: 4px;
-
         }
-
         .btn-delete:hover {
-
             background: #dc2828;
-
             box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
-
         }
-
         .btn-edit {
-
             background: #f59e0b;
-
             padding: 8px 12px;
-
             font-size: 13px;
-
             border-radius: 4px;
-
         }
-
         .btn-edit:hover {
-
             background: #d97706;
-
             box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
-
         }
-
         table {
-
             width: 100%;
-
             border-collapse: collapse;
-
             margin-top: 15px;
-
             background: #1e293b;
-
             border-radius: 8px;
-
             overflow: hidden;
-
         }
-
         th, td {
-
             border: 1px solid #334155;
-
             padding: 15px;
-
             text-align: left;
-
         }
-
         th {
-
             background-color: #0f172a;
-
             color: #38bdf8;
-
             font-weight: bold;
-
             text-transform: uppercase;
-
             font-size: 14px;
-
         }
-
         tr:nth-child(even) { background-color: #0f172a; }
-
         tr:hover { background-color: #334155; }
-
         
-
         .game-link {
-
             color: #38bdf8;
-
             text-decoration: none;
-
             font-weight: bold;
-
             display: flex;
-
             align-items: center;
-
             gap: 5px;
-
             transition: 0.3s;
-
         }
-
         .game-link:hover { color: #818cf8; text-decoration: underline; }
 
-
-
         /* Стилі для кольорової шкали оцінок */
-
         .score-container {
-
             display: flex;
-
             align-items: center;
-
             min-width: 140px;
-
         }
-
         .scale-bar {
-
             display: flex;
-
-            height: 18px; /* Збільшено товщину шкали */
-
+            height: 18px;
             width: 100%;
-
             border-radius: 6px;
-
             overflow: hidden;
-
             background: #0f172a;
-
-            gap: 3px; /* Трохи більший відступ між блоками */
-
+            gap: 3px;
             border: 1px solid #334155;
-
         }
-
         .scale-segment {
-
             flex: 1;
-
-            background: #334155; /* Колір неактивного сегмента */
-
+            background: #334155;
             transition: background 0.3s;
-
         }
-
-        /* Кольори активних сегментів */
-
         .scale-segment.active-1 { background: #ef4444; } /* Червоний */
-
         .scale-segment.active-2 { background: #f59e0b; } /* Жовтий */
-
         .scale-segment.active-3 { background: #3b82f6; } /* Синій */
-
         .scale-segment.active-4 { background: #10b981; } /* Зелений */
-
         .scale-segment.active-5 { background: #8b5cf6; } /* Фіолетовий */
-
+        
+        .chart-container {
+            margin-top: 30px;
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            display: none;
+        }
+        .chart-container h3 {
+            color: #38bdf8;
+            text-align: center;
+            margin-top: 0;
+        }
     </style>
-
 </head>
-
 <body>
 
-
-
 <div class="container">
-
     <h1>📚 Журнал Вчителя (ДЗ)</h1>
-
     
-
     <div class="tabs">
-
-        <button class="tab-btn active" onclick="switchTab('reports')">📊 Звіти ДЗ та Пошук</button>
-
+        <button class="tab-btn active" onclick="switchTab('reports')">📊 Звіти ДЗ</button>
+        <button class="tab-btn" onclick="switchTab('assignments')">📋 Призначення ДЗ</button>
         <button class="tab-btn" onclick="switchTab('students')">👥 Учні та Класи</button>
-
     </div>
-
-
 
     <!-- Вкладка Звітів та Пошуку -->
-
     <div id="tab-reports" class="tab-content active">
-
         <div class="control-group">
-
             <datalist id="students-datalist"></datalist>
-
             <input type="text" id="search-student" list="students-datalist" placeholder="Ім'я учня (оберіть або введіть...)" style="flex: 1;">
-
             
-
-            <input type="text" id="search-game" placeholder="Назва гри (або порожньо для всіх)" style="flex: 1;">
-
+            <input type="text" id="search-game" placeholder="Назва гри (або порожньо)" style="flex: 1;">
             
-
             <select id="report-category">
-
                 <option value="all">Всі категорії (всі класи)</option>
-
                 <option value="individual">Тільки Індивідуальні</option>
-
             </select>
-
             <button onclick="loadReports()" class="btn-blue">🔍 Знайти роботи</button>
-
         </div>
-
         <div id="reports-output">
-
             <p style="text-align: center; color: #64748b; font-size: 18px; margin-top: 30px;">Введіть ім'я учня, назву гри або оберіть клас, а потім натисніть "Знайти роботи".</p>
-
         </div>
-
+        
+        <!-- Контейнер для графіка прогресу -->
+        <div class="chart-container" id="chart-section">
+            <h3 id="chart-title">Прогрес учня</h3>
+            <canvas id="progressChart" height="80"></canvas>
+        </div>
     </div>
 
-
+    <!-- Вкладка Призначення ДЗ -->
+    <div id="tab-assignments" class="tab-content">
+        <div class="control-group">
+            <select id="assign-class-select"></select>
+            <input type="text" id="assign-game-id" placeholder="Назва гри (напр. game123)" style="flex: 1;">
+            <button class="btn-blue" onclick="assignGame()">➕ Призначити обов'язкову гру</button>
+        </div>
+        <p style="color: #94a3b8; font-size: 14px;">Ігри, призначені класу, будуть вимагатися від усіх учнів цього класу. Якщо учень пройде не призначену гру, вона відобразиться як "Додаткова" і не вплине на статистику інших.</p>
+        <div class="students-grid" id="assignments-grid"></div>
+    </div>
 
     <!-- Вкладка Учнів -->
-
     <div id="tab-students" class="tab-content">
-
         <div class="control-group">
-
             <input type="text" id="new-class-name" placeholder="Назва нового класу (напр. 5-А)">
-
             <button class="btn-blue" onclick="addClass()">➕ Створити клас</button>
-
         </div>
-
         <div class="control-group">
-
             <input type="text" id="new-student-name" placeholder="Ім'я учня">
-
             <select id="new-student-category">
-
                 <option value="individual">Індивідуально</option>
-
             </select>
-
             <button onclick="addStudent()">➕ Додати учня</button>
-
         </div>
-
         <div class="students-grid" id="classes-container"></div>
-
     </div>
-
 </div>
 
-
-
 <script>
-
     const firebaseConfig = {
-
         databaseURL: "https://lesson-13c44-default-rtdb.firebaseio.com",
-
         projectId: "lesson-13c44"
-
     };
-
     if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-
     const db = firebase.database();
 
-
-
     let classesData = {}; 
-
     let studentsData = { individual: {} };
-
-
+    let assignmentsData = {}; 
+    let studentChartInstance = null; 
 
     function loadSchoolData() {
-
         db.ref('journal_classes').on('value', (snapshot) => {
-
             classesData = snapshot.val() || {};
-
             updateSelectDropdowns();
-
             renderStudentsUI();
-
+            renderAssignmentsUI();
         });
-
         db.ref('journal_students').on('value', (snapshot) => {
-
             studentsData = snapshot.val() || { individual: {} };
-
             if (!studentsData.individual) studentsData.individual = {};
-
             updateSelectDropdowns();
-
             renderStudentsUI();
-
         });
-
+        db.ref('journal_assignments').on('value', (snapshot) => {
+            assignmentsData = snapshot.val() || {};
+            renderAssignmentsUI();
+        });
     }
-
-
 
     function updateSelectDropdowns() {
-
         const studentSelect = document.getElementById('new-student-category');
-
         const reportSelect = document.getElementById('report-category');
-
+        const assignSelect = document.getElementById('assign-class-select');
+        
         const currentStudentVal = studentSelect.value;
-
         const currentReportVal = reportSelect.value;
-
-
+        const currentAssignVal = assignSelect.value;
 
         studentSelect.innerHTML = `<option value="individual">Індивідуально</option>`;
-
         reportSelect.innerHTML = `<option value="all">Всі категорії (всі класи)</option><option value="individual">Тільки Індивідуальні</option>`;
-
-
+        assignSelect.innerHTML = `<option value="individual">Індивідуально</option>`;
 
         Object.keys(classesData).forEach(classId => {
-
             const className = classesData[classId].name;
-
             studentSelect.innerHTML += `<option value="${classId}">${className}</option>`;
-
             reportSelect.innerHTML += `<option value="${classId}">${className}</option>`;
-
+            assignSelect.innerHTML += `<option value="${classId}">${className}</option>`;
         });
-
-
 
         if (document.querySelector(`#new-student-category option[value="${currentStudentVal}"]`)) studentSelect.value = currentStudentVal;
-
         if (document.querySelector(`#report-category option[value="${currentReportVal}"]`)) reportSelect.value = currentReportVal;
-
-
+        if (document.querySelector(`#assign-class-select option[value="${currentAssignVal}"]`)) assignSelect.value = currentAssignVal;
 
         const datalist = document.getElementById('students-datalist');
-
         if (datalist) {
-
             datalist.innerHTML = '';
-
             let allStudentsNames = new Set();
-
             if (studentsData.individual) Object.values(studentsData.individual).forEach(n => allStudentsNames.add(n));
-
             Object.keys(classesData).forEach(classId => {
-
                 if (studentsData[classId]) Object.values(studentsData[classId]).forEach(n => allStudentsNames.add(n));
-
             });
-
             Array.from(allStudentsNames).sort((a,b) => a.localeCompare(b)).forEach(name => {
-
                 datalist.innerHTML += `<option value="${name}">`;
-
             });
-
         }
-
     }
 
+    function assignGame() {
+        const classId = document.getElementById('assign-class-select').value;
+        const gameId = document.getElementById('assign-game-id').value.trim();
+        if(gameId === "") return alert("Введіть назву гри!");
+        db.ref(`journal_assignments/${classId}/${gameId}`).set(true).then(() => {
+            document.getElementById('assign-game-id').value = '';
+        });
+    }
 
-
-    function renderStudentsUI() {
-
-        const container = document.getElementById('classes-container');
-
-        container.innerHTML = '';
-
-        let individualHtml = `<div class="class-section"><div class="class-header"><h3>👤 Індивідуальні учні</h3></div><div id="list-individual">`;
-
-        if (studentsData.individual) {
-
-            Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)).forEach(studentName => {
-
-                const studentId = Object.keys(studentsData.individual).find(key => studentsData.individual[key] === studentName);
-
-                individualHtml += `<div class="student-item">
-
-                    <span>${studentName}</span>
-
-                    <div class="btn-group">
-
-                        <button class="btn-edit" onclick="editStudent('individual', '${studentId}', '${studentName}')">✏️</button>
-
-                        <button class="btn-delete" onclick="deleteStudent('individual', '${studentId}')">🗑️</button>
-
-                    </div>
-
-                </div>`;
-
-            });
-
+    function removeAssignment(classId, gameId) {
+        if(confirm(`Видалити гру "${gameId}" з обов'язкових для цього класу?`)) {
+            db.ref(`journal_assignments/${classId}/${gameId}`).remove();
         }
+    }
 
-        individualHtml += `</div></div>`;
-
+    function renderAssignmentsUI() {
+        const container = document.getElementById('assignments-grid');
+        container.innerHTML = '';
+        
+        let individualHtml = `<div class="class-section"><div class="class-header"><h3>👤 Індивідуальні</h3></div>`;
+        if (assignmentsData['individual']) {
+            Object.keys(assignmentsData['individual']).forEach(gameId => {
+                individualHtml += `<div class="student-item"><span>🎮 ${gameId}</span>
+                <button class="btn-delete" onclick="removeAssignment('individual', '${gameId}')">🗑️</button></div>`;
+            });
+        } else {
+            individualHtml += `<p style="color:#64748b; font-size:14px;">Немає призначених ігор</p>`;
+        }
+        individualHtml += `</div>`;
         container.innerHTML += individualHtml;
 
+        Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
+            const className = classesData[classId].name;
+            let classHtml = `<div class="class-section"><div class="class-header"><h3>👥 ${className}</h3></div>`;
+            if (assignmentsData[classId]) {
+                Object.keys(assignmentsData[classId]).forEach(gameId => {
+                    classHtml += `<div class="student-item"><span>🎮 ${gameId}</span>
+                    <button class="btn-delete" onclick="removeAssignment('${classId}', '${gameId}')">🗑️</button></div>`;
+                });
+            } else {
+                classHtml += `<p style="color:#64748b; font-size:14px;">Немає призначених ігор</p>`;
+            }
+            classHtml += `</div>`;
+            container.innerHTML += classHtml;
+        });
+    }
 
+    function renderStudentsUI() {
+        const container = document.getElementById('classes-container');
+        container.innerHTML = '';
+        let individualHtml = `<div class="class-section"><div class="class-header"><h3>👤 Індивідуальні учні</h3></div><div id="list-individual">`;
+        if (studentsData.individual) {
+            Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)).forEach(studentName => {
+                const studentId = Object.keys(studentsData.individual).find(key => studentsData.individual[key] === studentName);
+                individualHtml += `<div class="student-item">
+                    <span>${studentName}</span>
+                    <div class="btn-group">
+                        <button class="btn-edit" onclick="editStudent('individual', '${studentId}', '${studentName}')">✏️</button>
+                        <button class="btn-delete" onclick="deleteStudent('individual', '${studentId}')">🗑️</button>
+                    </div>
+                </div>`;
+            });
+        }
+        individualHtml += `</div></div>`;
+        container.innerHTML += individualHtml;
 
         Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
-
             const className = classesData[classId].name;
-
             let classHtml = `<div class="class-section"><div class="class-header"><h3>👥 ${className}</h3><button class="btn-delete" onclick="deleteClass('${classId}', '${className}')">Видалити клас</button></div><div id="list-${classId}">`;
-
             if (studentsData[classId]) {
-
                 Object.values(studentsData[classId]).sort((a,b) => a.localeCompare(b)).forEach(studentName => {
-
                     const studentId = Object.keys(studentsData[classId]).find(key => studentsData[classId][key] === studentName);
-
                     classHtml += `<div class="student-item">
-
                         <span>${studentName}</span>
-
                         <div class="btn-group">
-
                             <button class="btn-edit" onclick="editStudent('${classId}', '${studentId}', '${studentName}')">✏️</button>
-
                             <button class="btn-delete" onclick="deleteStudent('${classId}', '${studentId}')">🗑️</button>
-
                         </div>
-
                     </div>`;
-
                 });
-
             } else {
-
                 classHtml += `<p style="color:#64748b; font-size:14px;">Немає учнів</p>`;
-
             }
-
             classHtml += `</div></div>`;
-
             container.innerHTML += classHtml;
-
         });
-
     }
-
-
 
     function addClass() {
-
         const input = document.getElementById('new-class-name');
-
         const className = input.value.trim();
-
         if (className === "") return alert("Введіть назву класу!");
-
         db.ref('journal_classes').push({ name: className }).then(() => { input.value = ''; });
-
     }
-
-
 
     function deleteClass(classId, className) {
-
         if (confirm(`Ви впевнені, що хочете видалити "${className}" та всіх його учнів?`)) {
-
             db.ref(`journal_classes/${classId}`).remove();
-
             db.ref(`journal_students/${classId}`).remove(); 
-
+            db.ref(`journal_assignments/${classId}`).remove(); 
         }
-
     }
-
-
 
     function addStudent() {
-
         const input = document.getElementById('new-student-name');
-
         const categoryId = document.getElementById('new-student-category').value;
-
         const studentName = input.value.trim();
-
         if (studentName === "") return alert("Введіть ім'я учня!");
-
         db.ref(`journal_students/${categoryId}`).push(studentName).then(() => { input.value = ''; });
-
     }
-
-
 
     function deleteStudent(categoryId, studentId) {
-
         if (confirm("Видалити цього учня зі списку?")) db.ref(`journal_students/${categoryId}/${studentId}`).remove();
-
     }
-
-
 
     function editStudent(categoryId, studentId, oldName) {
-
         const newName = prompt(`Введіть нове ім'я для "${oldName}"\n(Усі попередні роботи також будуть перейменовані):`, oldName);
-
         if (!newName || newName.trim() === "" || newName === oldName) return;
-
         const cleanNewName = newName.trim();
 
-
-
         db.ref(`journal_students/${categoryId}/${studentId}`).set(cleanNewName).then(() => {
-
             db.ref('homework_reports').once('value').then(snapshot => {
-
                 const allData = snapshot.val() || {};
-
                 let updates = {};
-
                 for (const month in allData) {
-
                     for (const date in allData[month]) {
-
                         for (const gameId in allData[month][date]) {
-
                             if (allData[month][date][gameId][oldName]) {
-
                                 updates[`homework_reports/${month}/${date}/${gameId}/${cleanNewName}`] = allData[month][date][gameId][oldName];
-
                                 updates[`homework_reports/${month}/${date}/${gameId}/${oldName}`] = null;
-
                             }
-
                         }
-
                     }
-
                 }
-
                 if (Object.keys(updates).length > 0) {
-
                     db.ref().update(updates).then(() => {
-
                         alert(`Ім'я змінено на "${cleanNewName}"!`);
-
-                        loadReports(); 
-
+                        if(document.getElementById('tab-reports').classList.contains('active')) loadReports(); 
                     });
-
                 }
-
             });
-
         });
-
     }
-
-
-
-    // --- ФУНКЦІЇ ДЛЯ КОЛЬОРОВОЇ ШКАЛИ ---
-
-
 
     function calculatePercentage(scoreStr) {
-
         if (!scoreStr) return null;
-
         let str = String(scoreStr);
-
-        
-
         let percMatch = str.match(/(\d+(?:\.\d+)?)%/);
-
         if (percMatch) return Math.min(100, Math.max(0, Math.round(parseFloat(percMatch[1]))));
 
-
-
         let fracMatch = str.match(/(\d+(?:\.\d+)?)\s*(?:\/|з|із)\s*(\d+(?:\.\d+)?)/i);
-
         if (fracMatch) {
-
             let correct = parseFloat(fracMatch[1]);
-
             let total = parseFloat(fracMatch[2]);
-
             if (total === 0) return 0;
-
             return Math.min(100, Math.max(0, Math.round((correct / total) * 100)));
-
         }
-
-        
-
         return null;
-
     }
 
-
+    function getColorForPct(pct) {
+        if (pct < 21) return '#ef4444'; 
+        if (pct < 41) return '#f59e0b'; 
+        if (pct < 61) return '#3b82f6'; 
+        if (pct < 81) return '#10b981'; 
+        return '#8b5cf6'; 
+    }
 
     function buildScoreBar(scoreStr) {
-
         let percent = calculatePercentage(scoreStr);
-
-
-
-        // Якщо не змогли вирахувати відсоток - повертаємо просто сирий текст для підстраховки
-
         if (percent === null) {
-
             let textDisplay = scoreStr ? scoreStr : '-';
-
             return `<span style="color:#10b981; font-weight:bold; font-size:16px;">${textDisplay}</span>`;
-
         }
-
-
-
-        // Визначаємо скільки сегментів активні
 
         let activeCount = 0;
-
         if (percent >= 0)  activeCount = 1;  
-
         if (percent >= 21) activeCount = 2;  
-
         if (percent >= 41) activeCount = 3;  
-
         if (percent >= 61) activeCount = 4;  
-
         if (percent >= 81) activeCount = 5;  
 
-
-
         let barHtml = `<div class="scale-bar">`;
-
         for (let i = 1; i <= 5; i++) {
-
             let activeClass = (i <= activeCount) ? `active-${i}` : '';
-
             barHtml += `<div class="scale-segment ${activeClass}"></div>`;
+        }
+        barHtml += `</div>`;
+        return `<div class="score-container" title="${percent}%">${barHtml}</div>`;
+    }
 
+    function drawProgressChart(studentName, scoresData) {
+        const chartContainer = document.getElementById('chart-section');
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        
+        if (studentChartInstance) {
+            studentChartInstance.destroy();
         }
 
-        barHtml += `</div>`;
+        if (scoresData.length === 0) {
+            chartContainer.style.display = 'none';
+            return;
+        }
 
+        chartContainer.style.display = 'block';
+        document.getElementById('chart-title').innerText = `Прогрес учня: ${studentName}`;
 
+        const labels = scoresData.map(d => `${d.date} (${d.game})`);
+        const dataPoints = scoresData.map(d => d.pct);
+        const bgColors = scoresData.map(d => getColorForPct(d.pct));
 
-        // Тільки шкала, без жодного тексту
-
-        return `<div class="score-container">${barHtml}</div>`;
-
+        studentChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Відсоток успішності (%)',
+                    data: dataPoints,
+                    borderColor: '#64748b',
+                    borderWidth: 2,
+                    pointBackgroundColor: bgColors,
+                    pointBorderColor: '#ffffff',
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: false,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: '#334155' }
+                    },
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: '#334155' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { return `Результат: ${context.parsed.y}%`; }
+                        }
+                    }
+                }
+            }
+        });
     }
 
-
-
-    function buildRow(date, gameId, studentName, report, month, isGuest=false) {
-
+    function buildRow(date, gameId, studentName, report, month, isExtra=false, isGuest=false) {
         let scoreHtml = buildScoreBar(report.score);
-
         const gameUrl = `${gameId}.html?reportUser=${encodeURIComponent(studentName)}&reportDate=${date}`;
-
-        let guestTag = isGuest ? `<span style="font-size:12px; color:#f59e0b; display:block;">(Гість / Поза класом)</span>` : '';
-
         
-
+        let tags = [];
+        if (isGuest) tags.push(`<span style="font-size:12px; color:#ef4444;">(Гість / Поза класом)</span>`);
+        if (isExtra) tags.push(`<span style="font-size:12px; color:#f59e0b;">(Додатково / Не призначено)</span>`);
+        
         return `<tr>
-
             <td>${date} <br><small style="color:#94a3b8">${report.timestamp || ''}</small></td>
-
             <td><a href="${gameUrl}" target="_blank" class="game-link">🎮 ${gameId}</a></td>
-
-            <td style="font-size: 16px; font-weight: bold; color: #f8fafc;">${studentName} ${guestTag}</td>
-
+            <td style="font-size: 16px; font-weight: bold; color: #f8fafc;">${studentName} ${tags.length > 0 ? '<br>'+tags.join(' ') : ''}</td>
             <td>${scoreHtml}</td>
-
             <td>
-
-                <button class="btn-delete" onclick="deleteReportRecord('${month}', '${date}', '${gameId}', '${studentName}')">🗑️ Видалити</button>
-
+                <button class="btn-delete" onclick="deleteReportRecord('${month}', '${date}', '${gameId}', '${studentName}')">🗑️</button>
             </td>
-
         </tr>`;
-
     }
-
-
 
     function buildMissingRow(gameId, studentName) {
-
         return `<tr style="opacity: 0.6; background-color: rgba(15, 23, 42, 0.5);">
-
             <td style="color:#64748b;">-</td>
-
             <td style="color:#64748b;">${gameId}</td>
-
             <td style="font-size: 16px; font-weight: bold; color: #94a3b8;">${studentName}</td>
-
             <td colspan="2"><span style="color:#ef4444; font-weight:bold; font-size:14px;">❌ Не виконав</span></td>
-
         </tr>`;
-
     }
 
-
-
+    // ПОТУЖНА ФУНКЦІЯ ПОШУКУ ТА ЗВІТІВ (НАТЯГУЄ І ГОСТЕЙ, І УЧНІВ)
     function loadReports() {
-
         const studentQ = document.getElementById('search-student').value.trim().toLowerCase();
-
         const gameQ = document.getElementById('search-game').value.trim().toLowerCase();
-
         const filterId = document.getElementById('report-category').value;
-
         const output = document.getElementById('reports-output');
-
-
-
+        
+        document.getElementById('chart-section').style.display = 'none';
         output.innerHTML = "<p style='text-align:center; color: #38bdf8;'>Завантаження даних...</p>";
 
-
-
         db.ref('homework_reports').once('value').then(snapshot => {
-
             const allData = snapshot.val() || {};
-
             let html = `<table>
-
                 <thead>
-
                     <tr>
-
                         <th>Дата та Час</th>
-
-                        <th>Гра (Натисни для перевірки)</th>
-
+                        <th>Гра</th>
                         <th>Ім'я учня</th>
-
                         <th>Результат</th>
-
                         <th>Дії</th>
-
                     </tr>
-
                 </thead>
-
                 <tbody>`;
-
             let resultCount = 0;
 
-
-
-            let baseRosterNames = new Set();
-
-            if (filterId === 'all') {
-
-                Object.keys(classesData).forEach(classId => {
-
-                    if (studentsData[classId]) Object.values(studentsData[classId]).forEach(n => baseRosterNames.add(n));
-
+            let baseRoster = [];
+            if (studentsData.individual) {
+                Object.values(studentsData.individual).forEach(name => {
+                    baseRoster.push({ name: name, category: 'individual', categoryName: 'Індивідуальні' });
                 });
-
-                if (studentsData.individual) Object.values(studentsData.individual).forEach(n => baseRosterNames.add(n));
-
-            } else {
-
-                if (studentsData[filterId]) Object.values(studentsData[filterId]).forEach(n => baseRosterNames.add(n));
-
             }
-
-
-
-            let roster = [];
-
-            if (filterId === 'all') {
-
-                Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
-
-                    const cName = classesData[classId].name;
-
-                    if (studentsData[classId]) {
-
-                        Object.values(studentsData[classId]).sort((a,b) => a.localeCompare(b)).forEach(sName => { roster.push({ name: sName, category: classId, categoryName: cName }); });
-
-                    }
-
-                });
-
-                if (studentsData.individual) {
-
-                    Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)).forEach(sName => { roster.push({ name: sName, category: 'individual', categoryName: 'Індивідуальні' }); });
-
+            Object.keys(classesData).forEach(classId => {
+                if (studentsData[classId]) {
+                    Object.values(studentsData[classId]).forEach(name => {
+                        baseRoster.push({ name: name, category: classId, categoryName: classesData[classId].name });
+                    });
                 }
-
-            } else {
-
-                let cName = filterId === 'individual' ? 'Індивідуальні' : classesData[filterId]?.name;
-
-                if (studentsData[filterId]) {
-
-                    Object.values(studentsData[filterId]).sort((a,b) => a.localeCompare(b)).forEach(sName => { roster.push({ name: sName, category: filterId, categoryName: cName }); });
-
-                }
-
-            }
-
-
-
-            if (studentQ) roster = roster.filter(s => s.name.toLowerCase().includes(studentQ));
-
-
-
-            let submissions = [];
-
-            let gameDates = {}; 
-
-
-
-            for (const month in allData) {
-
-                for (const date in allData[month]) {
-
-                    for (const gameId in allData[month][date]) {
-
-                        for (const studentName in allData[month][date][gameId]) {
-
-                            submissions.push({ month, date, gameId, studentName, report: allData[month][date][gameId][studentName] });
-
-                            if (baseRosterNames.has(studentName)) {
-
-                                if (!gameDates[gameId] || date > gameDates[gameId]) {
-
-                                    gameDates[gameId] = date;
-
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-
-
-            let targetGames = [];
-
-            if (gameQ !== "") {
-
-                let matched = [...new Set(submissions.map(s => s.gameId))].filter(g => g.toLowerCase().includes(gameQ));
-
-                if (matched.length === 0) matched = [gameQ]; 
-
-                targetGames = matched.map(g => ({ id: g, date: gameDates[g] || '0000-00-00' }));
-
-            } else {
-
-                targetGames = Object.keys(gameDates).map(g => ({ id: g, date: gameDates[g] }));
-
-            }
-
-
-
-            targetGames.sort((a, b) => b.date.localeCompare(a.date));
-
-
-
-            targetGames.forEach(gameObj => {
-
-                const targetGameId = gameObj.id;
-
-                let gameSubmissions = submissions.filter(s => s.gameId === targetGameId);
-
-                
-
-                let willShowSomething = roster.length > 0 || gameSubmissions.some(s => (!studentQ || s.studentName.toLowerCase().includes(studentQ)));
-
-                if (!willShowSomething) return;
-
-
-
-                html += `<tr><td colspan="5" class="group-header" style="background:#334155; color:#38bdf8; text-align:center; font-size:18px;">Гра: ${targetGameId} <span style="font-size:12px; color:#94a3b8;">(Остання активність: ${gameObj.date !== '0000-00-00' ? gameObj.date : 'Немає даних'})</span></td></tr>`;
-
-                
-
-                let currentCategory = null;
-
-                let processedGuests = new Set();
-
-                
-
-                roster.forEach(student => {
-
-                    if (currentCategory !== student.category) {
-
-                        html += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${student.categoryName}</td></tr>`;
-
-                        currentCategory = student.category;
-
-                    }
-
-                    
-
-                    let sub = gameSubmissions.find(s => s.studentName === student.name);
-
-                    if (sub) {
-
-                        html += buildRow(sub.date, targetGameId, student.name, sub.report, sub.month, false);
-
-                        processedGuests.add(student.name);
-
-                        resultCount++;
-
-                    } else {
-
-                        html += buildMissingRow(targetGameId, student.name);
-
-                        resultCount++;
-
-                    }
-
-                });
-
-                
-
-                let guests = gameSubmissions.filter(s => !processedGuests.has(s.studentName) && (!studentQ || s.studentName.toLowerCase().includes(studentQ)));
-
-                
-
-                if (filterId === 'all' && guests.length > 0) {
-
-                    html += `<tr><td colspan="5" style="background:#b45309; color:#fff; font-weight:bold; font-size:14px; padding: 8px 15px;">🕵️ Гості / Поза списком</td></tr>`;
-
-                    guests.forEach(g => { html += buildRow(g.date, targetGameId, g.studentName, g.report, g.month, true); resultCount++; });
-
-                }
-
             });
 
-
-
-            if (resultCount === 0) {
-
-                html += `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">За вашим запитом нічого не знайдено.</td></tr>`;
-
+            let submissions = [];
+            let gameDates = {}; 
+            for (const month in allData) {
+                for (const date in allData[month]) {
+                    for (const gameId in allData[month][date]) {
+                        for (const studentName in allData[month][date][gameId]) {
+                            submissions.push({ month, date, gameId, studentName, report: allData[month][date][gameId][studentName] });
+                            if (!gameDates[gameId] || date > gameDates[gameId]) {
+                                gameDates[gameId] = date;
+                            }
+                        }
+                    }
+                }
             }
 
-            html += `</tbody></table>`;
+            let targetGames = Object.keys(gameDates).map(g => ({ id: g, date: gameDates[g] }));
+            if (gameQ !== "") targetGames = targetGames.filter(g => g.id.toLowerCase().includes(gameQ));
+            targetGames.sort((a, b) => b.date.localeCompare(a.date));
 
+            const matchesSearch = (name) => {
+                if (!studentQ) return true;
+                return name.toLowerCase().includes(studentQ);
+            };
+
+            targetGames.forEach(gameObj => {
+                const targetGameId = gameObj.id;
+                let gameSubmissions = submissions.filter(s => s.gameId === targetGameId);
+                
+                let showGameHeader = false;
+                let gameHtmlBuffer = "";
+                let processedStudents = new Set(); 
+
+                const processCategory = (catId, catName) => {
+                    let studentsInCat = baseRoster.filter(r => r.category === catId);
+                    if (studentsInCat.length === 0) return;
+
+                    let isAssigned = assignmentsData[catId] && assignmentsData[catId][targetGameId];
+                    let catHtmlBuffer = "";
+                    let hasRenderedSomethingInCat = false;
+
+                    studentsInCat.sort((a,b) => a.name.localeCompare(b.name)).forEach(student => {
+                        let sub = gameSubmissions.find(s => s.studentName === student.name);
+                        
+                        if (!matchesSearch(student.name) && !(sub && matchesSearch(sub.studentName))) return;
+
+                        if (sub) {
+                            catHtmlBuffer += buildRow(sub.date, targetGameId, student.name, sub.report, sub.month, !isAssigned, false);
+                            processedStudents.add(student.name);
+                            hasRenderedSomethingInCat = true;
+                            resultCount++;
+                        } else if (isAssigned) {
+                            catHtmlBuffer += buildMissingRow(targetGameId, student.name);
+                            processedStudents.add(student.name);
+                            hasRenderedSomethingInCat = true;
+                            resultCount++;
+                        }
+                    });
+
+                    if (hasRenderedSomethingInCat && (filterId === 'all' || filterId === catId || studentQ !== "")) {
+                        showGameHeader = true;
+                        gameHtmlBuffer += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${catName}</td></tr>`;
+                        gameHtmlBuffer += catHtmlBuffer;
+                    }
+                };
+
+                processCategory('individual', 'Індивідуальні');
+                Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
+                    processCategory(classId, classesData[classId].name);
+                });
+
+                // ГОСТІ (навіть якщо дитина була створена пізніше, її старі гостьові роботи знайдуться тут)
+                let guests = gameSubmissions.filter(s => !processedStudents.has(s.studentName) && matchesSearch(s.studentName));
+                
+                if (guests.length > 0 && (filterId === 'all' || studentQ !== "")) {
+                    showGameHeader = true;
+                    gameHtmlBuffer += `<tr><td colspan="5" style="background:#b45309; color:#fff; font-weight:bold; font-size:14px; padding: 8px 15px;">🕵️ Поза списком / Гості</td></tr>`;
+                    guests.forEach(g => {
+                        gameHtmlBuffer += buildRow(g.date, targetGameId, g.studentName, g.report, g.month, false, true);
+                        resultCount++;
+                    });
+                }
+
+                if (showGameHeader) {
+                    html += `<tr><td colspan="5" style="background:#334155; color:#38bdf8; text-align:center; font-size:18px;">Гра: ${targetGameId}</td></tr>`;
+                    html += gameHtmlBuffer;
+                }
+            });
+
+            if (resultCount === 0) {
+                html += `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">За вашим запитом нічого не знайдено.</td></tr>`;
+            }
+            html += `</tbody></table>`;
             output.innerHTML = html;
 
+            if (studentQ) {
+                let exactMatches = [...new Set(submissions.filter(s => matchesSearch(s.studentName)).map(s => s.studentName))];
+                if (exactMatches.length === 1) {
+                    let studentNameForChart = exactMatches[0];
+                    let studentSubs = submissions.filter(s => s.studentName === studentNameForChart);
+                    studentSubs.sort((a,b) => (a.date+a.report.timestamp).localeCompare(b.date+b.report.timestamp));
+                    
+                    let chartData = [];
+                    studentSubs.forEach(s => {
+                        let pct = calculatePercentage(s.report.score);
+                        if(pct !== null) chartData.push({ date: s.date, game: s.gameId, pct: pct });
+                    });
+                    
+                    if(chartData.length > 0) drawProgressChart(studentNameForChart, chartData);
+                }
+            }
         });
-
     }
-
-
 
     function deleteReportRecord(month, date, gameId, studentName) {
-
         if (confirm(`Ви впевнені, що хочете видалити роботу учня "${studentName}" за гру "${gameId}"?`)) {
-
             db.ref(`homework_reports/${month}/${date}/${gameId}/${studentName}`).remove().then(() => {
-
                 loadReports();
-
             }).catch(err => alert("Помилка: " + err.message));
-
         }
-
     }
-
-
 
     function switchTab(tabId) {
-
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-
         document.getElementById(`tab-${tabId}`).classList.add('active');
-
         event.currentTarget.classList.add('active');
-
     }
 
-
-
     loadSchoolData();
-
 </script>
-
 </body>
-
 </html>
