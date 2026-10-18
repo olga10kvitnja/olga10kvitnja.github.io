@@ -470,7 +470,8 @@
         let t3Errors = {};
         let selectedSchema = null;
 
-        const gameId = window.location.pathname.split('/').pop().replace('.html', '') || 'homework_default';
+        // Безпечне отримання ID гри (відкидаємо можливі параметри після .html)
+        const gameId = window.location.pathname.split('/').pop().split('.')[0] || 'homework_default';
 
         const correctAnswers = {
             // T1
@@ -613,6 +614,10 @@
         window.startGame = () => {
             const nameInput = document.getElementById('student-name-input').value.trim();
             if (nameInput) {
+                if (/[.#$\[\]]/.test(nameInput)) {
+                    alert("Помилка: Ім'я не може містити крапку (.) або інші спеціальні символи (#, $, [, ]). Будь ласка, введіть ім'я без них.");
+                    return;
+                }
                 userName = nameInput;
                 sessionStorage.setItem('studentName', userName);
                 document.getElementById('auth-overlay').style.display = 'none';
@@ -624,9 +629,8 @@
         window.submitGame = async () => {
             if (!userName) return;
 
-            // Захист від використання крапок або спеціальних символів в імені (база Firebase їх не приймає як ключі)
             if (/[.#$\[\]]/.test(userName)) {
-                alert("Помилка: Ім'я не може містити крапку (.) або інші спеціальні символи (#, $, [, ]). Будь ласка, введіть ім'я без цих символів.");
+                alert("Помилка: Ваше ім'я містить заборонені символи (наприклад, крапку). Будь ласка, оновіть сторінку і введіть ім'я без крапок.");
                 return;
             }
 
@@ -676,17 +680,23 @@
 
             const now = new Date();
             const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const pathDate = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+            
+            // Створюємо правильний формат для журналу (з крапками) і безпечний для шляху (з дефісами)
+            const dateStrWithDots = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+            const pathDate = dateStrWithDots.replace(/\./g, '-');
+            
+            const safeUserName = userName.replace(/[.#$\[\]]/g, '_');
+            const safeGameId = gameId.replace(/[.#$\[\]]/g, '_');
 
             const reportData = {
                 score: `Вірно ${score} із ${totalItems}`,
                 rawAnswers: rawAnswers,
                 timestamp: now.toISOString(),
-                date: pathDate
+                date: dateStrWithDots, // Журнал шукатиме саме цю дату з крапками
+                userName: userName // Зберігаємо точне ім'я
             };
 
-            // Використовуємо формат дати з дефісами, оскільки крапки в шляхах Firebase створюють помилку і база не зберігає роботу.
-            const path = `homework_reports/${yearMonth}/${pathDate}/${gameId}/${userName}`;
+            const path = `homework_reports/${yearMonth}/${pathDate}/${safeGameId}/${safeUserName}`;
 
             try {
                 await set(ref(db, path), reportData);
@@ -701,13 +711,15 @@
         };
 
         async function loadReport(user, date) {
-            // Нормалізація дати з URL (на випадок якщо журнал передасть з крапками)
-            let parts = date.split(/[-.]/);
+            let parts = date.split(/[-.]/); 
             if(parts.length !== 3) return;
             let yearMonth = `${parts[2]}-${parts[1]}`;
-            let pathDate = `${parts[0]}-${parts[1]}-${parts[2]}`;
+            let pathDate = `${parts[0]}-${parts[1]}-${parts[2]}`; // Гарантуємо дефіси для шляху
             
-            const path = `homework_reports/${yearMonth}/${pathDate}/${gameId}/${user}`;
+            let safeUser = user.replace(/[.#$\[\]]/g, '_');
+            let safeGameId = gameId.replace(/[.#$\[\]]/g, '_');
+
+            const path = `homework_reports/${yearMonth}/${pathDate}/${safeGameId}/${safeUser}`;
 
             try {
                 const snapshot = await get(ref(db, path));
