@@ -714,7 +714,7 @@
                     for (const gameId in allData[month][date]) {
                         for (const studentName in allData[month][date][gameId]) {
                             submissions.push({ month, date, gameId, studentName, report: allData[month][date][gameId][studentName] });
-                            if (roster.some(r => r.name === studentName)) {
+                            if (filterId === 'all' || roster.some(r => r.name === studentName)) {
                                 if (!gameDates[gameId] || date > gameDates[gameId]) {
                                     gameDates[gameId] = date;
                                 }
@@ -724,15 +724,21 @@
                 }
             }
 
-            // Визначаємо які ігри треба показати (Призначені + Ті, в які реально грали)
+            // Визначаємо які ігри треба показати
             let gamesToShow = new Set();
+            
+            // 1. Додаємо всі ігри, які були призначені класам з поточного ростеру
             roster.forEach(r => {
                 if(assignmentsData[r.category]) {
                     Object.keys(assignmentsData[r.category]).forEach(gId => gamesToShow.add(gId));
                 }
             });
+            
+            // 2. Додаємо всі ігри, в які реально грали (якщо фільтр "всі", то додаємо всі наявні)
             submissions.forEach(s => {
-                if(roster.some(r => r.name === s.studentName)) gamesToShow.add(s.gameId);
+                if(filterId === 'all' || roster.some(r => r.name === s.studentName)) {
+                    gamesToShow.add(s.gameId);
+                }
             });
 
             let targetGames = Array.from(gamesToShow).map(g => ({ id: g, date: gameDates[g] || '0000-00-00' }));
@@ -770,11 +776,26 @@
                         showGameHeader = true;
                         gameHtmlBuffer += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${studentsInCat[0].categoryName}</td></tr>`;
                         subsInCat.forEach(sub => {
-                            gameHtmlBuffer += buildRow(sub.date, targetGameId, sub.studentName, sub.report, sub.month, true, false); // true = extra
+                            gameHtmlBuffer += buildRow(sub.date, targetGameId, sub.studentName, sub.report, sub.month, true, false); 
                             resultCount++;
                         });
                     }
                 });
+
+                // ВІДНОВЛЮЄМО "ГОСТЕЙ" (Учнів, яких немає в жодному класі/списку)
+                let processedNames = new Set(roster.map(r => r.name));
+                let guests = gameSubmissions.filter(s => !processedNames.has(s.studentName));
+                
+                if (studentQ) guests = guests.filter(g => g.studentName.toLowerCase().includes(studentQ));
+
+                if (filterId === 'all' && guests.length > 0) {
+                    showGameHeader = true;
+                    gameHtmlBuffer += `<tr><td colspan="5" style="background:#b45309; color:#fff; font-weight:bold; font-size:14px; padding: 8px 15px;">🕵️ Гості / Поза списком</td></tr>`;
+                    guests.forEach(g => {
+                        gameHtmlBuffer += buildRow(g.date, targetGameId, g.studentName, g.report, g.month, false, true);
+                        resultCount++;
+                    });
+                }
 
                 if (showGameHeader) {
                     html += `<tr><td colspan="5" style="background:#334155; color:#38bdf8; text-align:center; font-size:18px;">Гра: ${targetGameId}</td></tr>`;
@@ -788,7 +809,7 @@
             html += `</tbody></table>`;
             output.innerHTML = html;
 
-            // Збирання даних для графіка, якщо знайдено конкретного учня
+            // Збирання даних для графіка
             if (studentQ) {
                 let exactMatches = [...new Set(submissions.filter(s => s.studentName.toLowerCase().includes(studentQ)).map(s => s.studentName))];
                 if (exactMatches.length === 1) {
