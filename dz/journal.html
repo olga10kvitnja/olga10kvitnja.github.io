@@ -228,6 +228,43 @@
             text-align: center;
             margin-top: 0;
         }
+
+        /* Стилі для Кошика */
+        .trash-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .trash-content-box {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid #334155;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+        .trash-btn-open {
+            background: transparent;
+            border: none;
+            color: #475569;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
+            float: right;
+            margin-top: 10px;
+        }
+        .trash-btn-open:hover {
+            color: #ef4444;
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -263,6 +300,23 @@
         <div class="chart-container" id="chart-section">
             <h3 id="chart-title">Прогрес учня</h3>
             <canvas id="progressChart" height="80"></canvas>
+        </div>
+
+        <!-- Непомітна кнопка Кошика -->
+        <button class="trash-btn-open" onclick="openTrash()" title="Видалені роботи">🗑️</button>
+        <div style="clear: both;"></div>
+
+        <!-- Модальне вікно Кошика -->
+        <div id="trash-modal" class="trash-modal">
+            <div class="trash-content-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #ef4444;">🗑️ Кошик (Видалені роботи)</h2>
+                    <button onclick="closeTrash()" style="background: transparent; border: none; font-size: 28px; color: #94a3b8; cursor: pointer;">&times;</button>
+                </div>
+                <div id="trash-output">
+                    <p style="text-align:center; color:#64748b;">Завантаження...</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -646,7 +700,6 @@
         </tr>`;
     }
 
-    // ПОТУЖНА ФУНКЦІЯ ПОШУКУ ТА ЗВІТІВ (НАТЯГУЄ І ГОСТЕЙ, І УЧНІВ)
     function loadReports() {
         const studentQ = document.getElementById('search-student').value.trim().toLowerCase();
         const gameQ = document.getElementById('search-game').value.trim().toLowerCase();
@@ -755,7 +808,6 @@
                     processCategory(classId, classesData[classId].name);
                 });
 
-                // ГОСТІ (навіть якщо дитина була створена пізніше, її старі гостьові роботи знайдуться тут)
                 let guests = gameSubmissions.filter(s => !processedStudents.has(s.studentName) && matchesSearch(s.studentName));
                 
                 if (guests.length > 0 && (filterId === 'all' || studentQ !== "")) {
@@ -798,12 +850,111 @@
         });
     }
 
+    // НОВА логіка: зберігаємо в deleted_reports перед видаленням
     function deleteReportRecord(month, date, gameId, studentName) {
         if (confirm(`Ви впевнені, що хочете видалити роботу учня "${studentName}" за гру "${gameId}"?`)) {
-            db.ref(`homework_reports/${month}/${date}/${gameId}/${studentName}`).remove().then(() => {
-                loadReports();
-            }).catch(err => alert("Помилка: " + err.message));
+            const reportPath = `homework_reports/${month}/${date}/${gameId}/${studentName}`;
+            
+            // 1. Спочатку зчитуємо роботу
+            db.ref(reportPath).once('value').then(snapshot => {
+                const reportData = snapshot.val();
+                if (reportData) {
+                    // 2. Зберігаємо в корзину з позначкою часу
+                    db.ref('deleted_reports').push({
+                        month: month,
+                        date: date,
+                        gameId: gameId,
+                        studentName: studentName,
+                        report: reportData,
+                        deletedAt: new Date().toISOString()
+                    }).then(() => {
+                        // 3. Видаляємо з основного журналу
+                        db.ref(reportPath).remove().then(() => {
+                            loadReports();
+                        });
+                    });
+                } else {
+                    // Якщо даних раптом немає, просто видаляємо вузол
+                    db.ref(reportPath).remove().then(() => loadReports());
+                }
+            });
         }
+    }
+
+    // --- ФУНКЦІЇ ДЛЯ РОБОТИ З КОШИКОМ ---
+    function openTrash() {
+        document.getElementById('trash-modal').style.display = 'flex';
+        loadTrashData();
+    }
+
+    function closeTrash() {
+        document.getElementById('trash-modal').style.display = 'none';
+    }
+
+    function loadTrashData() {
+        const output = document.getElementById('trash-output');
+        output.innerHTML = '<p style="text-align:center; color:#94a3b8;">Завантаження...</p>';
+
+        db.ref('deleted_reports').once('value').then(snapshot => {
+            const data = snapshot.val();
+            if (!data) {
+                output.innerHTML = '<p style="text-align:center; color:#64748b;">Кошик порожній.</p>';
+                return;
+            }
+
+            let html = `<table>
+                <thead>
+                    <tr>
+                        <th>Час видалення</th>
+                        <th>Гра</th>
+                        <th>Учень</th>
+                        <th>Оцінка</th>
+                        <th>Дія</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            // Сортуємо від найновіших видалених до найстаріших
+            const entries = Object.entries(data).sort((a, b) => new Date(b[1].deletedAt) - new Date(a[1].deletedAt));
+
+            entries.forEach(([key, item]) => {
+                const delDateStr = new Date(item.deletedAt).toLocaleString('uk-UA', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                const scoreDisplay = item.report.score || '-';
+
+                html += `<tr>
+                    <td style="color:#94a3b8; font-size:13px;">${delDateStr}</td>
+                    <td>🎮 ${item.gameId}</td>
+                    <td style="font-weight:bold; color:#f8fafc;">${item.studentName}</td>
+                    <td style="color:#10b981; font-weight:bold;">${scoreDisplay}</td>
+                    <td>
+                        <button class="btn-blue" style="padding: 6px 12px; font-size: 12px;" onclick="restoreReport('${key}', '${item.month}', '${item.date}', '${item.gameId}', '${item.studentName}')">♻️ Відновити</button>
+                    </td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            output.innerHTML = html;
+        });
+    }
+
+    function restoreReport(trashKey, month, date, gameId, studentName) {
+        // Зчитуємо з корзини
+        db.ref(`deleted_reports/${trashKey}`).once('value').then(snapshot => {
+            const item = snapshot.val();
+            if (item) {
+                // Повертаємо в основний журнал
+                db.ref(`homework_reports/${month}/${date}/${gameId}/${studentName}`).set(item.report).then(() => {
+                    // Видаляємо з корзини
+                    db.ref(`deleted_reports/${trashKey}`).remove().then(() => {
+                        loadTrashData(); // Оновлюємо вікно кошика
+                        if (document.getElementById('tab-reports').classList.contains('active')) {
+                            loadReports(); // Оновлюємо таблицю на фоні
+                        }
+                        alert(`Роботу учня "${studentName}" успішно відновлено!`);
+                    });
+                });
+            }
+        });
     }
 
     function switchTab(tabId) {
