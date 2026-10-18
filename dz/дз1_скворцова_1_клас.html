@@ -701,7 +701,7 @@
 
 <script>
     // Ініціалізація та LMS логіка
-    const gameId = window.location.pathname.split('/').pop().replace('.html', '') || 'math_game_default';
+    const gameId = decodeURIComponent(window.location.pathname.split('/').pop().replace('.html', '')) || 'math_game_default';
     const urlParams = new URLSearchParams(window.location.search);
     const reportUser = urlParams.get('reportUser');
     const reportDate = urlParams.get('reportDate');
@@ -867,8 +867,12 @@
 
         const result = collectAnswers();
         const dateObj = new Date();
-        const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
-        const exactDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const yyyy = dateObj.getFullYear();
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        
+        const yearMonth = `${mm}-${yyyy}`;
+        const exactDate = `${dd}-${mm}-${yyyy}`;
         
         const dbUrl = `https://lesson-13c44-default-rtdb.firebaseio.com/homework_reports/${yearMonth}/${exactDate}/${gameId}/${currentUser}.json`;
 
@@ -877,13 +881,13 @@
             body: JSON.stringify({
                 score: result.scoreStr, // бали все ще зберігатимуться в базі даних для вчителя
                 rawAnswers: result.raw,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
             }),
             headers: { 'Content-Type': 'application/json' }
         })
         .then(res => {
             if(res.ok) {
-                alert(`Роботу успішно відправлено на перевірку!`);
+                alert(`Твоя робота відправлена на перевірку`);
                 document.getElementById('submit-btn').innerText = 'Відправлено ✓';
             } else {
                 throw new Error('Server error');
@@ -913,7 +917,8 @@
         // Відновлюємо зум кнопки
         document.querySelector('.zoom-controls').style.pointerEvents = 'auto';
 
-        const yearMonth = date.substring(0, 7);
+        const parts = date.split('-');
+        const yearMonth = parts.length === 3 ? `${parts[1]}-${parts[2]}` : date.substring(0, 7);
         const dbUrl = `https://lesson-13c44-default-rtdb.firebaseio.com/homework_reports/${yearMonth}/${date}/${gameId}/${user}.json`;
 
         fetch(dbUrl)
