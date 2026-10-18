@@ -534,7 +534,9 @@
         }
 
         // --- Збір даних та перевірка ---
-        function checkAnswers() {
+        // Додано параметр showFeedback (за замовчуванням false). 
+        // Якщо false – візуально для користувача не підсвічуються помилки і правильні відповіді.
+        function checkAnswers(showFeedback = false) {
             let totalTasks = 0;
             let correctTasks = 0;
             let rawAnswers = {};
@@ -553,22 +555,24 @@
                     rawAnswers[taskId].push(userVal);
                     
                     if (userVal === expectedVal) {
-                        input.classList.add('correct');
+                        if (showFeedback) input.classList.add('correct');
                     } else {
-                        input.classList.add('incorrect');
                         allCorrect = false;
-                        // Показуємо правильну відповідь у режимі перевірки
-                        if(isReviewMode) {
-                            const wrapper = document.createElement('div');
-                            wrapper.style.position = 'relative';
-                            wrapper.style.display = 'inline-block';
-                            input.parentNode.insertBefore(wrapper, input);
-                            wrapper.appendChild(input);
-                            
-                            const expectedLabel = document.createElement('span');
-                            expectedLabel.className = 'expected-answer';
-                            expectedLabel.textContent = expectedVal;
-                            wrapper.appendChild(expectedLabel);
+                        if (showFeedback) {
+                            input.classList.add('incorrect');
+                            // Показуємо правильну відповідь у режимі перевірки
+                            if(isReviewMode) {
+                                const wrapper = document.createElement('div');
+                                wrapper.style.position = 'relative';
+                                wrapper.style.display = 'inline-block';
+                                input.parentNode.insertBefore(wrapper, input);
+                                wrapper.appendChild(input);
+                                
+                                const expectedLabel = document.createElement('span');
+                                expectedLabel.className = 'expected-answer';
+                                expectedLabel.textContent = expectedVal;
+                                wrapper.appendChild(expectedLabel);
+                            }
                         }
                     }
                 });
@@ -592,12 +596,12 @@
                 if(isSelected) rawAnswers['task5'].push(opt.getAttribute('data-val'));
 
                 if(isSelected && isCorrectAns) {
-                    opt.classList.add('correct');
                     t5_correct_count++;
+                    if (showFeedback) opt.classList.add('correct');
                 } else if (isSelected && !isCorrectAns) {
-                    opt.classList.add('incorrect');
+                    if (showFeedback) opt.classList.add('incorrect');
                 } else if (!isSelected && isCorrectAns && isReviewMode) {
-                    opt.classList.add('missed'); // Обводимо те, що мали обрати
+                    if (showFeedback) opt.classList.add('missed'); // Обводимо те, що мали обрати
                 }
             });
             correctTasks += t5_correct_count;
@@ -614,13 +618,13 @@
                 if(isSelected) rawAnswers['task6'].push(index);
 
                 if(isSelected && isErrorExpr) {
-                    expr.classList.add('correct');
+                    if (showFeedback) expr.classList.add('correct');
                 } else if (isSelected && !isErrorExpr) {
-                    expr.classList.add('incorrect');
                     t6_all_correct = false;
+                    if (showFeedback) expr.classList.add('incorrect');
                 } else if (!isSelected && isErrorExpr) {
-                    if(isReviewMode) expr.classList.add('missed');
                     t6_all_correct = false;
+                    if (isReviewMode && showFeedback) expr.classList.add('missed');
                 }
             });
             if(t6_all_correct) correctTasks++;
@@ -641,7 +645,8 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Відправка...';
 
-            const result = checkAnswers();
+            // Передаємо false, щоб для дитини кольори та помилки не підсвічувались
+            const result = checkAnswers(false); 
             
             const now = new Date();
             const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -692,7 +697,8 @@
 
                 if (data && data.rawAnswers) {
                     applyRawAnswers(data.rawAnswers);
-                    checkAnswers(); // Викликаємо щоб підсвітити кольорами
+                    // Викликаємо з true, щоб у вчителя підсвітились правильні та неправильні відповіді
+                    checkAnswers(true); 
                 } else {
                     alert('Дані звіту не знайдено.');
                 }
