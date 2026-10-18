@@ -6,6 +6,8 @@
     <title>Журнал Вчителя - ДЗ (Темна Тема)</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- Підключаємо бібліотеку для графіків -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -194,25 +196,38 @@
         }
         .scale-bar {
             display: flex;
-            height: 18px; /* Збільшено товщину шкали */
+            height: 18px;
             width: 100%;
             border-radius: 6px;
             overflow: hidden;
             background: #0f172a;
-            gap: 3px; /* Трохи більший відступ між блоками */
+            gap: 3px;
             border: 1px solid #334155;
         }
         .scale-segment {
             flex: 1;
-            background: #334155; /* Колір неактивного сегмента */
+            background: #334155;
             transition: background 0.3s;
         }
-        /* Кольори активних сегментів */
         .scale-segment.active-1 { background: #ef4444; } /* Червоний */
         .scale-segment.active-2 { background: #f59e0b; } /* Жовтий */
         .scale-segment.active-3 { background: #3b82f6; } /* Синій */
         .scale-segment.active-4 { background: #10b981; } /* Зелений */
         .scale-segment.active-5 { background: #8b5cf6; } /* Фіолетовий */
+        
+        .chart-container {
+            margin-top: 30px;
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            display: none; /* Сховано за замовчуванням */
+        }
+        .chart-container h3 {
+            color: #38bdf8;
+            text-align: center;
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
@@ -221,7 +236,8 @@
     <h1>📚 Журнал Вчителя (ДЗ)</h1>
     
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('reports')">📊 Звіти ДЗ та Пошук</button>
+        <button class="tab-btn active" onclick="switchTab('reports')">📊 Звіти ДЗ</button>
+        <button class="tab-btn" onclick="switchTab('assignments')">📋 Призначення ДЗ</button>
         <button class="tab-btn" onclick="switchTab('students')">👥 Учні та Класи</button>
     </div>
 
@@ -231,7 +247,7 @@
             <datalist id="students-datalist"></datalist>
             <input type="text" id="search-student" list="students-datalist" placeholder="Ім'я учня (оберіть або введіть...)" style="flex: 1;">
             
-            <input type="text" id="search-game" placeholder="Назва гри (або порожньо для всіх)" style="flex: 1;">
+            <input type="text" id="search-game" placeholder="Назва гри (або порожньо)" style="flex: 1;">
             
             <select id="report-category">
                 <option value="all">Всі категорії (всі класи)</option>
@@ -242,6 +258,23 @@
         <div id="reports-output">
             <p style="text-align: center; color: #64748b; font-size: 18px; margin-top: 30px;">Введіть ім'я учня, назву гри або оберіть клас, а потім натисніть "Знайти роботи".</p>
         </div>
+        
+        <!-- Контейнер для графіка прогресу -->
+        <div class="chart-container" id="chart-section">
+            <h3 id="chart-title">Прогрес учня</h3>
+            <canvas id="progressChart" height="80"></canvas>
+        </div>
+    </div>
+
+    <!-- Вкладка Призначення ДЗ (НОВА) -->
+    <div id="tab-assignments" class="tab-content">
+        <div class="control-group">
+            <select id="assign-class-select"></select>
+            <input type="text" id="assign-game-id" placeholder="Назва гри (напр. game123)" style="flex: 1;">
+            <button class="btn-blue" onclick="assignGame()">➕ Призначити обов'язкову гру</button>
+        </div>
+        <p style="color: #94a3b8; font-size: 14px;">Ігри, призначені класу, будуть вимагатися від усіх учнів цього класу. Якщо учень пройде не призначену гру, вона відобразиться як "Додаткова" і не вплине на статистику інших.</p>
+        <div class="students-grid" id="assignments-grid"></div>
     </div>
 
     <!-- Вкладка Учнів -->
@@ -271,12 +304,15 @@
 
     let classesData = {}; 
     let studentsData = { individual: {} };
+    let assignmentsData = {}; // Зберігає призначені ігри
+    let studentChartInstance = null; // Для графіка
 
     function loadSchoolData() {
         db.ref('journal_classes').on('value', (snapshot) => {
             classesData = snapshot.val() || {};
             updateSelectDropdowns();
             renderStudentsUI();
+            renderAssignmentsUI();
         });
         db.ref('journal_students').on('value', (snapshot) => {
             studentsData = snapshot.val() || { individual: {} };
@@ -284,25 +320,35 @@
             updateSelectDropdowns();
             renderStudentsUI();
         });
+        db.ref('journal_assignments').on('value', (snapshot) => {
+            assignmentsData = snapshot.val() || {};
+            renderAssignmentsUI();
+        });
     }
 
     function updateSelectDropdowns() {
         const studentSelect = document.getElementById('new-student-category');
         const reportSelect = document.getElementById('report-category');
+        const assignSelect = document.getElementById('assign-class-select');
+        
         const currentStudentVal = studentSelect.value;
         const currentReportVal = reportSelect.value;
+        const currentAssignVal = assignSelect.value;
 
         studentSelect.innerHTML = `<option value="individual">Індивідуально</option>`;
         reportSelect.innerHTML = `<option value="all">Всі категорії (всі класи)</option><option value="individual">Тільки Індивідуальні</option>`;
+        assignSelect.innerHTML = `<option value="individual">Індивідуально</option>`;
 
         Object.keys(classesData).forEach(classId => {
             const className = classesData[classId].name;
             studentSelect.innerHTML += `<option value="${classId}">${className}</option>`;
             reportSelect.innerHTML += `<option value="${classId}">${className}</option>`;
+            assignSelect.innerHTML += `<option value="${classId}">${className}</option>`;
         });
 
         if (document.querySelector(`#new-student-category option[value="${currentStudentVal}"]`)) studentSelect.value = currentStudentVal;
         if (document.querySelector(`#report-category option[value="${currentReportVal}"]`)) reportSelect.value = currentReportVal;
+        if (document.querySelector(`#assign-class-select option[value="${currentAssignVal}"]`)) assignSelect.value = currentAssignVal;
 
         const datalist = document.getElementById('students-datalist');
         if (datalist) {
@@ -318,6 +364,57 @@
         }
     }
 
+    // --- ФУНКЦІЇ ПРИЗНАЧЕННЯ ДЗ ---
+    function assignGame() {
+        const classId = document.getElementById('assign-class-select').value;
+        const gameId = document.getElementById('assign-game-id').value.trim();
+        if(gameId === "") return alert("Введіть назву гри!");
+        db.ref(`journal_assignments/${classId}/${gameId}`).set(true).then(() => {
+            document.getElementById('assign-game-id').value = '';
+        });
+    }
+
+    function removeAssignment(classId, gameId) {
+        if(confirm(`Видалити гру "${gameId}" з обов'язкових для цього класу?`)) {
+            db.ref(`journal_assignments/${classId}/${gameId}`).remove();
+        }
+    }
+
+    function renderAssignmentsUI() {
+        const container = document.getElementById('assignments-grid');
+        container.innerHTML = '';
+        
+        // Індивідуальні
+        let individualHtml = `<div class="class-section"><div class="class-header"><h3>👤 Індивідуальні</h3></div>`;
+        if (assignmentsData['individual']) {
+            Object.keys(assignmentsData['individual']).forEach(gameId => {
+                individualHtml += `<div class="student-item"><span>🎮 ${gameId}</span>
+                <button class="btn-delete" onclick="removeAssignment('individual', '${gameId}')">🗑️</button></div>`;
+            });
+        } else {
+            individualHtml += `<p style="color:#64748b; font-size:14px;">Немає призначених ігор</p>`;
+        }
+        individualHtml += `</div>`;
+        container.innerHTML += individualHtml;
+
+        // Класи
+        Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
+            const className = classesData[classId].name;
+            let classHtml = `<div class="class-section"><div class="class-header"><h3>👥 ${className}</h3></div>`;
+            if (assignmentsData[classId]) {
+                Object.keys(assignmentsData[classId]).forEach(gameId => {
+                    classHtml += `<div class="student-item"><span>🎮 ${gameId}</span>
+                    <button class="btn-delete" onclick="removeAssignment('${classId}', '${gameId}')">🗑️</button></div>`;
+                });
+            } else {
+                classHtml += `<p style="color:#64748b; font-size:14px;">Немає призначених ігор</p>`;
+            }
+            classHtml += `</div>`;
+            container.innerHTML += classHtml;
+        });
+    }
+
+    // --- ФУНКЦІЇ ДЛЯ УЧНІВ ТА КЛАСІВ ---
     function renderStudentsUI() {
         const container = document.getElementById('classes-container');
         container.innerHTML = '';
@@ -370,6 +467,7 @@
         if (confirm(`Ви впевнені, що хочете видалити "${className}" та всіх його учнів?`)) {
             db.ref(`journal_classes/${classId}`).remove();
             db.ref(`journal_students/${classId}`).remove(); 
+            db.ref(`journal_assignments/${classId}`).remove(); 
         }
     }
 
@@ -407,19 +505,17 @@
                 if (Object.keys(updates).length > 0) {
                     db.ref().update(updates).then(() => {
                         alert(`Ім'я змінено на "${cleanNewName}"!`);
-                        loadReports(); 
+                        if(document.getElementById('tab-reports').classList.contains('active')) loadReports(); 
                     });
                 }
             });
         });
     }
 
-    // --- ФУНКЦІЇ ДЛЯ КОЛЬОРОВОЇ ШКАЛИ ---
-
+    // --- ФУНКЦІЇ ДЛЯ КОЛЬОРОВОЇ ШКАЛИ ТА ГРАФІКІВ ---
     function calculatePercentage(scoreStr) {
         if (!scoreStr) return null;
         let str = String(scoreStr);
-        
         let percMatch = str.match(/(\d+(?:\.\d+)?)%/);
         if (percMatch) return Math.min(100, Math.max(0, Math.round(parseFloat(percMatch[1]))));
 
@@ -430,20 +526,24 @@
             if (total === 0) return 0;
             return Math.min(100, Math.max(0, Math.round((correct / total) * 100)));
         }
-        
         return null;
+    }
+
+    function getColorForPct(pct) {
+        if (pct < 21) return '#ef4444'; // Red
+        if (pct < 41) return '#f59e0b'; // Yellow
+        if (pct < 61) return '#3b82f6'; // Blue
+        if (pct < 81) return '#10b981'; // Green
+        return '#8b5cf6'; // Purple
     }
 
     function buildScoreBar(scoreStr) {
         let percent = calculatePercentage(scoreStr);
-
-        // Якщо не змогли вирахувати відсоток - повертаємо просто сирий текст для підстраховки
         if (percent === null) {
             let textDisplay = scoreStr ? scoreStr : '-';
             return `<span style="color:#10b981; font-weight:bold; font-size:16px;">${textDisplay}</span>`;
         }
 
-        // Визначаємо скільки сегментів активні
         let activeCount = 0;
         if (percent >= 0)  activeCount = 1;  
         if (percent >= 21) activeCount = 2;  
@@ -457,23 +557,89 @@
             barHtml += `<div class="scale-segment ${activeClass}"></div>`;
         }
         barHtml += `</div>`;
-
-        // Тільки шкала, без жодного тексту
-        return `<div class="score-container">${barHtml}</div>`;
+        return `<div class="score-container" title="${percent}%">${barHtml}</div>`;
     }
 
-    function buildRow(date, gameId, studentName, report, month, isGuest=false) {
+    // --- ФУНКЦІЯ МАЛЮВАННЯ ГРАФІКА ---
+    function drawProgressChart(studentName, scoresData) {
+        const chartContainer = document.getElementById('chart-section');
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        
+        if (studentChartInstance) {
+            studentChartInstance.destroy();
+        }
+
+        if (scoresData.length === 0) {
+            chartContainer.style.display = 'none';
+            return;
+        }
+
+        chartContainer.style.display = 'block';
+        document.getElementById('chart-title').innerText = `Прогрес учня: ${studentName}`;
+
+        const labels = scoresData.map(d => `${d.date} (${d.game})`);
+        const dataPoints = scoresData.map(d => d.pct);
+        const bgColors = scoresData.map(d => getColorForPct(d.pct));
+
+        studentChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Відсоток успішності (%)',
+                    data: dataPoints,
+                    borderColor: '#64748b',
+                    borderWidth: 2,
+                    pointBackgroundColor: bgColors,
+                    pointBorderColor: '#ffffff',
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: false,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: '#334155' }
+                    },
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: '#334155' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { return `Результат: ${context.parsed.y}%`; }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // --- ФУНКЦІЇ ЗВІТІВ ---
+    function buildRow(date, gameId, studentName, report, month, isExtra=false, isGuest=false) {
         let scoreHtml = buildScoreBar(report.score);
         const gameUrl = `${gameId}.html?reportUser=${encodeURIComponent(studentName)}&reportDate=${date}`;
-        let guestTag = isGuest ? `<span style="font-size:12px; color:#f59e0b; display:block;">(Гість / Поза класом)</span>` : '';
+        
+        let tags = [];
+        if (isGuest) tags.push(`<span style="font-size:12px; color:#ef4444;">(Гість / Поза класом)</span>`);
+        if (isExtra) tags.push(`<span style="font-size:12px; color:#f59e0b;">(Додатково / Не призначено)</span>`);
         
         return `<tr>
             <td>${date} <br><small style="color:#94a3b8">${report.timestamp || ''}</small></td>
             <td><a href="${gameUrl}" target="_blank" class="game-link">🎮 ${gameId}</a></td>
-            <td style="font-size: 16px; font-weight: bold; color: #f8fafc;">${studentName} ${guestTag}</td>
+            <td style="font-size: 16px; font-weight: bold; color: #f8fafc;">${studentName} ${tags.length > 0 ? '<br>'+tags.join(' ') : ''}</td>
             <td>${scoreHtml}</td>
             <td>
-                <button class="btn-delete" onclick="deleteReportRecord('${month}', '${date}', '${gameId}', '${studentName}')">🗑️ Видалити</button>
+                <button class="btn-delete" onclick="deleteReportRecord('${month}', '${date}', '${gameId}', '${studentName}')">🗑️</button>
             </td>
         </tr>`;
     }
@@ -492,6 +658,9 @@
         const gameQ = document.getElementById('search-game').value.trim().toLowerCase();
         const filterId = document.getElementById('report-category').value;
         const output = document.getElementById('reports-output');
+        
+        // Ховаємо графік поки завантажується
+        document.getElementById('chart-section').style.display = 'none';
 
         output.innerHTML = "<p style='text-align:center; color: #38bdf8;'>Завантаження даних...</p>";
 
@@ -501,7 +670,7 @@
                 <thead>
                     <tr>
                         <th>Дата та Час</th>
-                        <th>Гра (Натисни для перевірки)</th>
+                        <th>Гра</th>
                         <th>Ім'я учня</th>
                         <th>Результат</th>
                         <th>Дії</th>
@@ -510,36 +679,33 @@
                 <tbody>`;
             let resultCount = 0;
 
-            let baseRosterNames = new Set();
-            if (filterId === 'all') {
-                Object.keys(classesData).forEach(classId => {
-                    if (studentsData[classId]) Object.values(studentsData[classId]).forEach(n => baseRosterNames.add(n));
-                });
-                if (studentsData.individual) Object.values(studentsData.individual).forEach(n => baseRosterNames.add(n));
-            } else {
-                if (studentsData[filterId]) Object.values(studentsData[filterId]).forEach(n => baseRosterNames.add(n));
-            }
-
+            // Формуємо список учнів вибраних класів
             let roster = [];
             if (filterId === 'all') {
                 Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
-                    const cName = classesData[classId].name;
                     if (studentsData[classId]) {
-                        Object.values(studentsData[classId]).sort((a,b) => a.localeCompare(b)).forEach(sName => { roster.push({ name: sName, category: classId, categoryName: cName }); });
+                        Object.values(studentsData[classId]).sort((a,b) => a.localeCompare(b)).forEach(sName => { 
+                            roster.push({ name: sName, category: classId, categoryName: classesData[classId].name }); 
+                        });
                     }
                 });
                 if (studentsData.individual) {
-                    Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)).forEach(sName => { roster.push({ name: sName, category: 'individual', categoryName: 'Індивідуальні' }); });
+                    Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)).forEach(sName => { 
+                        roster.push({ name: sName, category: 'individual', categoryName: 'Індивідуальні' }); 
+                    });
                 }
             } else {
                 let cName = filterId === 'individual' ? 'Індивідуальні' : classesData[filterId]?.name;
                 if (studentsData[filterId]) {
-                    Object.values(studentsData[filterId]).sort((a,b) => a.localeCompare(b)).forEach(sName => { roster.push({ name: sName, category: filterId, categoryName: cName }); });
+                    Object.values(studentsData[filterId]).sort((a,b) => a.localeCompare(b)).forEach(sName => { 
+                        roster.push({ name: sName, category: filterId, categoryName: cName }); 
+                    });
                 }
             }
 
             if (studentQ) roster = roster.filter(s => s.name.toLowerCase().includes(studentQ));
 
+            // Збираємо всі здані роботи
             let submissions = [];
             let gameDates = {}; 
 
@@ -548,7 +714,7 @@
                     for (const gameId in allData[month][date]) {
                         for (const studentName in allData[month][date][gameId]) {
                             submissions.push({ month, date, gameId, studentName, report: allData[month][date][gameId][studentName] });
-                            if (baseRosterNames.has(studentName)) {
+                            if (roster.some(r => r.name === studentName)) {
                                 if (!gameDates[gameId] || date > gameDates[gameId]) {
                                     gameDates[gameId] = date;
                                 }
@@ -558,51 +724,61 @@
                 }
             }
 
-            let targetGames = [];
-            if (gameQ !== "") {
-                let matched = [...new Set(submissions.map(s => s.gameId))].filter(g => g.toLowerCase().includes(gameQ));
-                if (matched.length === 0) matched = [gameQ]; 
-                targetGames = matched.map(g => ({ id: g, date: gameDates[g] || '0000-00-00' }));
-            } else {
-                targetGames = Object.keys(gameDates).map(g => ({ id: g, date: gameDates[g] }));
-            }
+            // Визначаємо які ігри треба показати (Призначені + Ті, в які реально грали)
+            let gamesToShow = new Set();
+            roster.forEach(r => {
+                if(assignmentsData[r.category]) {
+                    Object.keys(assignmentsData[r.category]).forEach(gId => gamesToShow.add(gId));
+                }
+            });
+            submissions.forEach(s => {
+                if(roster.some(r => r.name === s.studentName)) gamesToShow.add(s.gameId);
+            });
 
+            let targetGames = Array.from(gamesToShow).map(g => ({ id: g, date: gameDates[g] || '0000-00-00' }));
+            
+            if (gameQ !== "") targetGames = targetGames.filter(g => g.id.toLowerCase().includes(gameQ));
             targetGames.sort((a, b) => b.date.localeCompare(a.date));
 
+            // Будуємо таблицю
             targetGames.forEach(gameObj => {
                 const targetGameId = gameObj.id;
                 let gameSubmissions = submissions.filter(s => s.gameId === targetGameId);
-                
-                let willShowSomething = roster.length > 0 || gameSubmissions.some(s => (!studentQ || s.studentName.toLowerCase().includes(studentQ)));
-                if (!willShowSomething) return;
+                let categories = [...new Set(roster.map(r => r.category))];
+                let showGameHeader = false;
+                let gameHtmlBuffer = "";
 
-                html += `<tr><td colspan="5" class="group-header" style="background:#334155; color:#38bdf8; text-align:center; font-size:18px;">Гра: ${targetGameId} <span style="font-size:12px; color:#94a3b8;">(Остання активність: ${gameObj.date !== '0000-00-00' ? gameObj.date : 'Немає даних'})</span></td></tr>`;
-                
-                let currentCategory = null;
-                let processedGuests = new Set();
-                
-                roster.forEach(student => {
-                    if (currentCategory !== student.category) {
-                        html += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${student.categoryName}</td></tr>`;
-                        currentCategory = student.category;
-                    }
-                    
-                    let sub = gameSubmissions.find(s => s.studentName === student.name);
-                    if (sub) {
-                        html += buildRow(sub.date, targetGameId, student.name, sub.report, sub.month, false);
-                        processedGuests.add(student.name);
-                        resultCount++;
-                    } else {
-                        html += buildMissingRow(targetGameId, student.name);
-                        resultCount++;
+                categories.forEach(cat => {
+                    let studentsInCat = roster.filter(r => r.category === cat);
+                    let isAssigned = assignmentsData[cat] && assignmentsData[cat][targetGameId];
+                    let subsInCat = gameSubmissions.filter(s => studentsInCat.some(st => st.name === s.studentName));
+
+                    if (isAssigned) {
+                        showGameHeader = true;
+                        gameHtmlBuffer += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${studentsInCat[0].categoryName}</td></tr>`;
+                        studentsInCat.forEach(student => {
+                            let sub = subsInCat.find(s => s.studentName === student.name);
+                            if (sub) {
+                                gameHtmlBuffer += buildRow(sub.date, targetGameId, student.name, sub.report, sub.month, false, false);
+                                resultCount++;
+                            } else {
+                                gameHtmlBuffer += buildMissingRow(targetGameId, student.name);
+                                resultCount++;
+                            }
+                        });
+                    } else if (subsInCat.length > 0) {
+                        showGameHeader = true;
+                        gameHtmlBuffer += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${studentsInCat[0].categoryName}</td></tr>`;
+                        subsInCat.forEach(sub => {
+                            gameHtmlBuffer += buildRow(sub.date, targetGameId, sub.studentName, sub.report, sub.month, true, false); // true = extra
+                            resultCount++;
+                        });
                     }
                 });
-                
-                let guests = gameSubmissions.filter(s => !processedGuests.has(s.studentName) && (!studentQ || s.studentName.toLowerCase().includes(studentQ)));
-                
-                if (filterId === 'all' && guests.length > 0) {
-                    html += `<tr><td colspan="5" style="background:#b45309; color:#fff; font-weight:bold; font-size:14px; padding: 8px 15px;">🕵️ Гості / Поза списком</td></tr>`;
-                    guests.forEach(g => { html += buildRow(g.date, targetGameId, g.studentName, g.report, g.month, true); resultCount++; });
+
+                if (showGameHeader) {
+                    html += `<tr><td colspan="5" style="background:#334155; color:#38bdf8; text-align:center; font-size:18px;">Гра: ${targetGameId}</td></tr>`;
+                    html += gameHtmlBuffer;
                 }
             });
 
@@ -611,6 +787,24 @@
             }
             html += `</tbody></table>`;
             output.innerHTML = html;
+
+            // Збирання даних для графіка, якщо знайдено конкретного учня
+            if (studentQ) {
+                let exactMatches = [...new Set(submissions.filter(s => s.studentName.toLowerCase().includes(studentQ)).map(s => s.studentName))];
+                if (exactMatches.length === 1) {
+                    let studentNameForChart = exactMatches[0];
+                    let studentSubs = submissions.filter(s => s.studentName === studentNameForChart);
+                    studentSubs.sort((a,b) => (a.date+a.report.timestamp).localeCompare(b.date+b.report.timestamp));
+                    
+                    let chartData = [];
+                    studentSubs.forEach(s => {
+                        let pct = calculatePercentage(s.report.score);
+                        if(pct !== null) chartData.push({ date: s.date, game: s.gameId, pct: pct });
+                    });
+                    
+                    if(chartData.length > 0) drawProgressChart(studentNameForChart, chartData);
+                }
+            }
         });
     }
 
