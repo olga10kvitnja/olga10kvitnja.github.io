@@ -449,6 +449,7 @@
                 // РЕЖИМ ПЕРЕВІРКИ
                 isReviewMode = true;
                 playerName = reportUser;
+                authModal.style.display = 'none'; // Ховаємо модалку в режимі перевірки
                 document.body.style.pointerEvents = 'none'; // Блокуємо всі кліки
                 submitBtn.style.display = 'none';
                 zoomContainer.style.pointerEvents = 'auto'; // Дозволяємо лупу
@@ -515,14 +516,11 @@
 
         // --- Взаємодія в іграх (Завдання 5 і 6) ---
         function setupInteractions() {
-            // Завдання 5 (Вибір виразу)
+            // Завдання 5 (Вибір виразу - тепер просто toggle для можливості обрати декілька)
             document.querySelectorAll('.t5-option').forEach(opt => {
                 opt.addEventListener('click', function() {
                     if(isReviewMode) return;
-                    const group = this.getAttribute('data-group');
-                    // Знімаємо виділення з інших у цій групі
-                    document.querySelectorAll(`.t5-option[data-group="${group}"]`).forEach(el => el.classList.remove('selected'));
-                    this.classList.add('selected');
+                    this.classList.toggle('selected');
                 });
             });
 
@@ -585,28 +583,24 @@
             // Перевірка Завдання 5
             totalTasks += 2; // Дві схеми
             rawAnswers['task5'] = [];
-            let t5_1_correct = false;
-            let t5_2_correct = false;
+            let t5_correct_count = 0;
 
             document.querySelectorAll('.t5-option').forEach(opt => {
                 const isSelected = opt.classList.contains('selected');
                 const isCorrectAns = opt.getAttribute('data-correct') === 'true';
-                const group = opt.getAttribute('data-group');
                 
                 if(isSelected) rawAnswers['task5'].push(opt.getAttribute('data-val'));
 
                 if(isSelected && isCorrectAns) {
                     opt.classList.add('correct');
-                    if(group === '1') t5_1_correct = true;
-                    if(group === '2') t5_2_correct = true;
+                    t5_correct_count++;
                 } else if (isSelected && !isCorrectAns) {
                     opt.classList.add('incorrect');
                 } else if (!isSelected && isCorrectAns && isReviewMode) {
                     opt.classList.add('missed'); // Обводимо те, що мали обрати
                 }
             });
-            if(t5_1_correct) correctTasks++;
-            if(t5_2_correct) correctTasks++;
+            correctTasks += t5_correct_count;
 
             // Перевірка Завдання 6
             totalTasks++;
@@ -673,7 +667,8 @@
                 if (response.ok) {
                     submitBtn.textContent = 'Відправлено!';
                     submitBtn.style.backgroundColor = '#2ecc71';
-                    setTimeout(() => alert(`Готово! Твій результат: ${result.score}`), 500);
+                    // Не показуємо бали дитині, лише підтвердження відправки
+                    setTimeout(() => alert(`Готово! Твоя робота відправлена на перевірку.`), 500);
                 } else {
                     throw new Error('Network response was not ok');
                 }
