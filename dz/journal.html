@@ -185,6 +185,40 @@
             transition: 0.3s;
         }
         .game-link:hover { color: #818cf8; text-decoration: underline; }
+
+        /* Стилі для кольорової шкали оцінок */
+        .score-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 140px;
+        }
+        .score-text {
+            font-size: 15px;
+            font-weight: bold;
+            color: #f8fafc;
+        }
+        .scale-bar {
+            display: flex;
+            height: 12px;
+            width: 100%;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #0f172a;
+            gap: 2px;
+            border: 1px solid #334155;
+        }
+        .scale-segment {
+            flex: 1;
+            background: #334155; /* Колір неактивного сегмента */
+            transition: background 0.3s;
+        }
+        /* Кольори активних сегментів */
+        .scale-segment.active-1 { background: #ef4444; } /* Червоний */
+        .scale-segment.active-2 { background: #f59e0b; } /* Жовтий */
+        .scale-segment.active-3 { background: #3b82f6; } /* Синій */
+        .scale-segment.active-4 { background: #10b981; } /* Зелений */
+        .scale-segment.active-5 { background: #8b5cf6; } /* Фіолетовий */
     </style>
 </head>
 <body>
@@ -276,7 +310,6 @@
         if (document.querySelector(`#new-student-category option[value="${currentStudentVal}"]`)) studentSelect.value = currentStudentVal;
         if (document.querySelector(`#report-category option[value="${currentReportVal}"]`)) reportSelect.value = currentReportVal;
 
-        // Оновлюємо випадаючий список імен (datalist)
         const datalist = document.getElementById('students-datalist');
         if (datalist) {
             datalist.innerHTML = '';
@@ -387,8 +420,63 @@
         });
     }
 
+    // --- ФУНКЦІЇ ДЛЯ КОЛЬОРОВОЇ ШКАЛИ ---
+
+    // Функція, яка намагається розпізнати відсоток з текстового результату (напр. "8/10", "80%", "4 з 5")
+    function calculatePercentage(scoreStr) {
+        if (!scoreStr) return null;
+        let str = String(scoreStr);
+        
+        // Перевіряємо чи є вже готовий відсоток, наприклад "85%"
+        let percMatch = str.match(/(\d+(?:\.\d+)?)%/);
+        if (percMatch) return Math.min(100, Math.max(0, Math.round(parseFloat(percMatch[1]))));
+
+        // Перевіряємо дробовий результат, наприклад "8/10" або "8 з 10"
+        let fracMatch = str.match(/(\d+(?:\.\d+)?)\s*(?:\/|з|із)\s*(\d+(?:\.\d+)?)/i);
+        if (fracMatch) {
+            let correct = parseFloat(fracMatch[1]);
+            let total = parseFloat(fracMatch[2]);
+            if (total === 0) return 0;
+            return Math.min(100, Math.max(0, Math.round((correct / total) * 100)));
+        }
+        
+        return null; // Якщо формат невідомий
+    }
+
+    // Функція для побудови HTML-блоку з кольоровою шкалою
+    function buildScoreBar(scoreStr) {
+        let textDisplay = scoreStr ? (String(scoreStr).includes("Вірно") ? scoreStr : "Вірно " + scoreStr) : '-';
+        let percent = calculatePercentage(scoreStr);
+
+        // Якщо не змогли вирахувати відсоток (наприклад просто текст) - повертаємо звичайний вигляд
+        if (percent === null) {
+            return `<span style="color:#10b981; font-weight:bold; font-size:16px;">${textDisplay}</span>`;
+        }
+
+        // Визначаємо скільки сегментів активні
+        let activeCount = 0;
+        if (percent >= 0)  activeCount = 1;  // 0-20%
+        if (percent >= 21) activeCount = 2;  // 21-40%
+        if (percent >= 41) activeCount = 3;  // 41-60%
+        if (percent >= 61) activeCount = 4;  // 61-80%
+        if (percent >= 81) activeCount = 5;  // 81-100%
+
+        let barHtml = `<div class="scale-bar">`;
+        for (let i = 1; i <= 5; i++) {
+            let activeClass = (i <= activeCount) ? `active-${i}` : '';
+            barHtml += `<div class="scale-segment ${activeClass}"></div>`;
+        }
+        barHtml += `</div>`;
+
+        return `<div class="score-container">
+                    <span class="score-text">${textDisplay} <span style="color:#94a3b8; font-size:12px; font-weight:normal;">(${percent}%)</span></span>
+                    ${barHtml}
+                </div>`;
+    }
+
     function buildRow(date, gameId, studentName, report, month, isGuest=false) {
-        let scoreText = report.score ? (report.score.includes("Вірно") ? report.score : "Вірно " + report.score) : '-';
+        // Використовуємо нову функцію генерації шкали
+        let scoreHtml = buildScoreBar(report.score);
         const gameUrl = `${gameId}.html?reportUser=${encodeURIComponent(studentName)}&reportDate=${date}`;
         let guestTag = isGuest ? `<span style="font-size:12px; color:#f59e0b; display:block;">(Гість / Поза класом)</span>` : '';
         
@@ -396,7 +484,7 @@
             <td>${date} <br><small style="color:#94a3b8">${report.timestamp || ''}</small></td>
             <td><a href="${gameUrl}" target="_blank" class="game-link">🎮 ${gameId}</a></td>
             <td style="font-size: 16px; font-weight: bold; color: #f8fafc;">${studentName} ${guestTag}</td>
-            <td><span style="color:#10b981; font-weight:bold; font-size:16px;">${scoreText}</span></td>
+            <td>${scoreHtml}</td>
             <td>
                 <button class="btn-delete" onclick="deleteReportRecord('${month}', '${date}', '${gameId}', '${studentName}')">🗑️ Видалити</button>
             </td>
@@ -435,7 +523,6 @@
                 <tbody>`;
             let resultCount = 0;
 
-            // 1. Формуємо список учнів відповідно до вибраного класу (filterId)
             let baseRosterNames = new Set();
             if (filterId === 'all') {
                 Object.keys(classesData).forEach(classId => {
@@ -466,7 +553,6 @@
 
             if (studentQ) roster = roster.filter(s => s.name.toLowerCase().includes(studentQ));
 
-            // 2. Збираємо всі виконані роботи та визначаємо цільові ігри для обраного класу
             let submissions = [];
             let gameDates = {}; 
 
@@ -496,7 +582,6 @@
 
             targetGames.sort((a, b) => b.date.localeCompare(a.date));
 
-            // 3. Відмальовуємо результати: Групуємо по іграх
             targetGames.forEach(gameObj => {
                 const targetGameId = gameObj.id;
                 let gameSubmissions = submissions.filter(s => s.gameId === targetGameId);
@@ -528,7 +613,6 @@
                 
                 let guests = gameSubmissions.filter(s => !processedGuests.has(s.studentName) && (!studentQ || s.studentName.toLowerCase().includes(studentQ)));
                 
-                // Показуємо гостей тільки якщо обрано "Всі категорії"
                 if (filterId === 'all' && guests.length > 0) {
                     html += `<tr><td colspan="5" style="background:#b45309; color:#fff; font-weight:bold; font-size:14px; padding: 8px 15px;">🕵️ Гості / Поза списком</td></tr>`;
                     guests.forEach(g => { html += buildRow(g.date, targetGameId, g.studentName, g.report, g.month, true); resultCount++; });
