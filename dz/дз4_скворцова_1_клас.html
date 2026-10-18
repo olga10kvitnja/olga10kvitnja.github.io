@@ -470,8 +470,15 @@
         let t3Errors = {};
         let selectedSchema = null;
 
-        // Безпечне отримання ID гри (відкидаємо можливі параметри після .html)
-        const gameId = window.location.pathname.split('/').pop().split('.')[0] || 'homework_default';
+        // Безпечне розкодування ID гри (виправляє помилку збереження назв файлів кирилицею)
+        let rawGameId = window.location.pathname.split('/').pop().replace('.html', '');
+        if (!rawGameId) rawGameId = 'homework_default';
+        let gameId = 'homework_default';
+        try {
+            gameId = decodeURIComponent(rawGameId).replace(/[.#$\[\]]/g, '_');
+        } catch(e) {
+            gameId = rawGameId.replace(/[.#$\[\]]/g, '_');
+        }
 
         const correctAnswers = {
             // T1
@@ -681,22 +688,21 @@
             const now = new Date();
             const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             
-            // Створюємо правильний формат для журналу (з крапками) і безпечний для шляху (з дефісами)
+            // Зберігаємо дату з крапками всередині звіту для журналу, а для шляху використовуємо дефіси
             const dateStrWithDots = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
             const pathDate = dateStrWithDots.replace(/\./g, '-');
             
             const safeUserName = userName.replace(/[.#$\[\]]/g, '_');
-            const safeGameId = gameId.replace(/[.#$\[\]]/g, '_');
 
             const reportData = {
                 score: `Вірно ${score} із ${totalItems}`,
                 rawAnswers: rawAnswers,
                 timestamp: now.toISOString(),
-                date: dateStrWithDots, // Журнал шукатиме саме цю дату з крапками
-                userName: userName // Зберігаємо точне ім'я
+                date: dateStrWithDots, // Журнал зможе без проблем прочитати цю дату
+                userName: userName
             };
 
-            const path = `homework_reports/${yearMonth}/${pathDate}/${safeGameId}/${safeUserName}`;
+            const path = `homework_reports/${yearMonth}/${pathDate}/${gameId}/${safeUserName}`;
 
             try {
                 await set(ref(db, path), reportData);
@@ -711,15 +717,15 @@
         };
 
         async function loadReport(user, date) {
+            // Універсальний парсинг дати (працює і з крапками, і з дефісами від журналу)
             let parts = date.split(/[-.]/); 
             if(parts.length !== 3) return;
             let yearMonth = `${parts[2]}-${parts[1]}`;
-            let pathDate = `${parts[0]}-${parts[1]}-${parts[2]}`; // Гарантуємо дефіси для шляху
+            let pathDate = `${parts[0]}-${parts[1]}-${parts[2]}`; // Переводимо у дефіси для шляху
             
             let safeUser = user.replace(/[.#$\[\]]/g, '_');
-            let safeGameId = gameId.replace(/[.#$\[\]]/g, '_');
 
-            const path = `homework_reports/${yearMonth}/${pathDate}/${safeGameId}/${safeUser}`;
+            const path = `homework_reports/${yearMonth}/${pathDate}/${gameId}/${safeUser}`;
 
             try {
                 const snapshot = await get(ref(db, path));
