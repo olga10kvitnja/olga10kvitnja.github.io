@@ -2,8 +2,11 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Домашнє завдання</title>
+    <!-- Підключаємо Firebase v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -451,16 +454,17 @@
         <button class="zoom-btn" id="zoom-out-btn" onclick="zoom(-0.1)">➖</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
+    <script>
+        // Ініціалізація Firebase (v8)
         const firebaseConfig = {
             databaseURL: "https://lesson-13c44-default-rtdb.firebaseio.com/",
             projectId: "lesson-13c44"
         };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
 
         let userName = "";
         let isCheckMode = false;
@@ -470,7 +474,7 @@
         let t3Errors = {};
         let selectedSchema = null;
 
-        // Безпечне розкодування ID гри (виправляє помилку збереження назв файлів кирилицею)
+        // Безпечне розкодування ID гри
         let rawGameId = window.location.pathname.split('/').pop().replace('.html', '');
         if (!rawGameId) rawGameId = 'homework_default';
         let gameId = 'homework_default';
@@ -685,27 +689,28 @@
             rawAnswers['schema_selected'] = selectedSchema || '';
             if(selectedSchema === correctAnswers.schema_selected) score++;
 
+            // Форматування дати для Firebase
             const now = new Date();
-            const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yyyy = now.getFullYear();
+            const dd = String(now.getDate()).padStart(2, '0');
             
-            // Зберігаємо дату з крапками всередині звіту для журналу, а для шляху використовуємо дефіси
-            const dateStrWithDots = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
-            const pathDate = dateStrWithDots.replace(/\./g, '-');
-            
+            const yearMonth = `${mm}-${yyyy}`;
+            const dateStr = `${dd}-${mm}-${yyyy}`;
             const safeUserName = userName.replace(/[.#$\[\]]/g, '_');
 
             const reportData = {
                 score: `Вірно ${score} із ${totalItems}`,
                 rawAnswers: rawAnswers,
-                timestamp: now.toISOString(),
-                date: dateStrWithDots, // Журнал зможе без проблем прочитати цю дату
+                timestamp: now.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+                date: dateStr,
                 userName: userName
             };
 
-            const path = `homework_reports/${yearMonth}/${pathDate}/${gameId}/${safeUserName}`;
+            const path = `homework_reports/${yearMonth}/${dateStr}/${gameId}/${safeUserName}`;
 
             try {
-                await set(ref(db, path), reportData);
+                await db.ref(path).set(reportData);
                 document.getElementById('zoom-container').style.display = 'none';
                 document.getElementById('success-message').style.display = 'flex';
             } catch (e) {
@@ -717,18 +722,22 @@
         };
 
         async function loadReport(user, date) {
-            // Універсальний парсинг дати (працює і з крапками, і з дефісами від журналу)
-            let parts = date.split(/[-.]/); 
+            // Розбір дати з Журналу
+            const parts = date.split('-'); 
             if(parts.length !== 3) return;
-            let yearMonth = `${parts[2]}-${parts[1]}`;
-            let pathDate = `${parts[0]}-${parts[1]}-${parts[2]}`; // Переводимо у дефіси для шляху
+            
+            let yearMonth;
+            if (parts[0].length === 4) { 
+                yearMonth = `${parts[1]}-${parts[0]}`; // Якщо YYYY-MM-DD
+            } else { 
+                yearMonth = `${parts[1]}-${parts[2]}`; // Якщо DD-MM-YYYY
+            }
             
             let safeUser = user.replace(/[.#$\[\]]/g, '_');
-
-            const path = `homework_reports/${yearMonth}/${pathDate}/${gameId}/${safeUser}`;
+            const path = `homework_reports/${yearMonth}/${date}/${gameId}/${safeUser}`;
 
             try {
-                const snapshot = await get(ref(db, path));
+                const snapshot = await db.ref(path).once('value');
                 if (snapshot.exists()) {
                     applyCheckVisuals(snapshot.val().rawAnswers);
                 } else {
