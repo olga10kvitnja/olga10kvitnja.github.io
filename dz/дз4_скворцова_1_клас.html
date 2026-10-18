@@ -624,6 +624,12 @@
         window.submitGame = async () => {
             if (!userName) return;
 
+            // Захист від використання крапок або спеціальних символів в імені (база Firebase їх не приймає як ключі)
+            if (/[.#$\[\]]/.test(userName)) {
+                alert("Помилка: Ім'я не може містити крапку (.) або інші спеціальні символи (#, $, [, ]). Будь ласка, введіть ім'я без цих символів.");
+                return;
+            }
+
             document.getElementById('submit-btn').disabled = true;
             document.getElementById('submit-btn').textContent = "Відправка...";
 
@@ -670,20 +676,17 @@
 
             const now = new Date();
             const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            // Форматуємо дату для шляху через дефіси, щоб Firebase не видавав помилку на крапки
-            const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
-            
-            // Очищення імен та ID від недопустимих символів для Firebase (. # $ [ ])
-            const safeUserName = userName.replace(/[.#$\[\]]/g, '_');
-            const safeGameId = gameId.replace(/[.#$\[\]]/g, '_');
+            const pathDate = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
 
             const reportData = {
                 score: `Вірно ${score} із ${totalItems}`,
                 rawAnswers: rawAnswers,
-                timestamp: now.toISOString()
+                timestamp: now.toISOString(),
+                date: pathDate
             };
 
-            const path = `homework_reports/${yearMonth}/${dateStr}/${safeGameId}/${safeUserName}`;
+            // Використовуємо формат дати з дефісами, оскільки крапки в шляхах Firebase створюють помилку і база не зберігає роботу.
+            const path = `homework_reports/${yearMonth}/${pathDate}/${gameId}/${userName}`;
 
             try {
                 await set(ref(db, path), reportData);
@@ -691,22 +694,20 @@
                 document.getElementById('success-message').style.display = 'flex';
             } catch (e) {
                 console.error("Error saving to Firebase:", e);
-                alert("Помилка при відправці. Спробуйте ще раз.");
+                alert("Помилка при відправці. Перевірте з'єднання з інтернетом та спробуйте ще раз.");
                 document.getElementById('submit-btn').disabled = false;
                 document.getElementById('submit-btn').textContent = "Відправити";
             }
         };
 
         async function loadReport(user, date) {
-            let parts = date.split(/[-.]/); // Підтримка як крапок, так і дефісів
+            // Нормалізація дати з URL (на випадок якщо журнал передасть з крапками)
+            let parts = date.split(/[-.]/);
             if(parts.length !== 3) return;
             let yearMonth = `${parts[2]}-${parts[1]}`;
-            let safeDate = parts.join('-');
+            let pathDate = `${parts[0]}-${parts[1]}-${parts[2]}`;
             
-            let safeUser = user.replace(/[.#$\[\]]/g, '_');
-            let safeGameId = gameId.replace(/[.#$\[\]]/g, '_');
-
-            const path = `homework_reports/${yearMonth}/${safeDate}/${safeGameId}/${safeUser}`;
+            const path = `homework_reports/${yearMonth}/${pathDate}/${gameId}/${user}`;
 
             try {
                 const snapshot = await get(ref(db, path));
