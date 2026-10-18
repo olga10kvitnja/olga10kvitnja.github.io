@@ -114,7 +114,7 @@
         .task2-numbers { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 20px; flex-wrap: wrap; }
         .task2-numbers span { cursor: pointer; padding: 5px 10px; border-radius: 5px; user-select: none; border: 2px solid transparent; }
         .task2-numbers input { width: 30px; height: 30px; text-align: center; font-size: 18px; border: 1px solid #ccc; border-radius: 4px; color: red;}
-        .task2-numbers span.default-red { color: red; }
+        .task2-numbers span.default-green { color: #4CAF50; font-weight: bold; }
         .task2-numbers span.selected-red { color: red; border-color: red; }
         .task2-numbers span.selected-blue { color: blue; border-color: blue; }
 
@@ -274,7 +274,7 @@
                     <span data-val="3">3</span>
                     <input type="text" data-id="t2_input_4">
                     <input type="text" data-id="t2_input_5">
-                    <span class="default-red" data-val="6">6</span>
+                    <span class="default-green" data-val="6">6</span>
                     <span data-val="7">7</span>
                     <span data-val="8">8</span>
                     <span data-val="9">9</span>
@@ -670,7 +670,12 @@
 
             const now = new Date();
             const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+            // Форматуємо дату для шляху через дефіси, щоб Firebase не видавав помилку на крапки
+            const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+            
+            // Очищення імен та ID від недопустимих символів для Firebase (. # $ [ ])
+            const safeUserName = userName.replace(/[.#$\[\]]/g, '_');
+            const safeGameId = gameId.replace(/[.#$\[\]]/g, '_');
 
             const reportData = {
                 score: `Вірно ${score} із ${totalItems}`,
@@ -678,7 +683,7 @@
                 timestamp: now.toISOString()
             };
 
-            const path = `homework_reports/${yearMonth}/${dateStr}/${gameId}/${userName}`;
+            const path = `homework_reports/${yearMonth}/${dateStr}/${safeGameId}/${safeUserName}`;
 
             try {
                 await set(ref(db, path), reportData);
@@ -693,10 +698,15 @@
         };
 
         async function loadReport(user, date) {
-            let parts = date.split('.');
+            let parts = date.split(/[-.]/); // Підтримка як крапок, так і дефісів
             if(parts.length !== 3) return;
             let yearMonth = `${parts[2]}-${parts[1]}`;
-            const path = `homework_reports/${yearMonth}/${date}/${gameId}/${user}`;
+            let safeDate = parts.join('-');
+            
+            let safeUser = user.replace(/[.#$\[\]]/g, '_');
+            let safeGameId = gameId.replace(/[.#$\[\]]/g, '_');
+
+            const path = `homework_reports/${yearMonth}/${safeDate}/${safeGameId}/${safeUser}`;
 
             try {
                 const snapshot = await get(ref(db, path));
@@ -705,7 +715,9 @@
                 } else {
                     alert("Звіт не знайдено.");
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         function applyCheckVisuals(raw) {
