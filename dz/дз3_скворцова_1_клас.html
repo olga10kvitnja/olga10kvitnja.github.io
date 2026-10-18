@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Домашнє завдання</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            overflow-x: hidden;
+            touch-action: pan-y;
+        }
+
+        #zoom-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            box-sizing: border-box;
+            transform-origin: top center;
+            transition: transform 0.2s ease;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .task {
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed #ccc;
+        }
+
+        .task-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #444;
+        }
+
+        /* Task 1 */
+        .number-line-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .number-line {
+            width: 90%;
+            height: 2px;
+            background-color: #007bff;
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .tick-marks {
+            display: flex;
+            justify-content: space-between;
+            position: absolute;
+            top: -5px;
+            left: 0;
+            right: 0;
+        }
+
+        .tick {
+            width: 2px;
+            height: 10px;
+            background-color: #007bff;
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .tick-number {
+            position: absolute;
+            top: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .tick-number.blue { background-color: blue; color: white; }
+        .tick-number.red { background-color: red; color: white; }
+        .tick-number.teacher-correct { border: 2px solid green; background-color: #e8f5e9; color: black; }
+        .tick-number.teacher-error { background-color: red; color: white; }
+
+        /* Task 2 */
+        .composition-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 20px;
+        }
+
+        .composition-block {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .house {
+            border: 2px solid;
+            display: flex;
+            flex-direction: column;
+            width: 60px;
+        }
+
+        .house-5 { border-color: #007bff; }
+        .house-4 { border-color: #28a745; }
+
+        .roof {
+            text-align: center;
+            font-weight: bold;
+            padding: 5px;
+            border-bottom: 2px solid;
+            background-color: #eef;
+        }
+        .house-5 .roof { border-color: #007bff; }
+        .house-4 .roof { border-color: #28a745; background-color: #efe; }
+
+        .floor {
+            display: flex;
+            border-bottom: 1px solid #ccc;
+        }
+        .floor:last-child { border-bottom: none; }
+
+        .room {
+            flex: 1;
+            padding: 5px;
+            text-align: center;
+            border-right: 1px solid #ccc;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .room:last-child { border-right: none; }
+
+        .room input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 16px;
+            background: transparent;
+            outline: none;
+        }
+
+        .equations-grid {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .eq-row {
+            display: flex;
+            align-items: center;
+            height: 20px;
+        }
+
+        .eq-input {
+            width: 25px;
+            height: 25px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            text-align: center;
+            font-size: 16px;
+            outline: none;
+        }
+        .eq-text {
+            width: 20px;
+            text-align: center;
+            line-height: 20px;
+        }
+
+        /* Task 3 */
+        .comparison-grid {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            font-size: 20px;
+            align-items: center;
+        }
+
+        .comp-row {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .comp-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            height: 35px;
+        }
+
+        .comp-num {
+            width: 20px;
+            text-align: center;
+        }
+
+        select.comp-input {
+            width: 45px;
+            height: 35px;
+            border: 1px solid #ccc;
+            text-align: center;
+            font-size: 18px;
+            border-radius: 5px;
+            outline: none;
+            background: white;
+            cursor: pointer;
+            text-align-last: center;
+        }
+
+        /* Task 4 */
+        .story-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .schemas {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .schema-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .schema-option.selected {
+            background-color: #e0f7fa;
+            border-color: #00bcd4;
+        }
+        
+        .schema-option.teacher-correct {
+            border-color: green;
+            background-color: #e8f5e9;
+        }
+        .schema-option.teacher-error {
+            border-color: red;
+            background-color: #ffebee;
+        }
+
+        .story-question {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .story-input {
+            width: 40px;
+            height: 30px;
+            font-size: 18px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        /* Updated SVG for better fit */
+        .schema-svg-1 {
+            width: 260px; 
+            height: 120px;
+        }
+        
+        .schema-svg-2 {
+            width: 260px;
+            height: 120px;
+        }
+
+        /* Task 5 */
+        .letters-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .letters-schema {
+            position: relative;
+            width: 150px;
+            height: 60px;
+        }
+        
+        .letters-schema svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .letters-equations {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .letter-eq-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .letter-eq {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        select.let-input {
+            width: 50px;
+            height: 35px;
+            border: 1px solid #333;
+            text-align: center;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            background: white;
+            text-align-last: center;
+        }
+
+        /* Common inputs */
+        .check-input.teacher-correct { background-color: #c8e6c9 !important; border-color: green !important;}
+        .check-input.teacher-error { background-color: #ffcdd2 !important; border-color: red !important;}
+        .check-input.teacher-missed { border: 2px solid green !important; }
+
+        /* Controls */
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            color: white;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 30px;
+            margin-bottom: 50px;
+        }
+        .submit-btn:hover { background-color: #218838; }
+
+        /* Zoom controls */
+        .zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zoom-btn:hover { background-color: #f0f0f0; }
+
+        /* Modals & Overlays */
+        #auth-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .auth-modal {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .auth-modal input {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px 0;
+            width: 80%;
+        }
+        .auth-modal button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #teacher-banner {
+            display: none;
+            background-color: #ffeb3b;
+            color: #000;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1500;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #completion-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .completion-content {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        /* SVG styles for task 5 */
+        .svg-line { stroke: #4caf50; stroke-width: 2; fill: none; }
+        .svg-dot { fill: #2196f3; }
+        .svg-arc { stroke: #ff9800; stroke-width: 2; fill: none; }
+
+        @media (max-width: 600px) {
+            .comp-row { flex-direction: column; gap: 15px; }
+            .letter-eq-row { flex-direction: column; }
+            .schemas { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="teacher-banner"></div>
+
+    <div id="auth-overlay">
+        <div class="auth-modal">
+            <h2>👋 Привіт! Як тебе звати?</h2>
+            <input type="text" id="student-name-input" placeholder="Введи своє ім'я">
+            <br>
+            <button id="start-btn">Почати гру</button>
+        </div>
+    </div>
+
+    <div id="zoom-container">
+        <h1>Домашнє завдання</h1>
+
+        <!-- Завдання 1 -->
+        <div class="task" id="task1">
+            <div class="task-title">1. Познач синім числа менші за 5, червоним - більші за 5.</div>
+            <div class="number-line-container">
+                <div class="number-line">
+                    <div class="tick-marks" id="t1-ticks">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px; font-size: 14px; color: #666;">
+                (Натискай на числа, щоб змінити колір)
+            </div>
+        </div>
+
+        <!-- Завдання 2 -->
+        <div class="task" id="task2">
+            <div class="task-title">2. Запиши склад числа і рівності.</div>
+            <div class="composition-container">
+                <!-- House 5 -->
+                <div class="composition-block">
+                    <div class="house house-5">
+                        <div class="roof">5</div>
+                        <div class="floor"><div class="room">4</div><div class="room"><input type="text" class="t2-in" data-ans="1" maxlength="1"></div></div>
+                        <div class="floor"><div class="room"><input type="text" class="t2-in" data-ans="3" maxlength="1"></div><div class="room">2</div></div>
+                        <div class="floor"><div class="room"><input type="text" class="t2-in" data-ans="2" maxlength="1"></div><div class="room">3</div></div>
+                        <div class="floor"><div class="room">1</div><div class="room"><input type="text" class="t2-in" data-ans="4" maxlength="1"></div></div>
+                    </div>
+                    <div class="equations-grid">
+                        <div class="eq-row"><input type="text" class="eq-input t2-in" data-ans="4" maxlength="1"><span class="eq-text">+</span><input type="text" class="eq-input t2-in" data-ans="1" maxlength="1"><span class="eq-text">=</span><input type="text" class="eq-input t2-in" data-ans="5" maxlength="1"></div>
+                        <div class="eq-row"><input type="text" class="eq-input t2-in" data-ans="3" maxlength="1"><span class="eq-text">+</span><input type="text" class="eq-input t2-in" data-ans="2" maxlength="1"><span class="eq-text">=</span><input type="text" class="eq-input t2-in" data-ans="5" maxlength="1"></div>
+                        <div class="eq-row"><input type="text" class="eq-input t2-in" data-ans="2" maxlength="1"><span class="eq-text">+</span><input type="text" class="eq-input t2-in" data-ans="3" maxlength="1"><span class="eq-text">=</span><input type="text" class="eq-input t2-in" data-ans="5" maxlength="1"></div>
+                        <div class="eq-row"><input type="text" class="eq-input t2-in" data-ans="1" maxlength="1"><span class="eq-text">+</span><input type="text" class="eq-input t2-in" data-ans="4" maxlength="1"><span class="eq-text">=</span><input type="text" class="eq-input t2-in" data-ans="5" maxlength="1"></div>
+                    </div>
+                </div>
+
+                <!-- House 4 -->
+                <div class="composition-block">
+                    <div class="house house-4">
+                        <div class="roof">4</div>
+                        <div class="floor"><div class="room">1</div><div class="room"><input type="text" class="t2-in" data-ans="3" maxlength="1"></div></div>
+                        <div class="floor"><div class="room"><input type="text" class="t2-in" data-ans="2" maxlength="1"></div><div class="room">2</div></div>
+                        <div class="floor"><div class="room">3</div><div class="room"><input type="text" class="t2-in" data-ans="1" maxlength="1"></div></div>
+                    </div>
+                    <div class="equations-grid" style="justify-content: flex-start;">
+                        <div class="eq-row"><input type="text" class="eq-input t2-in" data-ans="1" maxlength="1"><span class="eq-text">+</span><input type="text" class="eq-input t2-in" data-ans="3" maxlength="1"><span class="eq-text">=</span><input type="text" class="eq-input t2-in" data-ans="4" maxlength="1"></div>
+                        <div class="eq-row"><input type="text" class="eq-input t2-in" data-ans="2" maxlength="1"><span class="eq-text">+</span><input type="text" class="eq-input t2-in" data-ans="2" maxlength="1"><span class="eq-text">=</span><input type="text" class="eq-input t2-in" data-ans="4" maxlength="1"></div>
+                        <div class="eq-row"><input type="text" class="eq-input t2-in" data-ans="3" maxlength="1"><span class="eq-text">+</span><input type="text" class="eq-input t2-in" data-ans="1" maxlength="1"><span class="eq-text">=</span><input type="text" class="eq-input t2-in" data-ans="4" maxlength="1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Завдання 3 -->
+        <div class="task" id="task3">
+            <div class="task-title">3. Порівняй числа.</div>
+            <div class="comparison-grid">
+                <div class="comp-row">
+                    <div class="comp-item">
+                        <span class="comp-num">5</span>
+                        <select class="comp-input t3-in" data-ans="<">
+                            <option value=""></option>
+                            <option value="<">&lt;</option>
+                            <option value=">">&gt;</option>
+                            <option value="=">=</option>
+                        </select>
+                        <span class="comp-num">6</span>
+                    </div>
+                    <div class="comp-item">
+                        <span class="comp-num">6</span>
+                        <select class="comp-input t3-in" data-ans=">">
+                            <option value=""></option>
+                            <option value="<">&lt;</option>
+                            <option value=">">&gt;</option>
+                            <option value="=">=</option>
+                        </select>
+                        <span class="comp-num">3</span>
+                    </div>
+                    <div class="comp-item">
+                        <span class="comp-num">6</span>
+                        <select class="comp-input t3-in" data-ans="=">
+                            <option value=""></option>
+                            <option value="<">&lt;</option>
+                            <option value=">">&gt;</option>
+                            <option value="=">=</option>
+                        </select>
+                        <span class="comp-num">6</span>
+                    </div>
+                    <div class="comp-item">
+                        <span class="comp-num">5</span>
+                        <select class="comp-input t3-in" data-ans=">">
+                            <option value=""></option>
+                            <option value="<">&lt;</option>
+                            <option value=">">&gt;</option>
+                            <option value="=">=</option>
+                        </select>
+                        <span class="comp-num">1</span>
+                    </div>
+                    <div class="comp-item">
+                        <span class="comp-num">1</span>
+                        <select class="comp-input t3-in" data-ans="<">
+                            <option value=""></option>
+                            <option value="<">&lt;</option>
+                            <option value=">">&gt;</option>
+                            <option value="=">=</option>
+                        </select>
+                        <span class="comp-num">2</span>
+                    </div>
+                </div>
+                <div class="comp-row">
+                    <div class="comp-item">
+                        <span class="comp-num">3</span>
+                        <select class="comp-input t3-in" data-ans="<">
+                            <option value=""></option>
+                            <option value="<">&lt;</option>
+                            <option value=">">&gt;</option>
+                            <option value="=">=</option>
+                        </select>
+                        <span class="comp-num">4</span>
+                    </div>
+                    <div class="comp-item">
+                        <span class="comp-num">3</span>
+                        <select class="comp-input t3-in" data-ans="<">
+                            <option value=""></option>
+                            <option value="<">&lt;</option>
+                            <option value=">">&gt;</option>
+                            <option value="=">=</option>
+                        </select>
+                        <span class="comp-num">5</span>
+                    </div>
+                    <div class="comp-item">
+                        <span class="comp-num">1</span>
+                        <select class="comp-input t3-in" data-ans="<">
+                            <option value=""></option>
+                            <option value="<">&lt;</option>
+                            <option value=">">&gt;</option>
+                            <option value="=">=</option>
+                        </select>
+                        <span class="comp-num">6</span>
+                    </div>
+                    <div class="comp-item">
+                        <span class="comp-num">6</span>
+                        <select class="comp-input t3-in" data-ans=">">
+                            <option value=""></option>
+                            <option value="<">&lt;</option>
+                            <option value=">">&gt;</option>
+                            <option value="=">=</option>
+                        </select>
+                        <span class="comp-num">7</span>
+                    </div>
+                    <div class="comp-item">
+                        <span class="comp-num">4</span>
+                        <select class="comp-input t3-in" data-ans=">">
+                            <option value=""></option>
+                            <option value="<">&lt;</option>
+                            <option value=">">&gt;</option>
+                            <option value="=">=</option>
+                        </select>
+                        <span class="comp-num">2</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Завдання 4 -->
+        <div class="task" id="task4">
+            <div class="task-title">4. Було 5 корів і 2 телятка. Чия схема правильна? Скільки всього тварин?</div>
+            <div class="story-container">
+                <div class="schemas">
+                    <div class="schema-option" id="t4-schema1" data-val="girl">
+                        <svg class="schema-svg-1" viewBox="0 0 250 110">
+                            <!-- Arc 5 -->
+                            <path d="M 30 40 Q 80 10 130 40" fill="none" stroke="#2196f3" stroke-width="2"/>
+                            <text x="80" y="20" font-family="Arial" font-size="16" text-anchor="middle">5</text>
+                            
+                            <!-- Arc 2 -->
+                            <path d="M 140 40 Q 170 15 200 40" fill="none" stroke="#4caf50" stroke-width="2"/>
+                            <text x="170" y="20" font-family="Arial" font-size="16" text-anchor="middle">2</text>
+
+                            <!-- Triangles -->
+                            <polygon points="40,65 50,45 60,65" fill="red" />
+                            <polygon points="60,65 70,45 80,65" fill="red" />
+                            <polygon points="80,65 90,45 100,65" fill="red" />
+                            <polygon points="100,65 110,45 120,65" fill="red" />
+                            <polygon points="120,65 130,45 140,65" fill="red" />
+                            
+                            <!-- Squares -->
+                            <rect x="150" y="48" width="16" height="16" fill="green" stroke="black"/>
+                            <rect x="175" y="48" width="16" height="16" fill="green" stroke="black"/>
+
+                            <!-- Bottom arc ? -->
+                            <path d="M 30 75 Q 115 100 200 75" fill="none" stroke="#e91e63" stroke-width="2" stroke-dasharray="4"/>
+                            <text x="115" y="105" fill="#e91e63" font-family="Arial" font-size="16" text-anchor="middle">?</text>
+                        </svg>
+                    </div>
+                    
+                    <div class="schema-option" id="t4-schema2" data-val="boy">
+                         <svg class="schema-svg-2" viewBox="0 0 220 100">
+                            <!-- Arc 5 -->
+                            <path d="M 20 40 Q 80 10 140 40" fill="none" stroke="#2196f3" stroke-width="2"/>
+                            <text x="80" y="20" font-family="Arial" font-size="16" text-anchor="middle">5</text>
+                            
+                            <!-- Line -->
+                            <line x1="20" y1="45" x2="200" y2="45" stroke="red" stroke-width="2"/>
+                            <!-- Dots -->
+                            <circle cx="20" cy="45" r="4" fill="blue"/>
+                            <circle cx="50" cy="45" r="4" fill="blue"/>
+                            <circle cx="80" cy="45" r="4" fill="blue"/>
+                            <circle cx="110" cy="45" r="4" fill="blue"/>
+                            <circle cx="140" cy="45" r="4" fill="blue"/>
+                            <circle cx="170" cy="45" r="4" fill="blue"/>
+                            <circle cx="200" cy="45" r="4" fill="blue"/>
+                            
+                            <!-- Small vertical red lines on line -->
+                            <line x1="50" y1="40" x2="50" y2="50" stroke="red"/>
+                            <line x1="80" y1="40" x2="80" y2="50" stroke="red"/>
+                            <line x1="110" y1="40" x2="110" y2="50" stroke="red"/>
+                            <line x1="140" y1="40" x2="140" y2="50" stroke="red"/>
+
+                            <!-- Bottom arc ? -->
+                            <path d="M 20 55 Q 80 85 140 55" fill="none" stroke="#e91e63" stroke-width="2"/>
+                            <text x="80" y="90" fill="#e91e63" font-family="Arial" font-size="16" text-anchor="middle">?</text>
+
+                            <!-- Bottom arc 2 -->
+                            <path d="M 140 55 Q 170 85 200 55" fill="none" stroke="#2196f3" stroke-width="2"/>
+                            <text x="170" y="80" font-family="Arial" font-size="16" text-anchor="middle">2</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="story-question">
+                    Всього тварин: <input type="text" id="t4-ans" class="story-input" data-ans="7" maxlength="2">
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 10px; font-size: 14px; color: #666;">
+                (Натисни на правильну схему та впиши відповідь)
+            </div>
+        </div>
+
+        <!-- Завдання 5 -->
+        <div class="task" id="task5">
+            <div class="task-title">5. Числа замінили буквами. Запиши рівності за схемами.</div>
+            <div class="letters-container">
+                <div class="letters-schema">
+                    <svg viewBox="0 0 150 60">
+                        <!-- Top Arc C -->
+                        <path class="svg-arc" d="M 10 30 Q 75 10 140 30" />
+                        <text x="75" y="15" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">C</text>
+                        
+                        <!-- Line -->
+                        <line class="svg-line" x1="10" y1="30" x2="140" y2="30" />
+                        <circle class="svg-dot" cx="10" cy="30" r="4" />
+                        <circle class="svg-dot" cx="60" cy="30" r="4" />
+                        <circle class="svg-dot" cx="140" cy="30" r="4" />
+
+                        <!-- Bottom Arcs A, O -->
+                        <path class="svg-arc" d="M 10 30 Q 35 50 60 30" />
+                        <text x="35" y="55" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">A</text>
+
+                        <path class="svg-arc" d="M 60 30 Q 100 50 140 30" />
+                        <text x="100" y="55" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">O</text>
+                    </svg>
+                </div>
+                
+                <div class="letters-equations">
+                    <div class="letter-eq-row">
+                        <div class="letter-eq">
+                            <select class="let-input t5-in" data-ans="A">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select> 
+                            + 
+                            <select class="let-input t5-in" data-ans="O">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select> 
+                            = 
+                            <select class="let-input t5-in" data-ans="C">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select>
+                        </div>
+                        <div class="letter-eq">
+                            <select class="let-input t5-in" data-ans="C">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select>
+                            - 
+                            <select class="let-input t5-in" data-ans="A">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select> 
+                            = 
+                            <select class="let-input t5-in" data-ans="O">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="letter-eq-row">
+                        <div class="letter-eq">
+                            <select class="let-input t5-in" data-ans="O">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select> 
+                            + 
+                            <select class="let-input t5-in" data-ans="A">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select> 
+                            = 
+                            <select class="let-input t5-in" data-ans="C">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select>
+                        </div>
+                        <div class="letter-eq">
+                            <select class="let-input t5-in" data-ans="C">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select> 
+                            - 
+                            <select class="let-input t5-in" data-ans="O">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select> 
+                            = 
+                            <select class="let-input t5-in" data-ans="A">
+                                <option value=""></option>
+                                <option value="A">A</option>
+                                <option value="O">O</option>
+                                <option value="C">C</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="submit-btn" class="submit-btn">Відправити на перевірку</button>
+    </div>
+
+    <div class="zoom-controls">
+        <button id="zoom-in-btn" class="zoom-btn">➕</button>
+        <button id="zoom-out-btn" class="zoom-btn">➖</button>
+    </div>
+
+    <div id="completion-modal">
+        <div class="completion-content">
+            🎉 Твоя робота відправлена на перевірку!
+        </div>
+    </div>
+
+    <script>
+        // --- System Data ---
+        const FIREBASE_URL = "https://lesson-13c44-default-rtdb.firebaseio.com/";
+        let gameId = window.location.pathname.split('/').pop().replace('.html', '');
+        if (!gameId || gameId === '') gameId = 'math_task_1'; 
+        
+        let currentUser = "";
+        let isTeacherMode = false;
+        let reportUser = "";
+        let reportDate = "";
+        let rawAnswersTeacher = null;
+
+        let zoomLevel = 1;
+
+        // --- Init & Auth ---
+        window.onload = function() {
+            initZoom();
+            checkAuth();
+            generateTask1();
+        };
+
+        function checkAuth() {
+            const urlParams = new URLSearchParams(window.location.search);
+            reportUser = urlParams.get('reportUser');
+            reportDate = urlParams.get('reportDate');
+
+            if (reportUser && reportDate) {
+                isTeacherMode = true;
+                currentUser = reportUser;
+                setupTeacherMode();
+            } else {
+                let user = urlParams.get('user');
+                if (user) {
+                    currentUser = user;
+                    sessionStorage.setItem('hwUser', user);
+                } else {
+                    user = sessionStorage.getItem('hwUser');
+                    if (user) {
+                        currentUser = user;
+                    } else {
+                        document.getElementById('auth-overlay').style.display = 'flex';
+                    }
+                }
+            }
+
+            document.getElementById('start-btn').onclick = function() {
+                const nameInp = document.getElementById('student-name-input').value.trim();
+                if (nameInp !== "") {
+                    currentUser = nameInp;
+                    sessionStorage.setItem('hwUser', currentUser);
+                    document.getElementById('auth-overlay').style.display = 'none';
+                } else {
+                    alert("Будь ласка, введи своє ім'я.");
+                }
+            };
+        }
+
+        function setupTeacherMode() {
+            document.getElementById('teacher-banner').style.display = 'block';
+            document.getElementById('teacher-banner').innerText = `👀 Режим перевірки: Робота учня ${reportUser}`;
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('zoom-container').style.pointerEvents = 'none';
+            
+            // Allow zoom controls to work
+            document.querySelector('.zoom-controls').style.pointerEvents = 'auto';
+
+            fetchReport();
+        }
+
+        async function fetchReport() {
+            const dateParts = reportDate.split('-');
+            if(dateParts.length !== 3) return;
+            const yearMonth = `${dateParts[0]}-${dateParts[1]}`;
+            
+            const url = `${FIREBASE_URL}homework_reports/${yearMonth}/${reportDate}/${gameId}/${encodeURIComponent(reportUser)}.json`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data && data.rawAnswers) {
+                    rawAnswersTeacher = data.rawAnswers;
+                    applyTeacherAnswers();
+                }
+            } catch (e) {
+                console.error("Error fetching report:", e);
+                alert("Не вдалося завантажити звіт.");
+            }
+        }
+
+        // --- Game Logic ---
+
+        // Task 1 Logic
+        let t1SelectedColors = {}; // index: 'blue' | 'red'
+        
+        function generateTask1() {
+            const container = document.getElementById('t1-ticks');
+            for(let i = 1; i <= 10; i++) {
+                const tick = document.createElement('div');
+                tick.className = 'tick';
+                
+                const num = document.createElement('div');
+                num.className = 'tick-number';
+                num.innerText = i;
+                num.dataset.val = i;
+                
+                num.onclick = function() {
+                    if(isTeacherMode) return;
+                    let current = t1SelectedColors[i];
+                    if(!current) {
+                        t1SelectedColors[i] = 'blue';
+                        this.className = 'tick-number blue';
+                    } else if (current === 'blue') {
+                        t1SelectedColors[i] = 'red';
+                        this.className = 'tick-number red';
+                    } else {
+                        delete t1SelectedColors[i];
+                        this.className = 'tick-number';
+                    }
+                };
+
+                tick.appendChild(num);
+                container.appendChild(tick);
+            }
+        }
+
+        // Task 4 Logic
+        let t4SelectedSchema = null;
+        document.getElementById('t4-schema1').onclick = function() {
+            if(isTeacherMode) return;
+            t4SelectedSchema = 'girl';
+            this.classList.add('selected');
+            document.getElementById('t4-schema2').classList.remove('selected');
+        };
+        document.getElementById('t4-schema2').onclick = function() {
+            if(isTeacherMode) return;
+            t4SelectedSchema = 'boy';
+            this.classList.add('selected');
+            document.getElementById('t4-schema1').classList.remove('selected');
+        };
+
+        // --- Validation & Submit ---
+        document.getElementById('submit-btn').onclick = async function() {
+            const report = checkAnswers();
+            await sendReport(report);
+            document.getElementById('completion-modal').style.display = 'flex';
+        };
+
+        function checkAnswers() {
+            let totalTasks = 0;
+            let correctTasks = 0;
+            const rawAnswers = {};
+
+            // Task 1
+            let t1Total = 10;
+            let t1Correct = 0;
+            const t1Expected = {1:'blue', 2:'blue', 3:'blue', 4:'blue', 6:'red', 7:'red', 8:'red', 9:'red', 10:'red'};
+            rawAnswers.t1 = t1SelectedColors;
+            
+            for(let i=1; i<=10; i++) {
+                if(i===5) {
+                    if(!t1SelectedColors[i]) t1Correct++;
+                } else {
+                    if(t1SelectedColors[i] === t1Expected[i]) t1Correct++;
+                }
+            }
+            totalTasks++;
+            if(t1Correct === t1Total) correctTasks++;
+
+            // Task 2
+            const t2Inputs = document.querySelectorAll('.t2-in');
+            let t2AllCorrect = true;
+            rawAnswers.t2 = [];
+            t2Inputs.forEach((inp, index) => {
+                const val = inp.value.trim();
+                const ans = inp.getAttribute('data-ans');
+                rawAnswers.t2.push(val);
+                if(val !== ans) t2AllCorrect = false;
+            });
+            totalTasks++;
+            if(t2AllCorrect && t2Inputs.length > 0) correctTasks++;
+
+            // Task 3
+            const t3Inputs = document.querySelectorAll('.t3-in');
+            let t3AllCorrect = true;
+            rawAnswers.t3 = [];
+            t3Inputs.forEach((inp, index) => {
+                let val = inp.value.trim();
+                
+                const ans = inp.getAttribute('data-ans');
+                rawAnswers.t3.push(val);
+                
+                let isCorrect = false;
+                
+                let num1 = parseInt(inp.previousElementSibling.innerText);
+                let num2 = parseInt(inp.nextElementSibling.innerText);
+                
+                if (val === '<' && num1 < num2) isCorrect = true;
+                if (val === '>' && num1 > num2) isCorrect = true;
+                if (val === '=' && num1 === num2) isCorrect = true;
+
+                // Override mathematical correctness to match specific data-ans provided in HTML
+                if(val === ans) isCorrect = true;
+
+                if(!isCorrect) t3AllCorrect = false;
+            });
+            totalTasks++;
+            if(t3AllCorrect && t3Inputs.length > 0) correctTasks++;
+
+            // Task 4
+            rawAnswers.t4 = { schema: t4SelectedSchema, ans: document.getElementById('t4-ans').value.trim() };
+            let t4Correct = false;
+            if(t4SelectedSchema === 'girl' && document.getElementById('t4-ans').value.trim() === '7') {
+                t4Correct = true;
+            }
+            totalTasks++;
+            if(t4Correct) correctTasks++;
+
+            // Task 5
+            const t5Inputs = document.querySelectorAll('.t5-in');
+            let t5AllCorrect = true;
+            rawAnswers.t5 = [];
+            t5Inputs.forEach((inp) => {
+                const val = inp.value.trim().toUpperCase();
+                const ans = inp.getAttribute('data-ans');
+                rawAnswers.t5.push(val);
+                if(val !== ans) t5AllCorrect = false;
+            });
+            totalTasks++;
+            if(t5AllCorrect && t5Inputs.length > 0) correctTasks++;
+
+
+            return {
+                score: `Вірно ${correctTasks} із ${totalTasks}`,
+                rawAnswers: rawAnswers
+            };
+        }
+
+        async function sendReport(reportData) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            const yearMonth = `${year}-${month}`;
+
+            const url = `${FIREBASE_URL}homework_reports/${yearMonth}/${dateStr}/${gameId}/${encodeURIComponent(currentUser)}.json`;
+            
+            reportData.timestamp = now.toISOString();
+
+            try {
+                await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reportData)
+                });
+            } catch (e) {
+                console.error("Помилка відправки:", e);
+            }
+        }
+
+        // --- Teacher Mode Visuals ---
+        function applyTeacherAnswers() {
+            if(!rawAnswersTeacher) return;
+
+            // Task 1
+            const t1Expected = {1:'blue', 2:'blue', 3:'blue', 4:'blue', 6:'red', 7:'red', 8:'red', 9:'red', 10:'red'};
+            const t1Ans = rawAnswersTeacher.t1 || {};
+            const ticks = document.querySelectorAll('.tick-number');
+            
+            ticks.forEach(tick => {
+                const val = parseInt(tick.dataset.val);
+                const userColor = t1Ans[val];
+                const expColor = t1Expected[val];
+
+                if (userColor) {
+                    if (userColor === expColor) {
+                        tick.classList.add(userColor);
+                        tick.classList.add('teacher-correct');
+                    } else {
+                        tick.classList.add(userColor);
+                        tick.classList.add('teacher-error');
+                    }
+                } else {
+                    if (expColor && val !== 5) {
+                        // User missed it
+                        tick.classList.add('teacher-missed');
+                    }
+                }
+            });
+
+            // Generic input/select checker
+            function checkInputs(selector, rawData) {
+                const inputs = document.querySelectorAll(selector);
+                if(!rawData) return;
+                inputs.forEach((inp, idx) => {
+                    const userVal = rawData[idx] || "";
+                    inp.value = userVal;
+                    const ans = inp.getAttribute('data-ans');
+                    
+                    if(userVal === "") {
+                         inp.classList.add('check-input', 'teacher-missed');
+                    } else if (userVal === ans) {
+                         inp.classList.add('check-input', 'teacher-correct');
+                    } else {
+                         inp.classList.add('check-input', 'teacher-error');
+                         // Show correct answer in placeholder or title
+                         inp.setAttribute('title', `Правильно: ${ans}`);
+                    }
+                });
+            }
+
+            // Task 2
+            checkInputs('.t2-in', rawAnswersTeacher.t2);
+
+            // Task 3
+            checkInputs('.t3-in', rawAnswersTeacher.t3);
+
+            // Task 4
+            const t4Ans = rawAnswersTeacher.t4 || {};
+            const schema1 = document.getElementById('t4-schema1');
+            const schema2 = document.getElementById('t4-schema2');
+            
+            if(t4Ans.schema === 'girl') {
+                schema1.classList.add('teacher-correct');
+            } else if (t4Ans.schema === 'boy') {
+                schema2.classList.add('teacher-error');
+                schema1.classList.add('teacher-missed'); // Show correct
+            } else {
+                schema1.classList.add('teacher-missed'); // Missed
+            }
+
+            const t4Inp = document.getElementById('t4-ans');
+            t4Inp.value = t4Ans.ans || "";
+            if(t4Inp.value === '7') {
+                t4Inp.classList.add('check-input', 'teacher-correct');
+            } else {
+                t4Inp.classList.add('check-input', 'teacher-error');
+                if(!t4Inp.value) t4Inp.classList.add('teacher-missed');
+            }
+
+            // Task 5
+            checkInputs('.t5-in', rawAnswersTeacher.t5);
+        }
+
+        // --- Zoom Logic ---
+        function initZoom() {
+            const container = document.getElementById('zoom-container');
+            const btnIn = document.getElementById('zoom-in-btn');
+            const btnOut = document.getElementById('zoom-out-btn');
+
+            btnIn.onclick = () => {
+                zoomLevel += 0.1;
+                applyZoom();
+            };
+
+            btnOut.onclick = () => {
+                zoomLevel = Math.max(0.5, zoomLevel - 0.1);
+                applyZoom();
+            };
+
+            function applyZoom() {
+                container.style.transform = `scale(${zoomLevel})`;
+            }
+        }
+    </script>
+</body>
+</html>
