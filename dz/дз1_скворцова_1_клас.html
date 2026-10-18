@@ -875,7 +875,7 @@
         fetch(dbUrl, {
             method: 'PUT',
             body: JSON.stringify({
-                score: result.scoreStr,
+                score: result.scoreStr, // бали все ще зберігатимуться в базі даних для вчителя
                 rawAnswers: result.raw,
                 timestamp: new Date().toISOString()
             }),
@@ -883,7 +883,7 @@
         })
         .then(res => {
             if(res.ok) {
-                alert(`Роботу успішно відправлено!\nРезультат: ${result.scoreStr}`);
+                alert(`Роботу успішно відправлено на перевірку!`);
                 document.getElementById('submit-btn').innerText = 'Відправлено ✓';
             } else {
                 throw new Error('Server error');
