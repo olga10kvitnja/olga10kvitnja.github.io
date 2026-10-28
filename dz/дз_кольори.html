@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Домашнє завдання</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0b1d2a;
+    font-family: Arial, sans-serif;-webkit-tap-highlight-color:transparent}
+  
+  #zoom-container {
+    position: fixed; inset: 0; transform-origin: center center; transition: transform 0.2s;
+  }
+  
+  #wrap{position:absolute;inset:0}
+  canvas{display:block;width:100%;height:100%;cursor:pointer}
+
+  #nextBtn{
+    position:fixed;top:20px;right:22px;z-index:25;
+    display:none;align-items:center;gap:3px;
+    padding:9px 18px 9px 12px;border-radius:999px;
+    border:1.5px solid rgba(255,255,255,.6);
+    background:rgba(255,255,255,.17);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    color:#fff;font-size:14px;letter-spacing:.07em;font-family:inherit;
+    cursor:pointer;transition:transform .18s,background .2s;
+    text-shadow:0 1px 3px rgba(0,0,0,.35);
+    box-shadow:0 6px 20px rgba(0,0,0,.22);
+  }
+  #nextBtn.show{display:flex}
+  #nextBtn:hover{background:rgba(255,255,255,.34);transform:translateY(-1px)}
+  #nextBtn:active{transform:scale(.95)}
+
+  #start{
+    position:fixed;inset:0;z-index:40;
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 46%,rgba(10,55,75,.15),rgba(4,22,32,.78));
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+    transition:opacity .45s;
+  }
+  #start.hide{opacity:0;pointer-events:none}
+  #startBtn{
+    width:132px;height:132px;border-radius:50%;border:none;cursor:pointer;
+    color:#fff;display:flex;align-items:center;justify-content:center;padding-left:10px;
+    background:radial-gradient(circle at 34% 28%,#ffe08a,#ff9a3c 55%,#ef5f18);
+    box-shadow:0 0 0 11px rgba(255,255,255,.16),0 22px 55px rgba(0,0,0,.5),
+               inset 0 -9px 22px rgba(150,50,0,.35);
+    animation:pulse 1.9s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+
+  #results{
+    position:fixed;inset:0;z-index:30;display:none;
+    align-items:center;justify-content:center;padding:22px;
+    background:rgba(4,20,28,.62);
+    backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  }
+  #results.show{display:flex}
+  .card{
+    width:min(880px,94vw);max-height:90vh;overflow:auto;
+    border-radius:34px;padding:32px 40px 30px;position:relative;
+    background:
+      radial-gradient(circle at 10% 6%,rgba(255,255,255,.20),transparent 42%),
+      radial-gradient(circle at 90% 94%,rgba(255,190,90,.24),transparent 46%),
+      linear-gradient(152deg,#0d4a5c,#12796a 42%,#2f5fa8);
+    color:#eefcff;
+    box-shadow:0 30px 90px rgba(0,0,0,.55),inset 0 0 0 2px rgba(255,255,255,.14);
+    animation:popIn .45s cubic-bezier(.2,1.4,.5,1);
+  }
+  @keyframes popIn{from{transform:scale(.86);opacity:0}to{transform:scale(1);opacity:1}}
+  .card::before{
+    content:'';position:absolute;inset:0;border-radius:34px;pointer-events:none;
+    background-image:radial-gradient(rgba(255,255,255,.16) 1.5px,transparent 1.7px);
+    background-size:26px 26px;opacity:.45;
+    -webkit-mask-image:radial-gradient(circle at 50% 50%,#000,transparent 80%);
+    mask-image:radial-gradient(circle at 50% 50%,#000,transparent 80%);
+  }
+  .stats{display:flex;gap:20px;justify-content:center;margin-bottom:22px;flex-wrap:wrap;position:relative}
+  .stat{
+    flex:1 1 220px;min-width:190px;border-radius:24px;padding:18px 22px;text-align:center;
+    background:linear-gradient(160deg,rgba(255,255,255,.19),rgba(255,255,255,.055));
+    border:1.5px solid rgba(255,255,255,.23);
+  }
+  .stat .num{
+    font-size:54px;font-weight:800;line-height:1;letter-spacing:-1.5px;
+    background:linear-gradient(180deg,#ffffff,#a9ecff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .stat.bad .num{background:linear-gradient(180deg,#ffe6ad,#ff9068);
+    -webkit-background-clip:text;background-clip:text;}
+  .stat .lbl{font-size:13px;letter-spacing:.11em;text-transform:uppercase;opacity:.82;margin-top:8px}
+  .cap{font-size:12px;letter-spacing:.15em;text-transform:uppercase;opacity:.62;
+       text-align:center;margin:0 0 10px}
+  .mlist{display:flex;flex-direction:column;gap:9px;max-height:34vh;overflow:auto;
+         padding-right:6px;margin-bottom:24px;position:relative}
+  .mlist::-webkit-scrollbar{width:8px}
+  .mlist::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:8px}
+  .mrow{
+    display:flex;align-items:center;gap:10px;font-size:17px;
+    background:rgba(255,255,255,.085);border:1px solid rgba(255,255,255,.13);
+    border-radius:16px;padding:9px 16px;
+  }
+  .sw{width:24px;height:24px;border-radius:50%;flex:none;
+      box-shadow:0 0 0 2px rgba(255,255,255,.35),inset 0 -3px 6px rgba(0,0,0,.25)}
+  .arr{opacity:.55;margin:0 4px;font-size:15px}
+  .nm{min-width:104px}
+  .perfect{
+    text-align:center;font-size:21px;font-weight:700;letter-spacing:.02em;
+    padding:20px;border-radius:20px;margin-bottom:24px;
+    background:linear-gradient(160deg,rgba(120,255,200,.22),rgba(255,255,255,.06));
+    border:1.5px solid rgba(140,255,210,.35);
+  }
+  #again{
+    display:block;margin:0 auto;padding:15px 44px;border-radius:999px;border:none;
+    cursor:pointer;font-family:inherit;font-size:17px;font-weight:700;letter-spacing:.04em;
+    color:#063038;transition:.18s;
+    background:linear-gradient(160deg,#b6ffe6,#5fe0b0 45%,#2bc48a);
+    box-shadow:0 12px 30px rgba(0,0,0,.35),inset 0 -4px 10px rgba(0,80,50,.25);
+    position:relative;
+  }
+  #again:hover{transform:translateY(-2px);box-shadow:0 17px 38px rgba(0,0,0,.44)}
+  #again:active{transform:scale(.97)}
+
+  /* LMS Styles */
+  #teacher-banner {
+    position: fixed; top: 0; left: 0; right: 0; background: #ff9800; color: white;
+    text-align: center; padding: 12px; z-index: 9999; font-weight: bold; font-size: 18px;
+    display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+  #auth-overlay {
+    position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+  }
+  #auth-overlay.hidden { display: none; }
+  .auth-card {
+    background: #ffffff; padding: 40px; border-radius: 20px; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5); width: 90%; max-width: 400px;
+  }
+  .auth-card h2 { margin: 0 0 20px; color: #333; font-size: 24px; }
+  .auth-card input {
+    width: 100%; padding: 15px; font-size: 18px; margin-bottom: 20px;
+    border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; text-align: center;
+  }
+  .auth-card button {
+    background: #2fa84f; color: white; border: none; padding: 15px 30px;
+    font-size: 18px; border-radius: 999px; cursor: pointer; font-weight: bold; width: 100%;
+  }
+  .auth-card button:active { transform: scale(0.95); }
+  
+  #zoom-controls {
+    position: fixed; bottom: 20px; right: 20px; z-index: 9997;
+    display: flex; gap: 10px;
+  }
+  #zoom-controls button {
+    width: 44px; height: 44px; border-radius: 50%; border: none;
+    background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    color: white; font-size: 24px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  }
+  #zoom-controls button:active { transform: scale(0.9); }
+  
+  @media (max-width: 600px) {
+    .card { padding: 20px; }
+    .stat .num { font-size: 40px; }
+    .mrow { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<div id="teacher-banner">👀 Режим перевірки: Робота учня</div>
+
+<div id="auth-overlay" class="hidden">
+  <div class="auth-card">
+    <h2>👋 Привіт! Як тебе звати?</h2>
+    <input type="text" id="auth-input" placeholder="Твоє ім'я...">
+    <button id="auth-btn">Почати гру</button>
+  </div>
+</div>
+
+<div id="zoom-container">
+  <div id="wrap">
+    <canvas id="c"></canvas>
+
+    <button id="nextBtn" title="далі">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 6l6 6-6 6"/>
+      </svg>
+      <span>далі</span>
+    </button>
+
+    <div id="start">
+      <button id="startBtn" aria-label="почати">
+        <svg viewBox="0 0 24 24" width="48" height="48">
+          <path d="M8 5.2v13.6L19 12z" fill="currentColor"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="results"><div class="card" id="card"></div></div>
+  </div>
+</div>
+
+<div id="zoom-controls">
+  <button id="zoom-out-btn">➖</button>
+  <button id="zoom-in-btn">➕</button>
+</div>
+
+<script>
+/* ============================================================
+   LMS SYSTEM (AUTH, FIREBASE, ZOOM, TEACHER MODE)
+============================================================ */
+let userName = '';
+let isTeacherMode = false;
+let reportDate = '';
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('reportUser') && urlParams.has('reportDate')) {
+    isTeacherMode = true;
+    userName = decodeURIComponent(urlParams.get('reportUser'));
+    reportDate = decodeURIComponent(urlParams.get('reportDate'));
+} else {
+    userName = urlParams.get('user') || sessionStorage.getItem('userName') || '';
+}
+
+function getGameId() {
+    let path = window.location.pathname;
+    let fileStr = path.substring(path.lastIndexOf('/') + 1);
+    if (!fileStr) fileStr = 'game';
+    fileStr = fileStr.replace('.html', '');
+    return decodeURIComponent(fileStr);
+}
+
+function sendReportToFirebase() {
+    const gameId = getGameId();
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const monthYear = `${mm}-${yyyy}`;
+    const exactDate = `${dd}-${mm}-${yyyy}`;
+
+    const url = `https://lesson-13c44-default-rtdb.firebaseio.com/homework_reports/${monthYear}/${exactDate}/${gameId}/${userName}.json`;
+
+    const payload = {
+        score: `Вірно ${state.popped} із ${MAX_ROUNDS}`,
+        rawAnswers: {
+            popped: state.popped,
+            mistakes: state.mistakes
+        },
+        timestamp: new Date().toISOString()
+    };
+
+    fetch(url, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+    }).then(() => {
+        cardEl.innerHTML = `<div class="perfect">Твоя робота відправлена на перевірку</div>`;
+    }).catch(e => {
+        cardEl.innerHTML = `<div class="perfect">Помилка відправки. Перевір інтернет.</div>`;
+    });
+}
+
+function loadTeacherReport() {
+    const gameId = getGameId();
+    const parts = reportDate.split('-');
+    const monthYear = parts.length === 3 ? `${parts[1]}-${parts[2]}` : '10-2026';
+    const url = `https://lesson-13c44-default-rtdb.firebaseio.com/homework_reports/${monthYear}/${reportDate}/${gameId}/${userName}.json`;
+
+    fetch(url).then(r => r.json()).then(data => {
+        if(data && data.rawAnswers) {
+            state.popped = data.rawAnswers.popped || 0;
+            state.mistakes = data.rawAnswers.mistakes || [];
+            showResults();
+        } else {
+            cardEl.innerHTML = `<div class="perfect">Немає даних для цього учня.</div>`;
+            resultsEl.classList.add('show');
+        }
+    }).catch(() => {
+        cardEl.innerHTML = `<div class="perfect">Помилка завантаження даних.</div>`;
+        resultsEl.classList.add('show');
+    });
+}
+
+let currentZoom = 1;
+const zoomContainer = document.getElementById('zoom-container');
+document.getElementById('zoom-in-btn').addEventListener('click', () => {
+    currentZoom += 0.1;
+    zoomContainer.style.transform = `scale(${currentZoom})`;
+});
+document.getElementById('zoom-out-btn').addEventListener('click', () => {
+    currentZoom -= 0.1;
+    zoomContainer.style.transform = `scale(${currentZoom})`;
+});
+
+
+/* ============================================================
+   БАЗА
+============================================================ */
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const nextBtn = document.getElementById('nextBtn');
+const startEl = document.getElementById('start');
+const resultsEl = document.getElementById('results');
+const cardEl = document.getElementById('card');
+
+let W = 0, H = 0, DPR = 1;
+
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp  = (a,b,t)=>a+(b-a)*t;
+const rnd   = (a,b)=>a+Math.random()*(b-a);
+const TAU   = Math.PI*2;
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function hexToRgb(h){
+  h = h.replace('#','');
+  if(h.length===3) h = h.split('').map(c=>c+c).join('');
+  return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
+}
+function shade(hex, amt){
+  const [r,g,b] = hexToRgb(hex);
+  const f = amt < 0 ? 0 : 255;
+  const p = Math.abs(amt);
+  return `rgb(${Math.round(lerp(r,f,p))},${Math.round(lerp(g,f,p))},${Math.round(lerp(b,f,p))})`;
+}
+function luminance(hex){
+  const [r,g,b] = hexToRgb(hex);
+  return (0.299*r + 0.587*g + 0.114*b)/255;
+}
+
+/* ============================================================
+   КОЛЬОРИ
+============================================================ */
+const COLORS = [
+  { key:'red',    name:'червоний',   hex:'#e33b3b' },
+  { key:'blue',   name:'синій',      hex:'#2447c9' },
+  { key:'green',  name:'зелений',    hex:'#2fa84f' },
+  { key:'yellow', name:'жовтий',     hex:'#f3c218' },
+  { key:'pink',   name:'рожевий',    hex:'#ff77b4' },
+  { key:'cyan',   name:'блакитний',  hex:'#5fc9f2' },
+  { key:'black',  name:'чорний',     hex:'#23232b' },
+  { key:'white',  name:'білий',      hex:'#ffffff' },
+  { key:'gray',   name:'сірий',      hex:'#9aa1a8' },
+  { key:'purple', name:'фіолетовий', hex:'#8e44c9' }
+];
+
+const MAX_ROUNDS   = 10;
+const BALLOON_COUNT = 6;
+
+/* ============================================================
+   СТАН
+============================================================ */
+const state = {
+  phase: 'start',
+  t: 0,
+  balloons: [],
+  target: null,
+  popped: 0,
+  mistakes: [],
+  particles: [],
+  locked: false,
+  talking: false,
+  fox: { jump: 0, sad: 0 }
+};
+
+const fox = { x:0, groundY:0, s:1 };
+
+let clouds = [], flowers = [], butterflies = [];
+
+/* фаза руху рота — прив'язана до реального часу відтворення аудіо */
+let _mouthPhase = 0;
+
+/* ============================================================
+   ЗВУКИ ГРИ (SFX)
+============================================================ */
+let actx = null;
+function initAudio(){
+  if(!actx){
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+  }
+  if(actx && actx.state === 'suspended') actx.resume();
+}
+
+function noiseBuffer(dur){
+  const len = Math.floor(actx.sampleRate*dur);
+  const buf = actx.createBuffer(1, len, actx.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<len;i++){
+    d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 3);
+  }
+  return buf;
+}
+
+function popSound(){
+  if(!actx) return;
+  const t0 = actx.currentTime;
+
+  const src = actx.createBufferSource();
+  src.buffer = noiseBuffer(0.13);
+  const bp = actx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 1.1;
+  const g = actx.createGain();
+  g.gain.setValueAtTime(0.55, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+0.14);
+  src.connect(bp).connect(g).connect(actx.destination);
+  src.start(t0);
+
+  const o = actx.createOscillator();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(720, t0);
+  o.frequency.exponentialRampToValueAtTime(170, t0+0.1);
+  const g2 = actx.createGain();
+  g2.gain.setValueAtTime(0.28, t0);
+  g2.gain.exponentialRampToValueAtTime(0.0001, t0+0.13);
+  o.connect(g2).connect(actx.destination);
+  o.start(t0); o.stop(t0+0.14);
+}
+
+function chime(){
+  if(!actx) return;
+  const t0 = actx.currentTime;
+  [[880,0,.22],[1174.7,.075,.22],[1568,.15,.34]].forEach(([f,st,d])=>{
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(f, t0+st);
+    g.gain.setValueAtTime(0.0001, t0+st);
+    g.gain.linearRampToValueAtTime(0.17, t0+st+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+st+d);
+    o.connect(g).connect(actx.destination);
+    o.start(t0+st); o.stop(t0+st+d+0.05);
+  });
+}
+
+function wrongSound(){
+  if(!actx) return;
+  const t0 = actx.currentTime;
+
+  const o = actx.createOscillator();
+  o.type = 'square';
+  o.frequency.setValueAtTime(250, t0);
+  o.frequency.exponentialRampToValueAtTime(115, t0+0.28);
+  const f = actx.createBiquadFilter();
+  f.type = 'lowpass'; f.frequency.value = 900;
+  const g = actx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(0.16, t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+0.32);
+  o.connect(f).connect(g).connect(actx.destination);
+  o.start(t0); o.stop(t0+0.35);
+
+  const o2 = actx.createOscillator();
+  o2.type = 'triangle';
+  o2.frequency.setValueAtTime(185, t0+0.12);
+  o2.frequency.exponentialRampToValueAtTime(92, t0+0.38);
+  const g2 = actx.createGain();
+  g2.gain.setValueAtTime(0.0001, t0+0.12);
+  g2.gain.linearRampToValueAtTime(0.11, t0+0.16);
+  g2.gain.exponentialRampToValueAtTime(0.0001, t0+0.42);
+  o2.connect(g2).connect(actx.destination);
+  o2.start(t0+0.12); o2.stop(t0+0.44);
+}
+
+function whoosh(){
+  if(!actx) return;
+  const t0 = actx.currentTime;
+  const src = actx.createBufferSource();
+  src.buffer = noiseBuffer(0.22);
+  const bp = actx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.setValueAtTime(500, t0);
+  bp.frequency.exponentialRampToValueAtTime(2400, t0+0.2);
+  bp.Q.value = 0.9;
+  const g = actx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(0.14, t0+0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+0.24);
+  src.connect(bp).connect(g).connect(actx.destination);
+  src.start(t0);
+}
+
+/* ============================================================
+   УНІВЕРСАЛЬНИЙ МОДУЛЬ ОЗВУЧКИ (ШВИДКИЙ + КЕШ + ФОЛБЕК)
+============================================================ */
+const VOICE_CONFIG = {
+    pitch: 1.19,
+    speed: 0.9,
+    dictionary: {
+        "читання": "чита́ння",
+        "завдання": "завда́ння",
+        "одинадцять": "одина́дцять",
+        "чотирнадцять": "чотирна́дцять"
+    }
+};
+
+let _gameAudioCtx = null;
+let _gameActiveAudio = null;
+let _gameAudioStop = false;
+
+const _urlCache = new Map();
+const _pending  = new Map();
+
+function _wavBlob(buffer) {
+    const numOfChan = buffer.numberOfChannels, length = buffer.length * numOfChan * 2 + 44;
+    const out = new ArrayBuffer(length), view = new DataView(out), sr = buffer.sampleRate;
+    let pos = 0;
+    const u16 = d => { view.setUint16(pos, d, true); pos += 2; };
+    const u32 = d => { view.setUint32(pos, d, true); pos += 4; };
+    u32(0x46464952); u32(length - 8); u32(0x45564157); u32(0x20746d66);
+    u32(16); u16(1); u16(numOfChan); u32(sr); u32(sr * 2 * numOfChan);
+    u16(numOfChan * 2); u16(16); u32(0x61746164); u32(length - pos - 4);
+    const ch = []; for (let i = 0; i < numOfChan; i++) ch.push(buffer.getChannelData(i));
+    let off = 0;
+    while (pos < length) {
+        for (let i = 0; i < numOfChan; i++) {
+            let s = Math.max(-1, Math.min(1, ch[i][off]));
+            view.setInt16(pos, (0.5 + s < 0 ? s * 32768 : s * 32767) | 0, true); pos += 2;
+        }
+        off++;
+    }
+    return new Blob([out], { type: "audio/wav" });
+}
+
+function _ttsDirect(text) {
+    return "https://translate.google.com/translate_tts?ie=UTF-8&tl=uk&client=tw-ob&q=" + encodeURIComponent(text);
+}
+
+function _fetchTimeout(url, ms) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+}
+
+async function _prepareChunkUrl(text, pitch) {
+    const key = pitch.toFixed(3) + '|' + text;
+    const cached = _urlCache.get(key);
+    if (cached) return cached;
+
+    const direct = { url: _ttsDirect(text), isProcessed: false };
+
+    if (Math.abs(pitch - 1.0) < 0.02) {
+        _urlCache.set(key, direct);
+        return direct;
+    }
+
+    if (!_pending.has(key)) {
+        const proxyPromise = (async () => {
+            const ttsUrl = direct.url;
+            const proxies = [
+                "https://corsproxy.io/?url=" + encodeURIComponent(ttsUrl),
+                "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(ttsUrl)
+            ];
+            const buf = await Promise.any(proxies.map(p =>
+                _fetchTimeout(p, 1500).then(r => { if (!r.ok) throw 1; return r.arrayBuffer(); })
+            ));
+            if (!_gameAudioCtx) _gameAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const dec = await _gameAudioCtx.decodeAudioData(buf);
+            const off = new OfflineAudioContext(dec.numberOfChannels, Math.ceil(dec.length / pitch), dec.sampleRate);
+            const src = off.createBufferSource(); src.buffer = dec; src.playbackRate.value = pitch;
+            src.connect(off.destination); src.start(0);
+            const rendered = await off.startRendering();
+            return { url: URL.createObjectURL(_wavBlob(rendered)), isProcessed: true };
+        })().catch(() => null);
+        _pending.set(key, proxyPromise);
+        proxyPromise.then(r => {
+            if (r) _urlCache.set(key, r);
+            _pending.delete(key);
+        });
+    }
+
+    // коротше очікування — швидший старт звуку
+    const waitMs = text.length <= 40 ? 100 : 2000;
+    const timeout = new Promise(r => setTimeout(() => r(null), waitMs));
+    const result = await Promise.race([_pending.get(key), timeout]);
+
+    if (result) {
+        _urlCache.set(key, result);
+        return result;
+    }
+    return direct;
+}
+
+async function speakInGame(rawText) {
+    if (!rawText) return;
+    _gameAudioStop = true;
+    if (_gameActiveAudio) { _gameActiveAudio.pause(); _gameActiveAudio = null; }
+    await new Promise(r => setTimeout(r, 15));
+    _gameAudioStop = false;
+
+    let text = rawText;
+    for (const [w, s] of Object.entries(VOICE_CONFIG.dictionary)) {
+        const esc = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        text = text.replace(new RegExp(`(?<![а-яіїєґА-ЯІЇЄҐ'\\u0301])${esc}(?![а-яіїєґА-ЯІЇЄҐ'\\u0301])`, 'gi'), s);
+    }
+
+    const sentences = text.match(/[^.!?;\n]+[.!?;\n]*/g) || [text];
+    const chunks = [];
+    for (let s of sentences) {
+        s = s.trim(); if (!s) continue;
+        if (s.length <= 160) chunks.push(s);
+        else {
+            let cur = "";
+            for (const p of s.split(/\s+/)) {
+                if ((cur + " " + p).trim().length <= 160) cur = (cur + " " + p).trim();
+                else { if (cur) chunks.push(cur); cur = p; }
+            }
+            if (cur) chunks.push(cur);
+        }
+    }
+
+    let nextP = _prepareChunkUrl(chunks[0], VOICE_CONFIG.pitch);
+    for (let i = 0; i < chunks.length; i++) {
+        if (_gameAudioStop) break;
+        const data = await nextP;
+        if (_gameAudioStop) break;
+        if (i + 1 < chunks.length) nextP = _prepareChunkUrl(chunks[i + 1], VOICE_CONFIG.pitch);
+
+        await new Promise(res => {
+            const a = new Audio(data.url); _gameActiveAudio = a;
+            const setRate = () => {
+                if (data.isProcessed) {
+                    a.preservesPitch = a.webkitPreservesPitch = true;
+                    a.playbackRate = VOICE_CONFIG.speed / VOICE_CONFIG.pitch;
+                } else {
+                    a.preservesPitch = a.webkitPreservesPitch = false;
+                    a.playbackRate = VOICE_CONFIG.pitch;
+                }
+            };
+            setRate(); a.onloadedmetadata = setRate; a.onplay = setRate;
+            a.onended = res;
+            a.onerror = res;
+            a.play().catch(res);
+        });
+    }
+}
+
+/* ---------- озвучити колір (без ручного таймера рота) ---------- */
+function sayColor(name){
+  speakInGame(name).catch(()=>{});
+}
+
+/* ---------- рот: фаза йде від РЕАЛЬНОГО часу аудіо ---------- */
+function _updateMouth(){
+  const a = _gameActiveAudio;
+  if(a && !a.paused && !a.ended && a.readyState >= 2){
+    state.talking = true;
+    // частота ~14 рад/с => ~2.2 «склади» на секунду
+    _mouthPhase = a.currentTime * 14;
+  } else {
+    state.talking = false;
+  }
+}
+
+/* ---------- передзавантаження кольорів ---------- */
+function preloadColors(){
+  COLORS.forEach((c, i) => {
+    setTimeout(() => {
+      _prepareChunkUrl(c.name, VOICE_CONFIG.pitch).catch(()=>{});
+    }, 40 + i*80);
+  });
+}
+
+/* ============================================================
+   РОЗМІРИ / ДЕКОРАЦІЇ
+============================================================ */
+function layout(){
+  W = window.innerWidth;
+  H = window.innerHeight;
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width  = Math.floor(W*DPR);
+  canvas.height = Math.floor(H*DPR);
+  canvas.style.width  = W+'px';
+  canvas.style.height = H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+
+  fox.s = clamp(Math.min(H/820, W/1250), 0.5, 1.35);
+  fox.groundY = H*0.845;
+  fox.x = W*0.15;
+
+  buildScenery();
+}
+
+function buildScenery(){
+  clouds = [];
+  const cn = Math.max(4, Math.round(W/300));
+  for(let i=0;i<cn;i++){
+    clouds.push({
+      x: rnd(-150, W+150),
+      y: rnd(H*0.04, H*0.34),
+      s: rnd(0.55, 1.5),
+      v: rnd(7, 22)
+    });
+  }
+
+  flowers = [];
+  const fn = Math.max(14, Math.round(W/85));
+  const palette = ['#ff8fbf','#ffd166','#ff6b6b','#c792ea','#8ce99a','#ffe066'];
+  for(let i=0;i<fn;i++){
+    flowers.push({
+      x: rnd(-30, W+30),
+      y: rnd(H*0.865, H*0.995),
+      s: rnd(0.55, 1.25),
+      c: palette[Math.floor(Math.random()*palette.length)],
+      ph: Math.random()*TAU
+    });
+  }
+
+  butterflies = [];
+  const bcol = ['#ffb3d9','#ffd97a','#a8e6ff'];
+  for(let i=0;i<3;i++){
+    butterflies.push({
+      x: rnd(W*0.3, W*0.95),
+      y: rnd(H*0.5, H*0.78),
+      ph: Math.random()*TAU,
+      sp: rnd(0.45, 0.95),
+      c: bcol[i % bcol.length]
+    });
+  }
+}
+
+/* ============================================================
+   РОЗТАШУВАННЯ КУЛЬОК
+============================================================ */
+function balloonLayout(){
+  const n = state.balloons.length;
+  const x0 = W*0.37, x1 = W*0.94;
+  const baseY = H*0.68;
+  const arcH  = H*0.16;
+  let r = Math.min(H*0.088, ((x1-x0)/Math.max(1,n-1))*0.44);
+  r = clamp(r, 24, 78);
+  return { x0, x1, baseY, arcH, r, n };
+}
+
+/* ============================================================
+   ЛОГІКА ГРИ
+============================================================ */
+function makeDecorBalloons(){
+  const pool = shuffle(COLORS.slice()).slice(0, BALLOON_COUNT);
+  state.balloons = pool.map((c,i)=>({
+    color: c,
+    phase: Math.random()*TAU,
+    scale: 1,
+    delay: i*0.04,
+    shake: 0,
+    dying: false,
+    popT: 0,
+    dx: 0, dy: 0, rr: 0
+  }));
+}
+
+function startGame(){
+  initAudio();
+  state.phase = 'play';
+  state.popped = 0;
+  state.mistakes = [];
+  state.particles = [];
+  state.locked = false;
+  state.fox.jump = 0;
+  state.fox.sad = 0;
+
+  startEl.classList.add('hide');
+  resultsEl.classList.remove('show');
+  nextBtn.classList.add('show');
+
+  preloadColors();
+  nextRound();
+}
+
+function nextRound(){
+  if(state.phase !== 'play') return;
+  state.locked = false;
+
+  const target = COLORS[Math.floor(Math.random()*COLORS.length)];
+  const others = shuffle(COLORS.filter(c => c !== target));
+  const chosen = shuffle([target, ...others.slice(0, BALLOON_COUNT-1)]);
+
+  state.target = target;
+  state.balloons = chosen.map((c,i)=>({
+    color: c,
+    phase: Math.random()*TAU,
+    scale: 0,
+    delay: i*0.055,
+    shake: 0,
+    dying: false,
+    popT: 0,
+    dx: 0, dy: 0, rr: 0
+  }));
+
+  const name = target.name;
+  setTimeout(()=>{ if(state.phase === 'play') sayColor(name); }, 80);
+}
+
+function onBalloonClick(b){
+  if(!state.target || state.locked || b.dying) return;
+
+  if(b.color === state.target){
+    state.locked = true;
+    state.popped++;
+    b.dying = true;
+    b.popT = 0;
+    spawnParticles(b);
+    popSound();
+    setTimeout(chime, 95);
+    state.fox.jump = 1;
+    state.fox.sad = 0;
+
+    setTimeout(()=>{
+      if(state.popped >= MAX_ROUNDS) showResults();
+      else nextRound();
+    }, 880);
+
+  } else {
+    if(b.shake > 0.55) return;
+    state.mistakes.push({
+      asked: state.target.name,
+      askedHex: state.target.hex,
+      clicked: b.color.name,
+      clickedHex: b.color.hex
+    });
+    b.shake = 1;
+    wrongSound();
+    state.fox.sad = 1;
+  }
+}
+
+function spawnParticles(b){
+  const x = b.dx, y = b.dy, r = b.rr || 50;
+  for(let i=0;i<22;i++){
+    const a = Math.random()*TAU;
+    const sp = rnd(110, 470);
+    state.particles.push({
+      x, y,
+      vx: Math.cos(a)*sp,
+      vy: Math.sin(a)*sp - 90,
+      r: rnd(3, 8),
+      life: 1,
+      color: b.color.hex,
+      rot: Math.random()*TAU,
+      vr: rnd(-9, 9),
+      shape: Math.random() < 0.5 ? 'circle' : 'rect'
+    });
+  }
+  state.particles.push({
+    ring: true, x, y, r: r*0.55, life: 1, color: b.color.hex
+  });
+}
+
+/* ============================================================
+   РЕЗУЛЬТАТИ
+============================================================ */
+function showResults(){
+  state.phase = 'result';
+  nextBtn.classList.remove('show');
+
+  if(isTeacherMode) {
+      const ms = state.mistakes;
+      let listHTML = '';
+
+      if(ms.length === 0){
+        listHTML = `<div class="perfect">Жодної помилки — бездоганно!</div>`;
+      } else {
+        listHTML = `<div class="cap">названо &nbsp;→&nbsp; натиснуто</div>
+          <div class="mlist">` +
+          ms.map(m => `
+            <div class="mrow">
+              <span class="sw" style="background:${m.askedHex}"></span>
+              <span class="nm">${m.asked}</span>
+              <span class="arr">→</span>
+              <span class="sw" style="background:${m.clickedHex}"></span>
+              <span class="nm">${m.clicked}</span>
+            </div>`).join('') + `</div>`;
+      }
+
+      cardEl.innerHTML = `
+        <div class="stats">
+          <div class="stat">
+            <div class="num">${state.popped}</div>
+            <div class="lbl">лопнуто кульок</div>
+          </div>
+          <div class="stat bad">
+            <div class="num">${ms.length}</div>
+            <div class="lbl">помилок</div>
+          </div>
+        </div>
+        ${listHTML}
+      `;
+      resultsEl.classList.add('show');
+  } else {
+      cardEl.innerHTML = `<div class="perfect">Відправка результатів...</div>`;
+      resultsEl.classList.add('show');
+      sendReportToFirebase();
+  }
+}
+
+/* ============================================================
+   ОНОВЛЕННЯ
+============================================================ */
+function update(dt){
+  state.t += dt;
+
+  _updateMouth();
+
+  clouds.forEach(c=>{
+    c.x += c.v*dt;
+    if(c.x > W + 190) c.x = -190;
+  });
+
+  butterflies.forEach(b=>{
+    b.ph += dt*b.sp;
+    b.x += Math.cos(b.ph*1.3)*46*dt;
+    b.y += Math.sin(b.ph*2.1)*34*dt;
+    b.x = clamp(b.x, 40, W-40);
+    b.y = clamp(b.y, H*0.42, H*0.84);
+  });
+
+  state.balloons.forEach(b=>{
+    if(b.delay > 0){ b.delay -= dt; return; }
+    b.scale += (1 - b.scale) * Math.min(1, dt*9);
+    if(b.shake > 0) b.shake = Math.max(0, b.shake - dt*2.2);
+    if(b.dying) b.popT = Math.min(1, b.popT + dt*3.2);
+  });
+  state.balloons = state.balloons.filter(b => !(b.dying && b.popT >= 1));
+
+  for(let i=state.particles.length-1; i>=0; i--){
+    const p = state.particles[i];
+    p.life -= dt*1.05;
+    if(p.ring){
+      p.r += dt*430;
+    } else {
+      p.vy += 950*dt;
+      p.x += p.vx*dt;
+      p.y += p.vy*dt;
+      p.vx *= 0.99;
+      p.rot += p.vr*dt;
+    }
+    if(p.life <= 0) state.particles.splice(i,1);
+  }
+
+  state.fox.jump = Math.max(0, state.fox.jump - dt*2.4);
+  state.fox.sad  = Math.max(0, state.fox.sad  - dt*1.5);
+}
+
+/* ============================================================
+   МАЛЮВАННЯ
+============================================================ */
+function render(){
+  const t = state.t;
+
+  const sg = ctx.createLinearGradient(0,0,0,H*0.86);
+  sg.addColorStop(0,   '#4fb3e8');
+  sg.addColorStop(0.5, '#9adcf7');
+  sg.addColorStop(0.82,'#dcf4fb');
+  sg.addColorStop(1,   '#f4f8d2');
+  ctx.fillStyle = sg;
+  ctx.fillRect(0,0,W,H);
+
+  /* сонечко ЗЛІВА */
+  const sx = W*0.135, sy = H*0.135, sr = Math.min(W,H)*0.078;
+  const glow = ctx.createRadialGradient(sx,sy,sr*0.5,sx,sy,sr*3.6);
+  glow.addColorStop(0,   'rgba(255,246,180,.92)');
+  glow.addColorStop(0.42,'rgba(255,236,150,.32)');
+  glow.addColorStop(1,   'rgba(255,236,150,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(sx,sy,sr*3.6,0,TAU); ctx.fill();
+
+  ctx.save();
+  ctx.translate(sx,sy);
+  ctx.rotate(t*0.11);
+  ctx.fillStyle = 'rgba(255,242,155,.85)';
+  for(let i=0;i<12;i++){
+    ctx.rotate(Math.PI/6);
+    ctx.beginPath();
+    ctx.moveTo(sr*1.18, -sr*0.105);
+    ctx.lineTo(sr*1.78, 0);
+    ctx.lineTo(sr*1.18,  sr*0.105);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.beginPath(); ctx.arc(sx,sy,sr,0,TAU);
+  ctx.fillStyle = '#ffe98a'; ctx.fill();
+  ctx.beginPath(); ctx.arc(sx-sr*0.28,sy-sr*0.28,sr*0.55,0,TAU);
+  ctx.fillStyle = 'rgba(255,255,225,.55)'; ctx.fill();
+
+  clouds.forEach(c=>{
+    ctx.save();
+    ctx.globalAlpha = 0.88;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(c.x,            c.y,          46*c.s, 26*c.s, 0,0,TAU);
+    ctx.ellipse(c.x-40*c.s,     c.y+7*c.s,    30*c.s, 20*c.s, 0,0,TAU);
+    ctx.ellipse(c.x+42*c.s,     c.y+9*c.s,    34*c.s, 22*c.s, 0,0,TAU);
+    ctx.ellipse(c.x+8*c.s,      c.y-17*c.s,   32*c.s, 24*c.s, 0,0,TAU);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  const gy = H*0.80;
+
+  ctx.fillStyle = '#93d46e';
+  ctx.beginPath();
+  ctx.moveTo(-60, gy+40);
+  ctx.bezierCurveTo(W*0.10, gy-H*0.155, W*0.30, gy-H*0.175, W*0.47, gy+18);
+  ctx.bezierCurveTo(W*0.62, gy-H*0.105, W*0.80, gy-H*0.150, W+60, gy+50);
+  ctx.lineTo(W+60, H+10);
+  ctx.lineTo(-60,  H+10);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#7cc756';
+  ctx.beginPath();
+  ctx.moveTo(-60, gy+70);
+  ctx.bezierCurveTo(W*0.18, gy-H*0.075, W*0.40, gy-H*0.095, W*0.60, gy+30);
+  ctx.bezierCurveTo(W*0.76, gy-H*0.030, W*0.90, gy-H*0.060, W+60, gy+80);
+  ctx.lineTo(W+60, H+10);
+  ctx.lineTo(-60,  H+10);
+  ctx.closePath();
+  ctx.fill();
+
+  const fg = ctx.createLinearGradient(0, gy, 0, H);
+  fg.addColorStop(0,   '#79c551');
+  fg.addColorStop(0.55,'#5fae44');
+  fg.addColorStop(1,   '#3d8a34');
+  ctx.fillStyle = fg;
+  ctx.beginPath();
+  ctx.moveTo(-60, H+10);
+  ctx.lineTo(-60, gy+30);
+  ctx.quadraticCurveTo(W*0.5, gy-24, W+60, gy+42);
+  ctx.lineTo(W+60, H+10);
+  ctx.closePath();
+  ctx.fill();
+
+  flowers.forEach(f=>{
+    const sway = Math.sin(t*2 + f.ph)*0.09;
+    ctx.save();
+    ctx.translate(f.x, f.y);
+    ctx.scale(f.s, f.s);
+    ctx.rotate(sway);
+
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.quadraticCurveTo(3,-10, 0,-19);
+    ctx.strokeStyle = '#3d8a34';
+    ctx.lineWidth = 2.4;
+    ctx.stroke();
+
+    for(let i=0;i<5;i++){
+      const a = i/5*TAU + sway*1.4;
+      ctx.beginPath();
+      ctx.ellipse(Math.cos(a)*6, -19+Math.sin(a)*6, 5, 5, 0, 0, TAU);
+      ctx.fillStyle = f.c;
+      ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(0,-19,3.4,0,TAU);
+    ctx.fillStyle = '#ffe066'; ctx.fill();
+    ctx.restore();
+  });
+
+  butterflies.forEach(drawButterfly);
+  renderBalloons();
+  drawFox();
+  renderParticles();
+
+  const vg = ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.36,W/2,H/2,Math.max(W,H)*0.76);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(0,0,0,.26)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0,0,W,H);
+}
+
+function renderBalloons(){
+  const lay = balloonLayout();
+  const n = state.balloons.length;
+
+  state.balloons.forEach((b,i)=>{
+    const tt = n <= 1 ? 0.5 : i/(n-1);
+    const arc = Math.sin(tt*Math.PI);
+
+    let x = lay.x0 + (lay.x1-lay.x0)*tt;
+    const y = lay.baseY - arc*lay.arcH + Math.sin(state.t*1.5 + b.phase)*7;
+
+    if(b.shake > 0) x += Math.sin(state.t*48)*13*b.shake;
+
+    let sc = b.scale;
+    if(b.dying) sc *= 1 + b.popT*0.55;
+
+    const r = lay.r*sc;
+
+    b.dx = x; b.dy = y; b.rr = lay.r*b.scale;
+
+    if(b.scale < 0.02 || r < 3) return;
+    drawBalloonShape(b, x, y, r);
+  });
+}
+
+function drawBalloonShape(b, x, y, r){
+  const hex = b.color.hex;
+
+  ctx.save();
+  if(b.dying) ctx.globalAlpha = Math.max(0, 1 - b.popT);
+
+  ctx.beginPath();
+  ctx.moveTo(x, y + r*1.02);
+  ctx.bezierCurveTo(
+    x - 16, y + r*1.50,
+    x + 16, y + r*1.92,
+    x + Math.sin(state.t*1.2 + b.phase)*9, y + r*2.35
+  );
+  ctx.strokeStyle = 'rgba(52,62,82,.38)';
+  ctx.lineWidth = 2.2;
+  ctx.stroke();
+
+  const g = ctx.createRadialGradient(
+    x - r*0.35, y - r*0.42, r*0.08,
+    x,          y + r*0.10, r*1.28
+  );
+  g.addColorStop(0,    shade(hex, 0.45));
+  g.addColorStop(0.45, hex);
+  g.addColorStop(1,    shade(hex, -0.38));
+
+  ctx.beginPath();
+  ctx.ellipse(x, y, r*0.90, r*1.04, 0, 0, TAU);
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  const lum = luminance(hex);
+  if(lum > 0.74){
+    ctx.strokeStyle = 'rgba(92,112,145,.55)';
+    ctx.lineWidth = 2.6;
+    ctx.stroke();
+  } else {
+    ctx.strokeStyle = 'rgba(0,0,0,.14)';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(x - r*0.10, y + r*0.99);
+  ctx.lineTo(x + r*0.10, y + r*0.99);
+  ctx.lineTo(x,          y + r*1.16);
+  ctx.closePath();
+  ctx.fillStyle = shade(hex, -0.22);
+  ctx.fill();
+
+  ctx.save();
+  ctx.globalAlpha *= 0.62;
+  ctx.beginPath();
+  ctx.ellipse(x - r*0.32, y - r*0.44, r*0.21, r*0.33, -0.5, 0, TAU);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + r*0.34, y + r*0.30, r*0.075, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function renderParticles(){
+  state.particles.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.life);
+
+    if(p.ring){
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, TAU);
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 4*p.life;
+      ctx.stroke();
+    } else {
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      if(p.shape === 'circle'){
+        ctx.beginPath();
+        ctx.arc(0,0,p.r,0,TAU);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-p.r, -p.r*0.6, p.r*2, p.r*1.2);
+      }
+    }
+    ctx.restore();
+  });
+}
+
+function drawButterfly(b){
+  const flap = Math.abs(Math.sin(state.t*9 + b.ph));
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  ctx.rotate(Math.sin(b.ph)*0.32);
+  ctx.globalAlpha = 0.92;
+  ctx.fillStyle = b.c;
+
+  ctx.beginPath(); ctx.ellipse(-6*flap, -4, 7*flap+2, 9, -0.5, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse( 6*flap, -4, 7*flap+2, 9,  0.5, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-5*flap,  5, 5*flap+1.5, 6, -0.3, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse( 5*flap,  5, 5*flap+1.5, 6,  0.3, 0, TAU); ctx.fill();
+
+  ctx.beginPath(); ctx.ellipse(0,0,2.2,8,0,0,TAU);
+  ctx.fillStyle = '#4a3a2a'; ctx.fill();
+  ctx.restore();
+}
+
+function drawFox(){
+  const s = fox.s;
+  const jump = Math.sin((1 - state.fox.jump)*Math.PI) * 36;
+  const sad = state.fox.sad;
+
+  const ORANGE   = '#f08a3c';
+  const ORANGE_D = '#dd7a2c';
+  const CREAM    = '#fff3e2';
+  const DARK     = '#3a2418';
+  const PINK     = '#ffb4a8';
+
+  ctx.save();
+  ctx.globalAlpha = 0.20 - Math.min(0.08, jump/500);
+  ctx.fillStyle = '#0a3d1a';
+  ctx.beginPath();
+  ctx.ellipse(fox.x, fox.groundY + 4*s, 86*s, 17*s, 0, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(fox.x, fox.groundY - jump);
+  ctx.scale(s, s);
+  ctx.rotate(Math.sin(state.t*1.3)*0.018);
+
+  /* хвіст */
+  ctx.save();
+  ctx.translate(-25, -58);
+  ctx.rotate(-2.45 + Math.sin(state.t*1.8)*0.10 + sad*0.18);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 78, 25, 0, 0, TAU);
+  ctx.fillStyle = ORANGE;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(62, 0, 21, 20, 0, 0, TAU);
+  ctx.fillStyle = CREAM;
+  ctx.fill();
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.ellipse(0, -72, 60, 66, 0, 0, TAU);
+  ctx.fillStyle = ORANGE;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(0, -58, 38, 44, 0, 0, TAU);
+  ctx.fillStyle = CREAM;
+  ctx.fill();
+
+  ctx.beginPath(); ctx.ellipse(-33, -12, 21, 15, 0, 0, TAU);
+  ctx.fillStyle = CREAM; ctx.fill();
+  ctx.beginPath(); ctx.ellipse( 33, -12, 21, 15, 0, 0, TAU);
+  ctx.fillStyle = CREAM; ctx.fill();
+
+  const earTilt = sad*0.32;
+  ctx.save();
+  ctx.translate(-30, -190);
+  ctx.rotate(-earTilt);
+  ctx.beginPath();
+  ctx.moveTo(-22, 4); ctx.lineTo(0, -72); ctx.lineTo(26, 6);
+  ctx.closePath();
+  ctx.fillStyle = ORANGE; ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-13, -2); ctx.lineTo(0, -52); ctx.lineTo(15, 0);
+  ctx.closePath();
+  ctx.fillStyle = PINK; ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.translate(30, -190);
+  ctx.rotate(earTilt);
+  ctx.beginPath();
+  ctx.moveTo(22, 4); ctx.lineTo(0, -72); ctx.lineTo(-26, 6);
+  ctx.closePath();
+  ctx.fillStyle = ORANGE; ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(13, -2); ctx.lineTo(0, -52); ctx.lineTo(-15, 0);
+  ctx.closePath();
+  ctx.fillStyle = PINK; ctx.fill();
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.arc(0, -150, 62, 0, TAU);
+  ctx.fillStyle = ORANGE;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(-58,-146); ctx.lineTo(-78,-132); ctx.lineTo(-56,-124);
+  ctx.closePath();
+  ctx.fillStyle = ORANGE_D; ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(58,-146); ctx.lineTo(78,-132); ctx.lineTo(56,-124);
+  ctx.closePath();
+  ctx.fillStyle = ORANGE_D; ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(0, -128, 41, 31, 0, 0, TAU);
+  ctx.fillStyle = CREAM;
+  ctx.fill();
+
+  const blinkPhase = (state.t*0.55) % 1;
+  const blinking = blinkPhase > 0.955;
+  const eyeY = -158;
+
+  if(blinking){
+    ctx.strokeStyle = DARK;
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-32, eyeY); ctx.lineTo(-16, eyeY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( 16, eyeY); ctx.lineTo( 32, eyeY); ctx.stroke();
+  } else {
+    [-24, 24].forEach(ex=>{
+      ctx.beginPath();
+      ctx.ellipse(ex, eyeY, 10.5, 12.5, 0, 0, TAU);
+      ctx.fillStyle = DARK;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(ex - 3.4, eyeY - 4, 3.6, 0, TAU);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(ex + 3.2, eyeY + 4.4, 1.7, 0, TAU);
+      ctx.fillStyle = 'rgba(255,255,255,.7)';
+      ctx.fill();
+    });
+  }
+
+  if(sad > 0.15){
+    ctx.save();
+    ctx.globalAlpha = sad*0.85;
+    ctx.strokeStyle = DARK;
+    ctx.lineWidth = 3.4;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-36, eyeY-19); ctx.lineTo(-14, eyeY-13); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( 36, eyeY-19); ctx.lineTo( 14, eyeY-13); ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(-8.5, -142);
+  ctx.quadraticCurveTo(0, -137, 8.5, -142);
+  ctx.quadraticCurveTo(7, -131, 0, -130);
+  ctx.quadraticCurveTo(-7, -131, -8.5, -142);
+  ctx.closePath();
+  ctx.fillStyle = DARK;
+  ctx.fill();
+
+  ctx.strokeStyle = DARK;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+
+  /* рот: якщо реально грає аудіо — відкриваємо за його часом */
+  if(state.talking){
+    const open = 3 + Math.abs(Math.sin(_mouthPhase))*9;
+    ctx.beginPath();
+    ctx.ellipse(0, -120, 11, open, 0, 0, TAU);
+    ctx.fillStyle = '#7a2b2b';
+    ctx.fill();
+  } else if(sad > 0.3){
+    ctx.beginPath();
+    ctx.arc(0, -112, 12, Math.PI*1.15, Math.PI*1.85);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(0, -128, 13, Math.PI*0.18, Math.PI*0.82);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+/* ============================================================
+   ЦИКЛ
+============================================================ */
+let lastT = performance.now();
+function loop(now){
+  const dt = Math.min(0.05, (now - lastT)/1000);
+  lastT = now;
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   ПОДІЇ
+============================================================ */
+canvas.addEventListener('pointerdown', e=>{
+  if(state.phase !== 'play') return;
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = (canvas.width / DPR) / rect.width;
+  const scaleY = (canvas.height / DPR) / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  const hx = fox.x;
+  const hy = fox.groundY - 150*fox.s;
+  if(Math.hypot(mx - hx, my - hy) < 85*fox.s){
+    if(state.target) sayColor(state.target.name);
+    state.fox.jump = 0.6;
+    return;
+  }
+
+  if(state.locked) return;
+
+  for(let i = state.balloons.length-1; i >= 0; i--){
+    const b = state.balloons[i];
+    if(b.dying || b.rr < 5) continue;
+    const nx = (mx - b.dx) / (b.rr*0.95);
+    const ny = (my - b.dy) / (b.rr*1.10);
+    if(nx*nx + ny*ny <= 1){
+      onBalloonClick(b);
+      return;
+    }
+  }
+});
+
+nextBtn.addEventListener('click', ()=>{
+  if(state.phase !== 'play' || state.locked) return;
+  initAudio();
+  whoosh();
+  nextRound();
+});
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  startGame();
+});
+
+window.addEventListener('resize', layout);
+
+/* ============================================================
+   СТАРТ
+============================================================ */
+layout();
+makeDecorBalloons();
+requestAnimationFrame(loop);
+
+if (isTeacherMode) {
+    document.getElementById('teacher-banner').style.display = 'block';
+    document.getElementById('teacher-banner').innerText = `👀 Режим перевірки: Робота учня ${userName}`;
+    canvas.style.pointerEvents = 'none';
+    startEl.classList.add('hide');
+    loadTeacherReport();
+} else if (!userName) {
+    document.getElementById('auth-overlay').classList.remove('hidden');
+}
+
+document.getElementById('auth-btn').addEventListener('click', () => {
+    const input = document.getElementById('auth-input').value.trim();
+    if(input) {
+        userName = input;
+        sessionStorage.setItem('userName', userName);
+        document.getElementById('auth-overlay').classList.add('hidden');
+    }
+});
+</script>
+</body>
+</html>
