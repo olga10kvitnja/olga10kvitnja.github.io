@@ -17,7 +17,7 @@
             color: #f8fafc;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 0 auto;
             background: #1e293b;
             padding: 25px;
@@ -64,18 +64,18 @@
         .tab-content.active { display: block; }
         .control-group {
             display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 12px;
+            margin-bottom: 18px;
             align-items: center;
             flex-wrap: wrap;
             background: #0f172a;
-            padding: 18px;
+            padding: 16px;
             border-radius: 8px;
             border: 1px solid #334155;
         }
         input, select, button {
-            padding: 12px 18px;
-            font-size: 15px;
+            padding: 10px 15px;
+            font-size: 14px;
             border: 1px solid #475569;
             border-radius: 6px;
             background-color: #1e293b;
@@ -103,6 +103,68 @@
         .btn-blue:hover { background: #2563eb; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
         .btn-purple { background: #8b5cf6; }
         .btn-purple:hover { background: #7c3aed; box-shadow: 0 0 10px rgba(139, 92, 246, 0.4); }
+        .btn-slate { background: #334155; color: #cbd5e1; }
+        .btn-slate:hover { background: #475569; color: #fff; box-shadow: none; }
+        .btn-slate.active-pill { background: #0ea5e9; color: #fff; box-shadow: 0 0 10px rgba(14, 165, 233, 0.4); }
+
+        /* Фільтри дат та режимів */
+        .filters-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            width: 100%;
+            padding-top: 12px;
+            border-top: 1px solid #1e293b;
+        }
+        .date-pills {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .date-pills button {
+            padding: 7px 12px;
+            font-size: 13px;
+        }
+        .date-pills input[type="date"] {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+        .view-switcher {
+            display: inline-flex;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .view-switcher button {
+            border-radius: 0;
+            background: transparent;
+            color: #94a3b8;
+            padding: 8px 14px;
+            font-size: 13px;
+            box-shadow: none;
+        }
+        .view-switcher button.active {
+            background: #6366f1;
+            color: #fff;
+        }
+
+        /* Панель секретного режиму 1982 */
+        .secret-admin-bar {
+            display: none;
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px dashed #8b5cf6;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
 
         .students-grid {
             display: grid;
@@ -137,10 +199,11 @@
         .btn-group {
             display: flex;
             gap: 5px;
+            align-items: center;
         }
         .btn-delete {
             background: #ef4444;
-            padding: 8px 12px;
+            padding: 7px 11px;
             font-size: 13px;
             border-radius: 4px;
         }
@@ -150,7 +213,7 @@
         }
         .btn-edit {
             background: #f59e0b;
-            padding: 8px 12px;
+            padding: 7px 11px;
             font-size: 13px;
             border-radius: 4px;
         }
@@ -161,14 +224,14 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            margin-top: 10px;
             background: #1e293b;
             border-radius: 8px;
             overflow: hidden;
         }
         th, td {
             border: 1px solid #334155;
-            padding: 14px;
+            padding: 12px 14px;
             text-align: left;
         }
         th {
@@ -192,6 +255,67 @@
         }
         .game-link:hover { color: #818cf8; text-decoration: underline; }
 
+        /* Кнопка статусу Перевірено / Нова */
+        .check-status-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+        }
+        .check-status-btn.is-new {
+            background: #ec4899;
+            color: #ffffff;
+            box-shadow: 0 0 8px rgba(236, 72, 153, 0.5);
+        }
+        .check-status-btn.is-checked {
+            background: #1e293b;
+            color: #10b981;
+            border: 1px solid #334155;
+        }
+
+        /* Стилі для Матриці Класу */
+        .matrix-scroll-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-top: 10px;
+        }
+        .matrix-table {
+            margin-top: 0;
+            min-width: 100%;
+        }
+        .matrix-table th, .matrix-table td {
+            text-align: center;
+            padding: 10px 8px;
+            font-size: 13px;
+        }
+        .matrix-table th.sticky-col, .matrix-table td.sticky-col {
+            position: sticky;
+            left: 0;
+            background: #0f172a;
+            z-index: 2;
+            text-align: left;
+            min-width: 170px;
+            border-right: 2px solid #475569;
+        }
+        .matrix-cell-score {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #fff;
+            text-decoration: none;
+            font-size: 12px;
+            min-width: 44px;
+            transition: transform 0.15s;
+        }
+        .matrix-cell-score:hover {
+            transform: scale(1.1);
+        }
+
         /* Стилі для кольорової шкали оцінок */
         .score-container {
             display: flex;
@@ -214,17 +338,17 @@
             background: #334155;
             transition: background 0.3s;
         }
-        .scale-segment.active-1 { background: #ef4444; } /* Червоний */
-        .scale-segment.active-2 { background: #f59e0b; } /* Жовтий */
-        .scale-segment.active-3 { background: #3b82f6; } /* Синій */
-        .scale-segment.active-4 { background: #10b981; } /* Зелений */
-        .scale-segment.active-5 { background: #8b5cf6; } /* Фіолетовий */
+        .scale-segment.active-1 { background: #ef4444; }
+        .scale-segment.active-2 { background: #f59e0b; }
+        .scale-segment.active-3 { background: #3b82f6; }
+        .scale-segment.active-4 { background: #10b981; }
+        .scale-segment.active-5 { background: #8b5cf6; }
 
         /* Кастомний вибір учня з підсписками (класами) */
         .student-picker-wrapper {
             position: relative;
             flex: 1;
-            min-width: 240px;
+            min-width: 230px;
         }
         .student-picker-wrapper input {
             width: 100%;
@@ -272,7 +396,6 @@
             align-items: center;
             border-bottom: 1px solid #334155;
             user-select: none;
-            transition: background 0.2s;
         }
         .picker-group-header:hover { background: #1e293b; }
         .picker-group-items {
@@ -294,7 +417,7 @@
             color: #ffffff;
         }
 
-        /* Графік з горизонтальною прокруткою для великої кількості робіт */
+        /* Графік з горизонтальною прокруткою */
         .chart-container {
             margin-top: 30px;
             background: #0f172a;
@@ -311,20 +434,14 @@
             gap: 12px;
             margin-bottom: 15px;
         }
-        .chart-header-bar h3 {
-            color: #38bdf8;
-            margin: 0;
-        }
+        .chart-header-bar h3 { color: #38bdf8; margin: 0; }
         .chart-controls {
             display: flex;
             gap: 10px;
             align-items: center;
             flex-wrap: wrap;
         }
-        .chart-controls select {
-            padding: 7px 12px;
-            font-size: 13px;
-        }
+        .chart-controls select { padding: 7px 12px; font-size: 13px; }
         .chart-stats-badges {
             display: flex;
             gap: 12px;
@@ -351,7 +468,7 @@
             min-width: 100%;
         }
 
-        /* Модальні вікна (Кошик та Редактор) */
+        /* Модальні вікна */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -366,33 +483,80 @@
             background: #1e293b;
             padding: 25px;
             border-radius: 12px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 85vh;
+            width: 92%;
+            max-width: 900px;
+            max-height: 88vh;
             overflow-y: auto;
             border: 1px solid #334155;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
-        .modal-box.small-modal {
-            max-width: 500px;
-        }
+        .modal-box.small-modal { max-width: 500px; }
         .form-row {
             margin-bottom: 14px;
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
-        .form-row label {
-            font-size: 13px;
-            color: #94a3b8;
-            font-weight: bold;
-        }
-        .form-row input, .form-row select {
+        .form-row label { font-size: 13px; color: #94a3b8; font-weight: bold; }
+        .form-row input, .form-row select { width: 100%; box-sizing: border-box; }
+
+        .messenger-textarea {
             width: 100%;
+            height: 210px;
+            background: #0f172a;
+            color: #f8fafc;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.5;
             box-sizing: border-box;
+            resize: vertical;
         }
 
-        /* Нижня панель (Кошик + Непомітна кнопка версії) */
+        /* Область попереднього перегляду А4 звіту */
+        .print-preview-card {
+            background: #ffffff;
+            color: #0f172a;
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .print-preview-card h2, .print-preview-card h3 { color: #0f172a; margin-top: 0; }
+        .print-preview-card table {
+            background: #ffffff;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+        }
+        .print-preview-card th {
+            background: #f1f5f9;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+        }
+        .print-preview-card td {
+            background: #ffffff;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+            padding: 8px 10px;
+        }
+        .print-preview-card tr:nth-child(even) td { background: #f8fafc; }
+        .print-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .print-stat-box {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            padding: 10px 14px;
+            border-radius: 6px;
+        }
+        .print-stat-box .lbl { font-size: 12px; color: #475569; }
+        .print-stat-box .val { font-size: 18px; font-weight: bold; color: #0f172a; margin-top: 4px; }
+
+        /* Нижня панель */
         .bottom-utility-bar {
             display: flex;
             justify-content: flex-end;
@@ -407,14 +571,8 @@
             cursor: pointer;
             font-size: 18px;
             padding: 4px 8px;
-            transition: 0.3s;
         }
-        .trash-btn-open:hover {
-            color: #ef4444;
-            transform: scale(1.1);
-            background: transparent;
-            box-shadow: none;
-        }
+        .trash-btn-open:hover { color: #ef4444; transform: scale(1.1); background: transparent; box-shadow: none; }
         .sys-version-btn {
             background: transparent;
             border: none;
@@ -425,15 +583,8 @@
             font-weight: normal;
             user-select: none;
         }
-        .sys-version-btn:hover {
-            color: #64748b;
-            background: transparent;
-            box-shadow: none;
-        }
-        .sys-version-btn.unlocked {
-            color: #8b5cf6;
-            font-weight: bold;
-        }
+        .sys-version-btn:hover { color: #64748b; background: transparent; box-shadow: none; }
+        .sys-version-btn.unlocked { color: #8b5cf6; font-weight: bold; }
         .badge-tag {
             display: inline-block;
             padding: 3px 8px;
@@ -443,14 +594,51 @@
             color: #38bdf8;
             margin: 2px;
         }
+
+        /* СТИЛІ ДЛЯ ДРУКУ НА А4 ТА ЗБЕРЕЖЕННЯ В PDF */
+        #printable-a4-Wrapper { display: none; }
+        @media print {
+            @page { size: A4; margin: 12mm; }
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .container, .modal-overlay { display: none !important; }
+            #printable-a4-Wrapper {
+                display: block !important;
+                width: 100% !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            #printable-a4-Wrapper .print-preview-card {
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            #printable-a4-Wrapper table {
+                page-break-inside: auto;
+                width: 100% !important;
+                font-size: 12px !important;
+            }
+            #printable-a4-Wrapper tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+        }
     </style>
 </head>
 <body>
 
+<!-- Спеціальний контейнер для чистого друку на А4 / PDF -->
+<div id="printable-a4-Wrapper"></div>
+
 <div class="container">
     <h1>📚 Журнал Вчителя (ДЗ)</h1>
     
-    <!-- Загальний список усіх ігор для автопідказок у полях вводу -->
     <datalist id="all-games-datalist"></datalist>
     <datalist id="all-students-datalist"></datalist>
 
@@ -463,26 +651,74 @@
 
     <!-- Вкладка 1: Звіти та Пошук -->
     <div id="tab-reports" class="tab-content active">
+
+        <!-- Секретна панель адміністратора (активується кодом 1982) -->
+        <div class="secret-admin-bar" id="secret-admin-bar">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="color:#c4b5fd; font-weight:bold;">🔓 Режим повного редагування (1982)</span>
+                <button onclick="openEditModal(null)" class="btn-purple" style="padding:7px 14px; font-size:13px;">➕ Додати запис вручну</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <button onclick="downloadFullBackup()" class="btn-blue" style="padding:7px 14px; font-size:13px;">📥 Завантажити резервну копію (Backup)</button>
+                <label style="background:#334155; color:#f8fafc; padding:7px 14px; border-radius:6px; font-size:13px; font-weight:bold; cursor:pointer;">
+                    📤 Відновити з копії
+                    <input type="file" accept=".json" style="display:none;" onchange="restoreFromBackupFile(event)">
+                </label>
+            </div>
+        </div>
+
         <div class="control-group">
-            <!-- Поле вибору учня з підсписками по класах -->
+            <!-- Рядок 1: Пошук учня, гри, категорії та перемикач вигляду -->
             <div class="student-picker-wrapper" id="student-picker-box">
                 <input type="text" id="search-student" placeholder="Ім'я учня (оберіть з класу або введіть...)" autocomplete="off" onfocus="openStudentDropdown()" oninput="filterStudentDropdown()">
                 <button type="button" class="picker-clear-btn" id="clear-student-btn" onclick="clearStudentSearch()" title="Очистити">✕</button>
                 <div class="student-dropdown-menu" id="student-dropdown-menu"></div>
             </div>
             
-            <input type="text" id="search-game" list="all-games-datalist" placeholder="Назва гри (або порожньо)" style="flex: 1; min-width: 180px;">
+            <input type="text" id="search-game" list="all-games-datalist" placeholder="Назва гри (або порожньо)" style="flex: 1; min-width: 170px;">
             
-            <select id="report-category">
+            <select id="report-category" onchange="loadReports()">
                 <option value="all">Всі категорії (всі класи)</option>
                 <option value="individual">Тільки Індивідуальні</option>
             </select>
-            <button onclick="loadReports()" class="btn-blue">🔍 Знайти роботи</button>
-            <button id="secret-add-btn" onclick="openEditModal(null)" class="btn-purple" style="display: none;">➕ Додати запис</button>
+
+            <div class="view-switcher">
+                <button type="button" id="view-btn-list" class="active" onclick="setReportViewMode('list')">📋 Список</button>
+                <button type="button" id="view-btn-matrix" onclick="setReportViewMode('matrix')">🎛️ Матриця (Табель)</button>
+            </div>
+
+            <button onclick="loadReports()" class="btn-blue">🔍 Знайти</button>
+
+            <!-- Рядок 2: Фільтри за датами, статусом (Боржники/Нові) та Експорт -->
+            <div class="filters-bar">
+                <div class="date-pills">
+                    <span style="color:#94a3b8; font-size:13px; font-weight:bold;">Період:</span>
+                    <button type="button" class="btn-slate active-pill" id="dp-all" onclick="setDatePreset('all')">Увесь час</button>
+                    <button type="button" class="btn-slate" id="dp-today" onclick="setDatePreset('today')">За сьогодні</button>
+                    <button type="button" class="btn-slate" id="dp-7d" onclick="setDatePreset('7d')">За 7 днів</button>
+                    <button type="button" class="btn-slate" id="dp-month" onclick="setDatePreset('month')">За місяць</button>
+                    <input type="date" id="filter-date-from" onchange="onCustomDateChange()" title="Дата від">
+                    <span style="color:#64748b;">—</span>
+                    <input type="date" id="filter-date-to" onchange="onCustomDateChange()" title="Дата до">
+                </div>
+
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <select id="filter-status" onchange="loadReports()" style="padding:7px 12px; font-size:13px;">
+                        <option value="all">Усі роботи та борги</option>
+                        <option value="debtors">❌ Тільки боржники (Не виконав)</option>
+                        <option value="new">🆕 Тільки нові (неперевірені)</option>
+                        <option value="completed">✅ Тільки виконані</option>
+                    </select>
+
+                    <button type="button" class="btn-slate" style="padding:7px 11px; font-size:12px;" onclick="markAllVisibleAsChecked()" title="Позначити всі знайдені роботи як перевірені">☑️ Усі перевірені</button>
+                    <button type="button" class="btn-purple" style="padding:7px 13px; font-size:13px;" onclick="openSummaryReportModal()">📄 Звіт / Друк А4</button>
+                    <button type="button" style="padding:7px 13px; font-size:13px;" onclick="exportCurrentViewToCSV()">📗 Excel (CSV)</button>
+                </div>
+            </div>
         </div>
 
         <div id="reports-output">
-            <p style="text-align: center; color: #64748b; font-size: 18px; margin-top: 30px;">Оберіть учня зі списку класів, назву гри або натисніть "Знайти роботи".</p>
+            <p style="text-align: center; color: #64748b; font-size: 18px; margin-top: 30px;">Оберіть учня зі списку класів, назву гри або натисніть "Знайти".</p>
         </div>
         
         <!-- Контейнер для графіка прогресу -->
@@ -490,6 +726,7 @@
             <div class="chart-header-bar">
                 <h3 id="chart-title">Прогрес учня</h3>
                 <div class="chart-controls">
+                    <button type="button" class="btn-purple" style="padding:7px 14px; font-size:13px;" onclick="openSummaryReportModal(currentChartStudentName)">📋 Скопіювати звіт для батьків / PDF А4</button>
                     <select id="chart-game-filter" onchange="updateStudentChartView()">
                         <option value="all">Усі ігри учня</option>
                     </select>
@@ -520,12 +757,12 @@
     <!-- Вкладка 2: Список усіх ігор -->
     <div id="tab-games" class="tab-content">
         <div class="control-group">
-            <input type="text" id="filter-games-input" placeholder="Пошук гри за назвою..." oninput="renderGamesCatalog()" style="flex: 1;">
+            <input type="text" id="filter-games-input" placeholder="Пошук гри за назвою або темою..." oninput="renderGamesCatalog()" style="flex: 1;">
             <input type="text" id="new-catalog-game-id" placeholder="Додати гру до списку (напр. game15)" style="flex: 1;">
             <input type="text" id="new-catalog-game-note" placeholder="Опис / тема (необов'язково)" style="flex: 1;">
             <button onclick="addGameToCatalog()" class="btn-blue">➕ Зберегти гру в каталог</button>
         </div>
-        <p style="color: #94a3b8; font-size: 14px; margin-top: -10px;">Тут автоматично відображаються всі ігри зі звітів учнів, призначень ДЗ та додані вручну.</p>
+        <p style="color: #94a3b8; font-size: 14px; margin-top: -6px;">Тут автоматично відображаються всі ігри зі звітів учнів, призначень ДЗ та додані вручну.</p>
         <div id="games-catalog-output"></div>
     </div>
 
@@ -554,6 +791,28 @@
             <button onclick="addStudent()">➕ Додати учня</button>
         </div>
         <div class="students-grid" id="classes-container"></div>
+    </div>
+</div>
+
+<!-- Модальне вікно Генератора Звіту (для Батьків / по Класу / Друк А4 та PDF) -->
+<div id="summary-report-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <h2 id="summary-modal-title" style="margin: 0; color: #38bdf8; font-size: 20px;">📄 Підсумковий звіт</h2>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button onclick="copyMessengerReportText()" class="btn-blue" style="padding: 8px 14px; font-size: 13px;">📋 Скопіювати для Viber / Telegram</button>
+                <button onclick="printReportA4()" class="btn-purple" style="padding: 8px 14px; font-size: 13px;">🖨️ Друк А4 / Зберегти в PDF</button>
+                <button onclick="closeSummaryReportModal()" style="background: transparent; border: none; font-size: 28px; color: #94a3b8; cursor: pointer;">&times;</button>
+            </div>
+        </div>
+
+        <label style="font-size: 13px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 6px;">Готове повідомлення для месенджерів (можна відредагувати перед копіюванням):</label>
+        <textarea id="messenger-report-text" class="messenger-textarea"></textarea>
+
+        <div style="margin-top: 18px;">
+            <span style="font-size: 13px; color: #94a3b8; font-weight: bold;">Попередній перегляд документа для друку А4 / PDF:</span>
+            <div id="summary-print-preview"></div>
+        </div>
     </div>
 </div>
 
@@ -640,6 +899,16 @@
     let currentChartStudentName = "";
     let currentChartRawSubs = [];
 
+    // Стан фільтрів та вигляду
+    let reportViewMode = 'list'; // 'list' або 'matrix'
+    let lastExportRows = []; // Масив рядків для експорту поточного вигляду в CSV
+
+    // Збереження позначок "Перевірено" у localStorage (не змінює структуру homework_reports)
+    let checkedReportsMap = {};
+    try {
+        checkedReportsMap = JSON.parse(localStorage.getItem('journal_checked_reports_v1') || '{}');
+    } catch (e) { checkedReportsMap = {}; }
+
     // Таємний режим редагування (активується кодом 1982)
     let isSecretMode = false;
 
@@ -673,15 +942,15 @@
         });
     }
 
-    // --- ТАЄМНИЙ РЕЖИМ (ПАРОЛЬ 1982) ---
+    // --- ТАЄМНИЙ РЕЖИМ (ПАРОЛЬ 1982) ТА РЕЗЕРВНА КОПІЯ (BACKUP) ---
     function triggerSystemCheck() {
         if (isSecretMode) {
             if (confirm("Вимкнути розширений режим редагування?")) {
                 isSecretMode = false;
                 document.getElementById('sys-version-btn').classList.remove('unlocked');
                 document.getElementById('sys-version-btn').innerText = 'v2.4';
-                document.getElementById('secret-add-btn').style.display = 'none';
-                if (document.getElementById('reports-output').querySelector('table')) loadReports();
+                document.getElementById('secret-admin-bar').style.display = 'none';
+                loadReports();
                 renderGamesCatalog();
             }
             return;
@@ -692,12 +961,177 @@
             isSecretMode = true;
             document.getElementById('sys-version-btn').classList.add('unlocked');
             document.getElementById('sys-version-btn').innerText = '• v2.4';
-            document.getElementById('secret-add-btn').style.display = 'inline-block';
-            if (document.getElementById('reports-output').querySelector('table')) loadReports();
+            document.getElementById('secret-admin-bar').style.display = 'flex';
+            loadReports();
             renderGamesCatalog();
         } else {
             alert("Синхронізація бази даних працює у штатному режимі. Помилок не виявлено.");
         }
+    }
+
+    function downloadFullBackup() {
+        if (!isSecretMode) return;
+        Promise.all([
+            db.ref('homework_reports').once('value'),
+            db.ref('journal_classes').once('value'),
+            db.ref('journal_students').once('value'),
+            db.ref('journal_assignments').once('value'),
+            db.ref('journal_games_catalog').once('value'),
+            db.ref('deleted_reports').once('value')
+        ]).then(([repSnap, clsSnap, stuSnap, asgSnap, catSnap, delSnap]) => {
+            const backupPayload = {
+                backupCreatedAt: new Date().toISOString(),
+                homework_reports: repSnap.val() || {},
+                journal_classes: clsSnap.val() || {},
+                journal_students: stuSnap.val() || {},
+                journal_assignments: asgSnap.val() || {},
+                journal_games_catalog: catSnap.val() || {},
+                deleted_reports: delSnap.val() || {}
+            };
+            const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const today = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `journal_backup_${today}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    function restoreFromBackupFile(event) {
+        if (!isSecretMode) return;
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (!data.homework_reports && !data.journal_students) {
+                    return alert("Помилка: обраний файл не є коректною резервною копією журналу!");
+                }
+                if (!confirm("УВАГА! Ви впевнені, що хочете відновити базу даних із цього файлу? Усі дані з файлу будуть записані в журнал.")) {
+                    event.target.value = '';
+                    return;
+                }
+                const updates = {};
+                if (data.homework_reports) updates['homework_reports'] = data.homework_reports;
+                if (data.journal_classes) updates['journal_classes'] = data.journal_classes;
+                if (data.journal_students) updates['journal_students'] = data.journal_students;
+                if (data.journal_assignments) updates['journal_assignments'] = data.journal_assignments;
+                if (data.journal_games_catalog) updates['journal_games_catalog'] = data.journal_games_catalog;
+                if (data.deleted_reports) updates['deleted_reports'] = data.deleted_reports;
+
+                db.ref().update(updates).then(() => {
+                    alert("Резервну копію успішно відновлено!");
+                    event.target.value = '';
+                    loadReports();
+                });
+            } catch (err) {
+                alert("Не вдалося прочитати JSON-файл резервної копії!");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // --- ФІЛЬТРИ ДАТ ТА СТАТУСІВ ("НОВІ" / "ПЕРЕВІРЕНІ") ---
+    function setDatePreset(preset) {
+        document.querySelectorAll('.date-pills button').forEach(b => b.classList.remove('active-pill'));
+        const btn = document.getElementById(`dp-${preset}`);
+        if (btn) btn.classList.add('active-pill');
+
+        const fromInput = document.getElementById('filter-date-from');
+        const toInput = document.getElementById('filter-date-to');
+        const now = new Date();
+        const todayStr = now.toISOString().slice(0, 10);
+
+        if (preset === 'all') {
+            fromInput.value = '';
+            toInput.value = '';
+        } else if (preset === 'today') {
+            fromInput.value = todayStr;
+            toInput.value = todayStr;
+        } else if (preset === '7d') {
+            const d7 = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+            fromInput.value = d7.toISOString().slice(0, 10);
+            toInput.value = todayStr;
+        } else if (preset === 'month') {
+            const d30 = new Date(now.getFullYear(), now.getMonth(), 1);
+            fromInput.value = formatLocalYYYYMMDD(d30);
+            toInput.value = todayStr;
+        }
+        loadReports();
+    }
+
+    function formatLocalYYYYMMDD(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function onCustomDateChange() {
+        document.querySelectorAll('.date-pills button').forEach(b => b.classList.remove('active-pill'));
+        loadReports();
+    }
+
+    function isDateInRange(dateStr) {
+        if (!dateStr || dateStr === '0000-00-00') return true;
+        const fromVal = document.getElementById('filter-date-from').value;
+        const toVal = document.getElementById('filter-date-to').value;
+        if (fromVal && dateStr < fromVal) return false;
+        if (toVal && dateStr > toVal) return false;
+        return true;
+    }
+
+    function getReportCheckKey(date, gameId, studentName) {
+        return `${date}|${gameId}|${studentName}`;
+    }
+
+    function isReportChecked(date, gameId, studentName) {
+        return !!checkedReportsMap[getReportCheckKey(date, gameId, studentName)];
+    }
+
+    function toggleReportChecked(date, gameId, studentName, btnEl) {
+        const key = getReportCheckKey(date, gameId, studentName);
+        if (checkedReportsMap[key]) {
+            delete checkedReportsMap[key];
+        } else {
+            checkedReportsMap[key] = true;
+        }
+        localStorage.setItem('journal_checked_reports_v1', JSON.stringify(checkedReportsMap));
+        if (document.getElementById('filter-status').value === 'new') {
+            loadReports();
+        } else if (btnEl) {
+            const checked = !!checkedReportsMap[key];
+            btnEl.className = `check-status-btn ${checked ? 'is-checked' : 'is-new'}`;
+            btnEl.innerText = checked ? '✅' : '🆕';
+            btnEl.title = checked ? 'Перевірено (натисніть, щоб зняти)' : 'Нова робота (натисніть, щоб позначити перевіреною)';
+        }
+    }
+
+    function markAllVisibleAsChecked() {
+        for (const month in cachedReportsData) {
+            for (const date in cachedReportsData[month]) {
+                if (!isDateInRange(date)) continue;
+                for (const gameId in cachedReportsData[month][date]) {
+                    for (const sName in cachedReportsData[month][date][gameId]) {
+                        checkedReportsMap[getReportCheckKey(date, gameId, sName)] = true;
+                    }
+                }
+            }
+        }
+        localStorage.setItem('journal_checked_reports_v1', JSON.stringify(checkedReportsMap));
+        loadReports();
+    }
+
+    function setReportViewMode(mode) {
+        reportViewMode = mode;
+        document.getElementById('view-btn-list').classList.toggle('active', mode === 'list');
+        document.getElementById('view-btn-matrix').classList.toggle('active', mode === 'matrix');
+        loadReports();
     }
 
     // --- ОНОВЛЕННЯ СПИСКІВ ТА ПІДСПИСКІВ УЧНІВ ---
@@ -716,16 +1150,15 @@
 
         Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
             const className = classesData[classId].name;
-            studentSelect.innerHTML += `<option value="${classId}">${className}</option>`;
-            reportSelect.innerHTML += `<option value="${classId}">${className}</option>`;
-            assignSelect.innerHTML += `<option value="${classId}">${className}</option>`;
+            studentSelect.innerHTML += `<option value="${classId}">${escapeHtml(className)}</option>`;
+            reportSelect.innerHTML += `<option value="${classId}">${escapeHtml(className)}</option>`;
+            assignSelect.innerHTML += `<option value="${classId}">${escapeHtml(className)}</option>`;
         });
 
         if (document.querySelector(`#new-student-category option[value="${currentStudentVal}"]`)) studentSelect.value = currentStudentVal;
         if (document.querySelector(`#report-category option[value="${currentReportVal}"]`)) reportSelect.value = currentReportVal;
         if (document.querySelector(`#assign-class-select option[value="${currentAssignVal}"]`)) assignSelect.value = currentAssignVal;
 
-        // Оновлюємо datalist для модального вікна та будуємо підсписки по класах
         const allStudentsDatalist = document.getElementById('all-students-datalist');
         let registeredNames = new Set();
         if (studentsData.individual) Object.values(studentsData.individual).forEach(n => registeredNames.add(n));
@@ -744,14 +1177,17 @@
     }
 
     function escapeHtml(str) {
-        return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
     function escapeJsStr(str) {
-        return String(str).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+        return String(str || '').replace(/\\/g, "\\\\").replace(/'/g, "\\'");
     }
 
-    // Побудова випадаючого списку з підсписками (Індивідуальні, кожен Клас окремо, Гості)
+    function getGameNote(gameId) {
+        return (catalogGamesData[gameId] && catalogGamesData[gameId].note) ? catalogGamesData[gameId].note : '';
+    }
+
     function buildCategorizedStudentDropdown(registeredNamesSet) {
         const menu = document.getElementById('student-dropdown-menu');
         if (!menu) return;
@@ -760,18 +1196,14 @@
         document.getElementById('clear-student-btn').style.display = searchVal ? 'block' : 'none';
 
         let groups = [];
-
-        // 1. Індивідуальні
         let indivList = studentsData.individual ? Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)) : [];
         groups.push({ id: 'grp-indiv', title: '👤 Індивідуальні учні', items: indivList });
 
-        // 2. Класи
         Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
             let clsList = studentsData[classId] ? Object.values(studentsData[classId]).sort((a,b) => a.localeCompare(b)) : [];
             groups.push({ id: `grp-${classId}`, title: `👥 ${classesData[classId].name}`, items: clsList });
         });
 
-        // 3. Гості (ті, хто є у звітах, але не записані в жоден клас)
         let guestSet = new Set();
         for (const month in cachedReportsData) {
             for (const date in cachedReportsData[month]) {
@@ -793,9 +1225,7 @@
             let filtered = searchVal ? g.items.filter(name => name.toLowerCase().includes(searchVal)) : g.items;
             if (filtered.length === 0) return;
 
-            // Якщо введено текст пошуку — автоматично розгортаємо групи, де є збіги
             const isExpanded = searchVal.length > 0;
-
             html += `
                 <div class="picker-group-header" onclick="togglePickerGroup('${g.id}', event)">
                     <span>${escapeHtml(g.title)} <small style="color:#94a3b8;">(${filtered.length})</small></span>
@@ -846,9 +1276,9 @@
         document.getElementById('search-student').value = '';
         document.getElementById('clear-student-btn').style.display = 'none';
         updateSelectDropdowns();
+        loadReports();
     }
 
-    // Закриваємо випадаючий список учнів при кліку поза ним
     document.addEventListener('click', (e) => {
         const box = document.getElementById('student-picker-box');
         const menu = document.getElementById('student-dropdown-menu');
@@ -860,7 +1290,6 @@
     // --- КАТАЛОГ УСІХ ІГОР ---
     function getAllGamesStats() {
         let gamesMap = {};
-
         const ensureGame = (gId) => {
             if (!gamesMap[gId]) {
                 gamesMap[gId] = {
@@ -868,15 +1297,12 @@
                     count: 0,
                     lastDate: '-',
                     assignedTo: [],
-                    note: (catalogGamesData[gId] && catalogGamesData[gId].note) ? catalogGamesData[gId].note : ''
+                    note: getGameNote(gId)
                 };
             }
         };
 
-        // 1. З каталогу
         Object.keys(catalogGamesData).forEach(gId => ensureGame(gId));
-
-        // 2. З призначень ДЗ
         Object.keys(assignmentsData).forEach(catId => {
             const catName = catId === 'individual' ? 'Індивідуальні' : (classesData[catId] ? classesData[catId].name : catId);
             if (assignmentsData[catId]) {
@@ -887,7 +1313,6 @@
             }
         });
 
-        // 3. Зі звітів ДЗ
         for (const month in cachedReportsData) {
             for (const date in cachedReportsData[month]) {
                 for (const gId in cachedReportsData[month][date]) {
@@ -1058,7 +1483,8 @@
         let individualHtml = `<div class="class-section"><div class="class-header"><h3>👤 Індивідуальні</h3></div>`;
         if (assignmentsData['individual']) {
             Object.keys(assignmentsData['individual']).forEach(gameId => {
-                individualHtml += `<div class="student-item"><span>🎮 ${escapeHtml(gameId)}</span>
+                const note = getGameNote(gameId);
+                individualHtml += `<div class="student-item"><span>🎮 ${escapeHtml(gameId)} ${note ? `<small style="color:#94a3b8;">(${escapeHtml(note)})</small>` : ''}</span>
                 <button class="btn-delete" onclick="removeAssignment('individual', '${escapeJsStr(gameId)}')">🗑️</button></div>`;
             });
         } else {
@@ -1072,7 +1498,8 @@
             let classHtml = `<div class="class-section"><div class="class-header"><h3>👥 ${escapeHtml(className)}</h3></div>`;
             if (assignmentsData[classId]) {
                 Object.keys(assignmentsData[classId]).forEach(gameId => {
-                    classHtml += `<div class="student-item"><span>🎮 ${escapeHtml(gameId)}</span>
+                    const note = getGameNote(gameId);
+                    classHtml += `<div class="student-item"><span>🎮 ${escapeHtml(gameId)} ${note ? `<small style="color:#94a3b8;">(${escapeHtml(note)})</small>` : ''}</span>
                     <button class="btn-delete" onclick="removeAssignment('${classId}', '${escapeJsStr(gameId)}')">🗑️</button></div>`;
                 });
             } else {
@@ -1181,7 +1608,7 @@
         });
     }
 
-    // --- ШКАЛА ОЦІНОК ТА ПРОГРЕС-ГРАФІК ---
+    // --- ШКАЛА ОЦІНОК, ДИНАМІКА ТА ПРОГРЕС-ГРАФІК ---
     function calculatePercentage(scoreStr) {
         if (!scoreStr) return null;
         let str = String(scoreStr);
@@ -1206,6 +1633,40 @@
         return '#8b5cf6'; 
     }
 
+    // Розрахунок динаміки прогресу за списком оцінок у хронологічному порядку
+    function computeDynamicsInfo(chronologicalPctArray) {
+        if (!chronologicalPctArray || chronologicalPctArray.length < 2) {
+            return { diff: 0, text: 'Недостатньо робіт для порівняння динаміки', shortText: '—' };
+        }
+        const mid = Math.floor(chronologicalPctArray.length / 2);
+        const firstHalf = chronologicalPctArray.slice(0, mid);
+        const secondHalf = chronologicalPctArray.slice(mid);
+
+        const avgFirst = Math.round(firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length);
+        const avgSecond = Math.round(secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length);
+        const diff = avgSecond - avgFirst;
+
+        if (diff > 2) {
+            return {
+                diff,
+                text: `📈 Позитивна динаміка: результат зріс на +${diff}% (з ${avgFirst}% до ${avgSecond}%)`,
+                shortText: `📈 +${diff}%`
+            };
+        } else if (diff < -2) {
+            return {
+                diff,
+                text: `📉 Зниження результату на ${diff}% (з ${avgFirst}% до ${avgSecond}%)`,
+                shortText: `📉 ${diff}%`
+            };
+        } else {
+            return {
+                diff,
+                text: `⚖️ Стабільний рівень виконання (~${avgSecond}%)`,
+                shortText: `⚖️ Стабільно (${avgSecond}%)`
+            };
+        }
+    }
+
     function buildScoreBar(scoreStr) {
         let percent = calculatePercentage(scoreStr);
         if (percent === null) {
@@ -1226,16 +1687,14 @@
             barHtml += `<div class="scale-segment ${activeClass}"></div>`;
         }
         barHtml += `</div>`;
-        const label = isSecretMode ? `<small style="color:#94a3b8; white-space:nowrap;">${escapeHtml(scoreStr)}</small>` : '';
+        const label = `<small style="color:#94a3b8; white-space:nowrap; min-width:36px; text-align:right;">${percent}%</small>`;
         return `<div class="score-container" title="${escapeHtml(scoreStr)} (${percent}%)">${barHtml}${label}</div>`;
     }
 
-    // Оновлений розумний графік, що витримує 1000+ робіт
     function setupStudentChart(studentName, rawStudentSubs) {
         currentChartStudentName = studentName;
         currentChartRawSubs = rawStudentSubs;
 
-        // Заповнюємо фільтр ігор для цього учня
         const gameFilter = document.getElementById('chart-game-filter');
         const prevGameVal = gameFilter.value;
         const uniqueGames = [...new Set(rawStudentSubs.map(s => s.gameId))].sort();
@@ -1267,12 +1726,11 @@
         chartContainer.style.display = 'block';
         document.getElementById('chart-title').innerText = `Прогрес учня: ${currentChartStudentName}`;
 
-        // Рахуємо загальну статистику по всіх знайдених роботах учня
         const allPcts = filtered.map(s => calculatePercentage(s.report.score));
         const avgPct = Math.round(allPcts.reduce((acc, v) => acc + v, 0) / allPcts.length);
         const lastPct = allPcts[allPcts.length - 1];
+        const dyn = computeDynamicsInfo(allPcts);
 
-        // Обмежуємо вибірку згідно з вибраним лімітом (показуємо останні N робіт)
         let displayedSubs = filtered;
         if (limitVal !== 'all') {
             const lim = parseInt(limitVal, 10);
@@ -1283,11 +1741,11 @@
 
         document.getElementById('chart-stats').innerHTML = `
             <div class="stat-badge">Усього робіт: <strong>${filtered.length}</strong> (показано: <strong>${displayedSubs.length}</strong>)</div>
-            <div class="stat-badge">Середній результат: <strong style="color:${getColorForPct(avgPct)}">${avgPct}%</strong></div>
+            <div class="stat-badge">Середній бал: <strong style="color:${getColorForPct(avgPct)}">${avgPct}%</strong></div>
             <div class="stat-badge">Остання робота: <strong style="color:${getColorForPct(lastPct)}">${lastPct}%</strong></div>
+            <div class="stat-badge">Динаміка: <strong>${dyn.shortText}</strong></div>
         `;
 
-        // Якщо робіт багато (> 20), розширюємо полотно для горизонтального скролу
         const canvasBox = document.getElementById('chart-canvas-box');
         const scrollWrapper = document.getElementById('chart-scroll-wrapper');
         const minWidthPx = Math.max(scrollWrapper.clientWidth || 700, displayedSubs.length * 42);
@@ -1352,32 +1810,39 @@
             }
         });
 
-        // Автоматично прокручуємо графік праворуч до найсвіжіших робіт
         setTimeout(() => {
             scrollWrapper.scrollLeft = scrollWrapper.scrollWidth;
         }, 50);
     }
 
-    // --- ТАБЛИЦЯ ЗВІТІВ ---
+    // --- ПОБУДОВА РЯДКІВ ТАБЛИЦІ ТА МАТРИЦІ ---
     function buildRow(date, gameId, studentName, report, month, isExtra=false, isGuest=false) {
         let scoreHtml = buildScoreBar(report.score);
         const gameUrl = `${encodeURI(gameId)}.html?reportUser=${encodeURIComponent(studentName)}&reportDate=${encodeURIComponent(date)}`;
+        const gameNote = getGameNote(gameId);
         
         let tags = [];
         if (isGuest) tags.push(`<span style="font-size:12px; color:#ef4444;">(Гість / Поза класом)</span>`);
-        if (isExtra) tags.push(`<span style="font-size:12px; color:#f59e0b;">(Додатково / Не призначено)</span>`);
+        if (isExtra) tags.push(`<span style="font-size:12px; color:#f59e0b;">(Додатково)</span>`);
         
+        const checked = isReportChecked(date, gameId, studentName);
+        const checkBtnHtml = `<button class="check-status-btn ${checked ? 'is-checked' : 'is-new'}" onclick="toggleReportChecked('${escapeJsStr(date)}', '${escapeJsStr(gameId)}', '${escapeJsStr(studentName)}', this)" title="${checked ? 'Перевірено' : 'Нова робота (натисніть, щоб позначити перевіреною)'}">${checked ? '✅' : '🆕'}</button>`;
+
         let editBtnHtml = isSecretMode
             ? `<button class="btn-edit" title="Редагувати ім'я, дату або оцінку" onclick="openEditModal({month:'${escapeJsStr(month)}', date:'${escapeJsStr(date)}', gameId:'${escapeJsStr(gameId)}', studentName:'${escapeJsStr(studentName)}'})">✏️</button>`
             : '';
 
         return `<tr>
             <td>${escapeHtml(date)} <br><small style="color:#94a3b8">${escapeHtml(report.timestamp || '')}</small></td>
-            <td><a href="${gameUrl}" target="_blank" class="game-link">🎮 ${escapeHtml(gameId)}</a></td>
+            <td>
+                <a href="${gameUrl}" target="_blank" class="game-link">🎮 ${escapeHtml(gameId)}</a>
+                ${gameNote ? `<br><small style="color:#94a3b8;">${escapeHtml(gameNote)}</small>` : ''}
+            </td>
             <td style="font-size: 16px; font-weight: bold; color: #f8fafc;">${escapeHtml(studentName)} ${tags.length > 0 ? '<br>'+tags.join(' ') : ''}</td>
             <td>${scoreHtml}</td>
             <td>
                 <div class="btn-group">
+                    ${checkBtnHtml}
                     ${editBtnHtml}
                     <button class="btn-delete" onclick="deleteReportRecord('${escapeJsStr(month)}', '${escapeJsStr(date)}', '${escapeJsStr(gameId)}', '${escapeJsStr(studentName)}')">🗑️</button>
                 </div>
@@ -1386,21 +1851,40 @@
     }
 
     function buildMissingRow(gameId, studentName) {
+        const gameNote = getGameNote(gameId);
         let quickAddBtn = isSecretMode
             ? `<button class="btn-edit" style="padding:4px 8px; font-size:12px; margin-left:8px;" onclick="openEditModal({month:'', date:'', gameId:'${escapeJsStr(gameId)}', studentName:'${escapeJsStr(studentName)}', isNew:true})" title="Виставити оцінку вручну">➕</button>`
             : '';
-        return `<tr style="opacity: 0.6; background-color: rgba(15, 23, 42, 0.5);">
-            <td style="color:#64748b;">-</td>
-            <td style="color:#64748b;">${escapeHtml(gameId)}</td>
+        return `<tr style="opacity: 0.65; background-color: rgba(15, 23, 42, 0.5);">
+            <td style="color:#64748b;">—</td>
+            <td style="color:#94a3b8;">🎮 ${escapeHtml(gameId)} ${gameNote ? `<br><small style="color:#64748b;">${escapeHtml(gameNote)}</small>` : ''}</td>
             <td style="font-size: 16px; font-weight: bold; color: #94a3b8;">${escapeHtml(studentName)}</td>
             <td colspan="2"><span style="color:#ef4444; font-weight:bold; font-size:14px;">❌ Не виконав</span> ${quickAddBtn}</td>
         </tr>`;
+    }
+
+    function getBaseRoster() {
+        let baseRoster = [];
+        if (studentsData.individual) {
+            Object.values(studentsData.individual).forEach(name => {
+                baseRoster.push({ name: name, category: 'individual', categoryName: 'Індивідуальні' });
+            });
+        }
+        Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
+            if (studentsData[classId]) {
+                Object.values(studentsData[classId]).forEach(name => {
+                    baseRoster.push({ name: name, category: classId, categoryName: classesData[classId].name });
+                });
+            }
+        });
+        return baseRoster;
     }
 
     function loadReports() {
         const studentQ = document.getElementById('search-student').value.trim().toLowerCase();
         const gameQ = document.getElementById('search-game').value.trim().toLowerCase();
         const filterId = document.getElementById('report-category').value;
+        const statusFilter = document.getElementById('filter-status').value; // all | debtors | new | completed
         const output = document.getElementById('reports-output');
         
         document.getElementById('chart-section').style.display = 'none';
@@ -1409,38 +1893,15 @@
         db.ref('homework_reports').once('value').then(snapshot => {
             const allData = snapshot.val() || {};
             cachedReportsData = allData;
+            lastExportRows = [];
 
-            let html = `<table>
-                <thead>
-                    <tr>
-                        <th>Дата та Час</th>
-                        <th>Гра</th>
-                        <th>Ім'я учня</th>
-                        <th>Результат</th>
-                        <th>Дії</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-            let resultCount = 0;
-
-            let baseRoster = [];
-            if (studentsData.individual) {
-                Object.values(studentsData.individual).forEach(name => {
-                    baseRoster.push({ name: name, category: 'individual', categoryName: 'Індивідуальні' });
-                });
-            }
-            Object.keys(classesData).forEach(classId => {
-                if (studentsData[classId]) {
-                    Object.values(studentsData[classId]).forEach(name => {
-                        baseRoster.push({ name: name, category: classId, categoryName: classesData[classId].name });
-                    });
-                }
-            });
+            const baseRoster = getBaseRoster();
 
             let submissions = [];
             let gameDates = {}; 
             for (const month in allData) {
                 for (const date in allData[month]) {
+                    if (!isDateInRange(date)) continue;
                     for (const gameId in allData[month][date]) {
                         for (const studentName in allData[month][date][gameId]) {
                             submissions.push({ month, date, gameId, studentName, report: allData[month][date][gameId][studentName] });
@@ -1452,7 +1913,6 @@
                 }
             }
 
-            // Додаємо також призначені ігри, навіть якщо їх ще ніхто не виконав
             Object.keys(assignmentsData).forEach(catId => {
                 if (assignmentsData[catId]) {
                     Object.keys(assignmentsData[catId]).forEach(gId => {
@@ -1461,89 +1921,22 @@
                 }
             });
 
-            let targetGames = Object.keys(gameDates).map(g => ({ id: g, date: gameDates[g] }));
-            if (gameQ !== "") targetGames = targetGames.filter(g => g.id.toLowerCase().includes(gameQ));
-            targetGames.sort((a, b) => b.date.localeCompare(a.date));
+            const matchesSearch = (name) => !studentQ || name.toLowerCase().includes(studentQ);
 
-            const matchesSearch = (name) => {
-                if (!studentQ) return true;
-                return name.toLowerCase().includes(studentQ);
-            };
-
-            targetGames.forEach(gameObj => {
-                const targetGameId = gameObj.id;
-                let gameSubmissions = submissions.filter(s => s.gameId === targetGameId);
-                
-                let showGameHeader = false;
-                let gameHtmlBuffer = "";
-                let processedStudents = new Set(); 
-
-                const processCategory = (catId, catName) => {
-                    let studentsInCat = baseRoster.filter(r => r.category === catId);
-                    if (studentsInCat.length === 0) return;
-
-                    let isAssigned = assignmentsData[catId] && assignmentsData[catId][targetGameId];
-                    let catHtmlBuffer = "";
-                    let hasRenderedSomethingInCat = false;
-
-                    studentsInCat.sort((a,b) => a.name.localeCompare(b.name)).forEach(student => {
-                        let studentSubsForGame = gameSubmissions.filter(s => s.studentName === student.name);
-                        
-                        if (!matchesSearch(student.name)) return;
-
-                        if (studentSubsForGame.length > 0) {
-                            studentSubsForGame.sort((a,b) => b.date.localeCompare(a.date)).forEach(sub => {
-                                catHtmlBuffer += buildRow(sub.date, targetGameId, student.name, sub.report, sub.month, !isAssigned, false);
-                                resultCount++;
-                            });
-                            processedStudents.add(student.name);
-                            hasRenderedSomethingInCat = true;
-                        } else if (isAssigned) {
-                            catHtmlBuffer += buildMissingRow(targetGameId, student.name);
-                            processedStudents.add(student.name);
-                            hasRenderedSomethingInCat = true;
-                            resultCount++;
-                        }
-                    });
-
-                    if (hasRenderedSomethingInCat && (filterId === 'all' || filterId === catId || studentQ !== "")) {
-                        showGameHeader = true;
-                        gameHtmlBuffer += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${escapeHtml(catName)}</td></tr>`;
-                        gameHtmlBuffer += catHtmlBuffer;
-                    }
-                };
-
-                processCategory('individual', 'Індивідуальні');
-                Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
-                    processCategory(classId, classesData[classId].name);
-                });
-
-                let guests = gameSubmissions.filter(s => !processedStudents.has(s.studentName) && matchesSearch(s.studentName));
-                
-                if (guests.length > 0 && (filterId === 'all' || studentQ !== "")) {
-                    showGameHeader = true;
-                    gameHtmlBuffer += `<tr><td colspan="5" style="background:#b45309; color:#fff; font-weight:bold; font-size:14px; padding: 8px 15px;">🕵️ Поза списком / Гості</td></tr>`;
-                    guests.forEach(g => {
-                        gameHtmlBuffer += buildRow(g.date, targetGameId, g.studentName, g.report, g.month, false, true);
-                        resultCount++;
-                    });
-                }
-
-                if (showGameHeader) {
-                    html += `<tr><td colspan="5" style="background:#334155; color:#38bdf8; text-align:center; font-size:18px;">Гра: ${escapeHtml(targetGameId)}</td></tr>`;
-                    html += gameHtmlBuffer;
-                }
-            });
-
-            if (resultCount === 0) {
-                html += `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">За вашим запитом нічого не знайдено.</td></tr>`;
+            // Якщо увімкнено режим МАТРИЦІ КЛАСУ (ТАБЕЛЯ)
+            if (reportViewMode === 'matrix') {
+                renderMatrixView(baseRoster, submissions, gameQ, filterId, statusFilter, matchesSearch);
+            } else {
+                renderListView(baseRoster, submissions, gameDates, gameQ, filterId, statusFilter, matchesSearch);
             }
-            html += `</tbody></table>`;
-            output.innerHTML = html;
 
-            // Якщо знайдено конкретного учня — показуємо розумний графік прогресу
+            // Якщо знайдено конкретного учня — показуємо графік прогресу
             if (studentQ) {
                 let exactMatches = [...new Set(submissions.filter(s => matchesSearch(s.studentName)).map(s => s.studentName))];
+                if (exactMatches.length === 0) {
+                    const rosterMatches = baseRoster.filter(r => matchesSearch(r.name)).map(r => r.name);
+                    if (rosterMatches.length === 1) exactMatches = rosterMatches;
+                }
                 if (exactMatches.length === 1) {
                     let studentNameForChart = exactMatches[0];
                     let studentSubs = submissions.filter(s => s.studentName === studentNameForChart);
@@ -1552,6 +1945,642 @@
                 }
             }
         });
+    }
+
+    function renderListView(baseRoster, submissions, gameDates, gameQ, filterId, statusFilter, matchesSearch) {
+        const output = document.getElementById('reports-output');
+        let html = `<table>
+            <thead>
+                <tr>
+                    <th>Дата та Час</th>
+                    <th>Гра</th>
+                    <th>Ім'я учня</th>
+                    <th>Результат</th>
+                    <th>Дії</th>
+                </tr>
+            </thead>
+            <tbody>`;
+        let resultCount = 0;
+
+        lastExportRows.push(['Дата', 'Час', 'Клас / Категорія', 'Ім\'я учня', 'Гра (ID)', 'Тема гри', 'Результат', 'Відсоток (%)', 'Статус']);
+
+        let targetGames = Object.keys(gameDates).map(g => ({ id: g, date: gameDates[g] }));
+        if (gameQ !== "") {
+            targetGames = targetGames.filter(g => g.id.toLowerCase().includes(gameQ) || getGameNote(g.id).toLowerCase().includes(gameQ));
+        }
+        targetGames.sort((a, b) => b.date.localeCompare(a.date));
+
+        targetGames.forEach(gameObj => {
+            const targetGameId = gameObj.id;
+            const gameNote = getGameNote(targetGameId);
+            let gameSubmissions = submissions.filter(s => s.gameId === targetGameId);
+            
+            let showGameHeader = false;
+            let gameHtmlBuffer = "";
+            let processedStudents = new Set(); 
+
+            const processCategory = (catId, catName) => {
+                if (filterId !== 'all' && filterId !== catId) return;
+                let studentsInCat = baseRoster.filter(r => r.category === catId);
+                if (studentsInCat.length === 0) return;
+
+                let isAssigned = assignmentsData[catId] && assignmentsData[catId][targetGameId];
+                let catHtmlBuffer = "";
+                let hasRenderedSomethingInCat = false;
+
+                studentsInCat.sort((a,b) => a.name.localeCompare(b.name)).forEach(student => {
+                    processedStudents.add(student.name);
+                    if (!matchesSearch(student.name)) return;
+
+                    let studentSubsForGame = gameSubmissions.filter(s => s.studentName === student.name);
+
+                    if (studentSubsForGame.length > 0) {
+                        if (statusFilter === 'debtors') return; // У режимі боржників пропускаємо виконані
+
+                        studentSubsForGame.sort((a,b) => b.date.localeCompare(a.date)).forEach(sub => {
+                            const checked = isReportChecked(sub.date, targetGameId, student.name);
+                            if (statusFilter === 'new' && checked) return;
+
+                            catHtmlBuffer += buildRow(sub.date, targetGameId, student.name, sub.report, sub.month, !isAssigned, false);
+                            hasRenderedSomethingInCat = true;
+                            resultCount++;
+
+                            const pct = calculatePercentage(sub.report.score);
+                            lastExportRows.push([
+                                sub.date,
+                                sub.report.timestamp || '',
+                                catName,
+                                student.name,
+                                targetGameId,
+                                gameNote,
+                                sub.report.score || '',
+                                pct !== null ? `${pct}%` : '',
+                                checked ? 'Перевірено' : 'Нова'
+                            ]);
+                        });
+                    } else if (isAssigned) {
+                        if (statusFilter === 'new' || statusFilter === 'completed') return;
+
+                        catHtmlBuffer += buildMissingRow(targetGameId, student.name);
+                        hasRenderedSomethingInCat = true;
+                        resultCount++;
+
+                        lastExportRows.push([
+                            '—',
+                            '—',
+                            catName,
+                            student.name,
+                            targetGameId,
+                            gameNote,
+                            'Не виконав',
+                            '0%',
+                            'Борг'
+                        ]);
+                    }
+                });
+
+                if (hasRenderedSomethingInCat) {
+                    showGameHeader = true;
+                    gameHtmlBuffer += `<tr><td colspan="5" style="background:#1e293b; color:#94a3b8; font-weight:bold; font-size:14px; padding: 8px 15px;">📁 ${escapeHtml(catName)}</td></tr>`;
+                    gameHtmlBuffer += catHtmlBuffer;
+                }
+            };
+
+            processCategory('individual', 'Індивідуальні');
+            Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
+                processCategory(classId, classesData[classId].name);
+            });
+
+            // Гості (поза списком)
+            if ((filterId === 'all' || document.getElementById('search-student').value.trim() !== '') && statusFilter !== 'debtors') {
+                let guests = gameSubmissions.filter(s => !processedStudents.has(s.studentName) && matchesSearch(s.studentName));
+                if (statusFilter === 'new') {
+                    guests = guests.filter(g => !isReportChecked(g.date, targetGameId, g.studentName));
+                }
+                if (guests.length > 0) {
+                    showGameHeader = true;
+                    gameHtmlBuffer += `<tr><td colspan="5" style="background:#b45309; color:#fff; font-weight:bold; font-size:14px; padding: 8px 15px;">🕵️ Поза списком / Гості</td></tr>`;
+                    guests.forEach(g => {
+                        gameHtmlBuffer += buildRow(g.date, targetGameId, g.studentName, g.report, g.month, false, true);
+                        resultCount++;
+                        const pct = calculatePercentage(g.report.score);
+                        lastExportRows.push([
+                            g.date,
+                            g.report.timestamp || '',
+                            'Гість',
+                            g.studentName,
+                            targetGameId,
+                            gameNote,
+                            g.report.score || '',
+                            pct !== null ? `${pct}%` : '',
+                            'Гість'
+                        ]);
+                    });
+                }
+            }
+
+            if (showGameHeader) {
+                html += `<tr><td colspan="5" style="background:#334155; color:#38bdf8; text-align:center; font-size:17px; font-weight:bold;">🎮 Гра: ${escapeHtml(targetGameId)} ${gameNote ? `<span style="color:#cbd5e1; font-weight:normal; font-size:14px;">— ${escapeHtml(gameNote)}</span>` : ''}</td></tr>`;
+                html += gameHtmlBuffer;
+            }
+        });
+
+        if (resultCount === 0) {
+            html += `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:25px;">За обраними фільтрами нічого не знайдено.</td></tr>`;
+        }
+        html += `</tbody></table>`;
+        output.innerHTML = html;
+    }
+
+    // --- РЕЖИМ МАТРИЦІ КЛАСУ (ТАБЕЛЯ) ---
+    function renderMatrixView(baseRoster, submissions, gameQ, filterId, statusFilter, matchesSearch) {
+        const output = document.getElementById('reports-output');
+
+        // Відбираємо учнів для матриці
+        let studentsList = baseRoster.filter(r => {
+            if (filterId !== 'all' && r.category !== filterId) return false;
+            return matchesSearch(r.name);
+        });
+
+        // Визначаємо перелік ігор для стовпців матриці
+        let gameSet = new Set();
+        if (filterId !== 'all') {
+            if (assignmentsData[filterId]) Object.keys(assignmentsData[filterId]).forEach(g => gameSet.add(g));
+        } else {
+            Object.keys(assignmentsData).forEach(cId => {
+                if (assignmentsData[cId]) Object.keys(assignmentsData[cId]).forEach(g => gameSet.add(g));
+            });
+        }
+        // Додаємо ігри, які ці учні фактично проходили за обраний період
+        const studentNamesSet = new Set(studentsList.map(s => s.name));
+        submissions.forEach(sub => {
+            if (studentNamesSet.has(sub.studentName)) gameSet.add(sub.gameId);
+        });
+
+        let gamesCols = Array.from(gameSet);
+        if (gameQ !== '') {
+            gamesCols = gamesCols.filter(g => g.toLowerCase().includes(gameQ) || getGameNote(g).toLowerCase().includes(gameQ));
+        }
+        gamesCols.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+        if (studentsList.length === 0 || gamesCols.length === 0) {
+            output.innerHTML = `<p style="text-align:center; color:#94a3b8; padding:25px;">Немає даних для побудови матриці (оберіть клас або перевірте призначені ігри).</p>`;
+            return;
+        }
+
+        // Готуємо заголовок для Excel-експорту матриці
+        lastExportRows = [];
+        lastExportRows.push(['Учень', 'Клас', ...gamesCols.map(g => getGameNote(g) ? `${g} (${getGameNote(g)})` : g), 'Виконано', 'Боргів', 'Середній %']);
+
+        let html = `<div class="matrix-scroll-wrapper"><table class="matrix-table"><thead><tr>
+            <th class="sticky-col">Учень</th>
+            <th>Клас</th>`;
+        gamesCols.forEach(g => {
+            const note = getGameNote(g);
+            html += `<th title="${escapeHtml(note)}">🎮 ${escapeHtml(g)}${note ? `<br><small style="color:#94a3b8; font-weight:normal; text-transform:none;">${escapeHtml(note)}</small>` : ''}</th>`;
+        });
+        html += `<th>Виконано / Боргів</th><th>Середній %</th></tr></thead><tbody>`;
+
+        let renderedRows = 0;
+
+        studentsList.sort((a,b) => a.categoryName.localeCompare(b.categoryName) || a.name.localeCompare(b.name)).forEach(st => {
+            let completedCount = 0;
+            let debtsCount = 0;
+            let pctSum = 0;
+            let pctCount = 0;
+            let cellsHtml = '';
+            let csvRow = [st.name, st.categoryName];
+
+            gamesCols.forEach(gId => {
+                const isAssigned = assignmentsData[st.category] && assignmentsData[st.category][gId];
+                const stuSubs = submissions.filter(s => s.studentName === st.name && s.gameId === gId);
+
+                if (stuSubs.length > 0) {
+                    // Беремо найсвіжішу або найкращу спробу
+                    stuSubs.sort((a,b) => b.date.localeCompare(a.date));
+                    const bestSub = stuSubs[0];
+                    const pct = calculatePercentage(bestSub.report.score);
+                    completedCount++;
+                    if (pct !== null) {
+                        pctSum += pct;
+                        pctCount++;
+                    }
+                    const bg = pct !== null ? getColorForPct(pct) : '#10b981';
+                    const displayTxt = pct !== null ? `${pct}%` : escapeHtml(bestSub.report.score || '+');
+                    const gameUrl = `${encodeURI(gId)}.html?reportUser=${encodeURIComponent(st.name)}&reportDate=${encodeURIComponent(bestSub.date)}`;
+                    cellsHtml += `<td><a href="${gameUrl}" target="_blank" class="matrix-cell-score" style="background:${bg};" title="${escapeHtml(bestSub.date)}: ${escapeHtml(bestSub.report.score)}">${displayTxt}</a></td>`;
+                    csvRow.push(pct !== null ? `${pct}%` : (bestSub.report.score || 'Виконано'));
+                } else if (isAssigned) {
+                    debtsCount++;
+                    cellsHtml += `<td><span style="color:#ef4444; font-weight:bold;" title="Обов'язкове ДЗ не виконано">❌</span></td>`;
+                    csvRow.push('НЕ ВИКОНАВ');
+                } else {
+                    cellsHtml += `<td style="color:#475569;">—</td>`;
+                    csvRow.push('—');
+                }
+            });
+
+            if (statusFilter === 'debtors' && debtsCount === 0) return;
+            if (statusFilter === 'completed' && completedCount === 0) return;
+
+            const avgPct = pctCount > 0 ? Math.round(pctSum / pctCount) : null;
+            const avgColor = avgPct !== null ? getColorForPct(avgPct) : '#64748b';
+
+            html += `<tr>
+                <td class="sticky-col" style="font-weight:bold; color:#f8fafc;">${escapeHtml(st.name)}</td>
+                <td style="color:#94a3b8;">${escapeHtml(st.categoryName)}</td>
+                ${cellsHtml}
+                <td><span style="color:#10b981; font-weight:bold;">${completedCount}</span> / <span style="color:${debtsCount > 0 ? '#ef4444' : '#64748b'}; font-weight:bold;">${debtsCount}</span></td>
+                <td style="font-weight:bold; color:${avgColor}; font-size:15px;">${avgPct !== null ? avgPct + '%' : '—'}</td>
+            </tr>`;
+
+            csvRow.push(completedCount, debtsCount, avgPct !== null ? `${avgPct}%` : '—');
+            lastExportRows.push(csvRow);
+            renderedRows++;
+        });
+
+        if (renderedRows === 0) {
+            html += `<tr><td colspan="${gamesCols.length + 4}" style="text-align:center; color:#94a3b8; padding:20px;">За обраним фільтром учнів не знайдено.</td></tr>`;
+        }
+
+        html += `</tbody></table></div>`;
+        output.innerHTML = html;
+    }
+
+    // --- ЕКСПОРТ ТАБЛИЦІ В EXCEL (CSV) ---
+    function exportCurrentViewToCSV() {
+        if (!lastExportRows || lastExportRows.length <= 1) {
+            return alert("Спочатку знайдіть роботи у таблиці або відкрийте матрицю класу!");
+        }
+        const csvLines = lastExportRows.map(row =>
+            row.map(cell => {
+                const str = String(cell ?? '').replace(/"/g, '""');
+                return `"${str}"`;
+            }).join(';')
+        );
+        // Додаємо UTF-8 BOM (\uFEFF), щоб Excel у Windows коректно відкривав українські літери
+        const csvContent = '\uFEFF' + csvLines.join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const today = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `zhurnal_${reportViewMode}_${today}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // --- ГЕНЕРАТОР ПІДСУМКІВ ДЛЯ БАТЬКІВ ТА ПО КЛАСУ (ТЕКСТ + ДРУК А4 / PDF) ---
+    function getPeriodLabelText() {
+        const fromVal = document.getElementById('filter-date-from').value;
+        const toVal = document.getElementById('filter-date-to').value;
+        if (fromVal && toVal) return `${fromVal} — ${toVal}`;
+        if (fromVal) return `від ${fromVal}`;
+        if (toVal) return `до ${toVal}`;
+        return 'За весь час навчання';
+    }
+
+    function openSummaryReportModal(forcedStudentName) {
+        const baseRoster = getBaseRoster();
+        const searchStudentInput = (forcedStudentName || document.getElementById('search-student').value || '').trim();
+        const filterCatId = document.getElementById('report-category').value;
+
+        // Збираємо всі роботи за поточний вибраний період
+        let periodSubs = [];
+        for (const month in cachedReportsData) {
+            for (const date in cachedReportsData[month]) {
+                if (!isDateInRange(date)) continue;
+                for (const gameId in cachedReportsData[month][date]) {
+                    for (const sName in cachedReportsData[month][date][gameId]) {
+                        periodSubs.push({
+                            month,
+                            date,
+                            gameId,
+                            studentName: sName,
+                            report: cachedReportsData[month][date][gameId][sName]
+                        });
+                    }
+                }
+            }
+        }
+
+        // Перевіряємо, чи обрано одного конкретного учня
+        let matchedStudentName = null;
+        if (searchStudentInput) {
+            const lowerQ = searchStudentInput.toLowerCase();
+            const rosterMatch = baseRoster.filter(r => r.name.toLowerCase().includes(lowerQ));
+            if (rosterMatch.length === 1) {
+                matchedStudentName = rosterMatch[0].name;
+            } else {
+                const subMatch = [...new Set(periodSubs.filter(s => s.studentName.toLowerCase().includes(lowerQ)).map(s => s.studentName))];
+                if (subMatch.length === 1) matchedStudentName = subMatch[0];
+            }
+        }
+
+        if (matchedStudentName) {
+            generateIndividualStudentReport(matchedStudentName, baseRoster, periodSubs);
+        } else {
+            generateClassSummaryReport(filterCatId, baseRoster, periodSubs);
+        }
+
+        document.getElementById('summary-report-modal').style.display = 'flex';
+    }
+
+    function generateIndividualStudentReport(studentName, baseRoster, periodSubs) {
+        const rosterEntry = baseRoster.find(r => r.name === studentName);
+        const catId = rosterEntry ? rosterEntry.category : 'individual';
+        const catName = rosterEntry ? rosterEntry.categoryName : 'Індивідуально / Гість';
+        const periodText = getPeriodLabelText();
+
+        let stuSubs = periodSubs.filter(s => s.studentName === studentName);
+        stuSubs.sort((a,b) => (a.date + (a.report.timestamp || '')).localeCompare(b.date + (b.report.timestamp || '')));
+
+        const assignedGames = (assignmentsData[catId] ? Object.keys(assignmentsData[catId]) : []).sort();
+        const completedGameIds = new Set(stuSubs.map(s => s.gameId));
+        const missingGames = assignedGames.filter(g => !completedGameIds.has(g));
+
+        const pctList = stuSubs.map(s => calculatePercentage(s.report.score)).filter(p => p !== null);
+        const avgPct = pctList.length > 0 ? Math.round(pctList.reduce((a,b) => a + b, 0) / pctList.length) : 0;
+        const dyn = computeDynamicsInfo(pctList);
+
+        document.getElementById('summary-modal-title').innerText = `📄 Звіт для батьків: ${studentName}`;
+
+        // 1. Формуємо текст для месенджерів (Viber / Telegram / WhatsApp)
+        let msg = `📊 ЗВІТ ПРО НАВЧАННЯ УЧНЯ\n`;
+        msg += `👤 Учень: ${studentName} (${catName})\n`;
+        msg += `📅 Період: ${periodText}\n`;
+        msg += `────────────────────\n`;
+        msg += `✅ Виконано робіт: ${stuSubs.length}\n`;
+        msg += `🎯 Середній бал успішності: ${pctList.length > 0 ? avgPct + '%' : '—'}\n`;
+        msg += `${dyn.text}\n`;
+
+        if (stuSubs.length > 0) {
+            msg += `\n📚 Виконані завдання:\n`;
+            stuSubs.forEach(s => {
+                const note = getGameNote(s.gameId);
+                const pct = calculatePercentage(s.report.score);
+                msg += ` • ${s.date}: ${s.gameId}${note ? ` (${note})` : ''} — ${s.report.score}${pct !== null ? ` (${pct}%)` : ''}\n`;
+            });
+        }
+
+        if (missingGames.length > 0) {
+            msg += `\n❌ Невиконані обов'язкові ДЗ (${missingGames.length}):\n`;
+            missingGames.forEach(g => {
+                const note = getGameNote(g);
+                msg += ` • ${g}${note ? ` (${note})` : ''}\n`;
+            });
+        } else if (assignedGames.length > 0) {
+            msg += `\n🌟 Усі обов'язкові домашні завдання виконано!\n`;
+        }
+
+        document.getElementById('messenger-report-text').value = msg;
+
+        // 2. Формуємо охайний документ А4 для друку та збереження в PDF
+        let rowsHtml = '';
+        stuSubs.slice().reverse().forEach(s => {
+            const note = getGameNote(s.gameId);
+            const pct = calculatePercentage(s.report.score);
+            rowsHtml += `<tr>
+                <td>${escapeHtml(s.date)} ${escapeHtml(s.report.timestamp || '')}</td>
+                <td><b>${escapeHtml(s.gameId)}</b> ${note ? `— ${escapeHtml(note)}` : ''}</td>
+                <td><b>${escapeHtml(s.report.score || '-')}</b> ${pct !== null ? `(${pct}%)` : ''}</td>
+                <td style="color:#059669; font-weight:bold;">Виконано</td>
+            </tr>`;
+        });
+        missingGames.forEach(g => {
+            const note = getGameNote(g);
+            rowsHtml += `<tr>
+                <td>—</td>
+                <td><b>${escapeHtml(g)}</b> ${note ? `— ${escapeHtml(note)}` : ''}</td>
+                <td>—</td>
+                <td style="color:#dc2626; font-weight:bold;">❌ Не виконано (Борг)</td>
+            </tr>`;
+        });
+
+        let printHtml = `
+            <div class="print-preview-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:16px;">
+                    <div>
+                        <h2 style="margin:0; font-size:22px;">Індивідуальна картка успішності учня</h2>
+                        <p style="margin:5px 0 0 0; color:#475569; font-size:14px;">Учень: <b>${escapeHtml(studentName)}</b> | Категорія: <b>${escapeHtml(catName)}</b></p>
+                    </div>
+                    <div style="text-align:right; font-size:13px; color:#475569;">
+                        <div>Період: <b>${escapeHtml(periodText)}</b></div>
+                        <div>Дата формування: ${new Date().toLocaleDateString('uk-UA')}</div>
+                    </div>
+                </div>
+
+                <div class="print-summary-grid">
+                    <div class="print-stat-box">
+                        <div class="lbl">Виконано робіт</div>
+                        <div class="val">${stuSubs.length}</div>
+                    </div>
+                    <div class="print-stat-box">
+                        <div class="lbl">Середній результат</div>
+                        <div class="val">${pctList.length > 0 ? avgPct + '%' : '—'}</div>
+                    </div>
+                    <div class="print-stat-box">
+                        <div class="lbl">Невиконані ДЗ (борги)</div>
+                        <div class="val" style="color:${missingGames.length > 0 ? '#dc2626' : '#059669'};">${missingGames.length}</div>
+                    </div>
+                    <div class="print-stat-box">
+                        <div class="lbl">Динаміка прогресу</div>
+                        <div class="val" style="font-size:15px;">${escapeHtml(dyn.shortText)}</div>
+                    </div>
+                </div>
+
+                <p style="font-size:14px; background:#f1f5f9; padding:10px 14px; border-radius:6px; border-left:4px solid #3b82f6; margin-bottom:16px;">
+                    <b>Висновок щодо динаміки:</b> ${escapeHtml(dyn.text)}
+                </p>
+
+                <h3 style="font-size:16px; margin-bottom:8px;">Детальна відомість виконання завдань</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Дата та час</th>
+                            <th>Завдання / Тема</th>
+                            <th>Результат</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml || '<tr><td colspan="4" style="text-align:center;">Немає записів за обраний період</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        document.getElementById('summary-print-preview').innerHTML = printHtml;
+        document.getElementById('printable-a4-Wrapper').innerHTML = printHtml;
+    }
+
+    function generateClassSummaryReport(filterCatId, baseRoster, periodSubs) {
+        const periodText = getPeriodLabelText();
+        const catTitle = filterCatId === 'all'
+            ? 'Усі класи та індивідуальні учні'
+            : (filterCatId === 'individual' ? 'Індивідуальні учні' : (classesData[filterCatId]?.name || filterCatId));
+
+        document.getElementById('summary-modal-title').innerText = `📊 Зведений звіт по класу: ${catTitle}`;
+
+        let studentsInScope = baseRoster.filter(r => filterCatId === 'all' || r.category === filterCatId);
+        studentsInScope.sort((a,b) => a.categoryName.localeCompare(b.categoryName) || a.name.localeCompare(b.name));
+
+        let totalWorksCount = 0;
+        let totalDebtsCount = 0;
+        let allClassPctsChronological = [];
+        let studentStatsRows = [];
+
+        // Сортуємо всі здані роботи хронологічно для загальної динаміки класу
+        const sortedScopeSubs = periodSubs
+            .filter(s => studentsInScope.some(st => st.name === s.studentName))
+            .sort((a,b) => (a.date + (a.report.timestamp || '')).localeCompare(b.date + (b.report.timestamp || '')));
+
+        sortedScopeSubs.forEach(s => {
+            const p = calculatePercentage(s.report.score);
+            if (p !== null) allClassPctsChronological.push(p);
+        });
+
+        studentsInScope.forEach(st => {
+            const stSubs = sortedScopeSubs.filter(s => s.studentName === st.name);
+            const assigned = assignmentsData[st.category] ? Object.keys(assignmentsData[st.category]) : [];
+            const doneSet = new Set(stSubs.map(s => s.gameId));
+            const missing = assigned.filter(g => !doneSet.has(g));
+
+            const stPcts = stSubs.map(s => calculatePercentage(s.report.score)).filter(p => p !== null);
+            const stAvg = stPcts.length > 0 ? Math.round(stPcts.reduce((a,b) => a + b, 0) / stPcts.length) : null;
+            const stDyn = computeDynamicsInfo(stPcts);
+
+            totalWorksCount += stSubs.length;
+            totalDebtsCount += missing.length;
+
+            studentStatsRows.push({
+                name: st.name,
+                categoryName: st.categoryName,
+                doneCount: stSubs.length,
+                debtsCount: missing.length,
+                missingList: missing,
+                avgPct: stAvg,
+                dynShort: stDyn.shortText
+            });
+        });
+
+        const classAvgPct = allClassPctsChronological.length > 0
+            ? Math.round(allClassPctsChronological.reduce((a,b) => a + b, 0) / allClassPctsChronological.length)
+            : 0;
+        const classDyn = computeDynamicsInfo(allClassPctsChronological);
+
+        // 1. Формуємо текст для месенджерів (Viber / Telegram)
+        let msg = `📊 ЗВЕДЕНИЙ ЗВІТ ПО КЛАСУ / ГРУПІ\n`;
+        msg += `👥 Категорія: ${catTitle}\n`;
+        msg += `📅 Період: ${periodText}\n`;
+        msg += `────────────────────\n`;
+        msg += `👨‍🎓 Учнів у списку: ${studentsInScope.length}\n`;
+        msg += `✅ Усього виконано робіт: ${totalWorksCount}\n`;
+        msg += `🎯 Середній бал по групі: ${allClassPctsChronological.length > 0 ? classAvgPct + '%' : '—'}\n`;
+        msg += `❌ Невиконаних обов'язкових ДЗ (боргів): ${totalDebtsCount}\n`;
+        msg += `${classDyn.text}\n\n`;
+        msg += `📋 Результати по учнях:\n`;
+
+        studentStatsRows.forEach((r, idx) => {
+            const avgStr = r.avgPct !== null ? `${r.avgPct}%` : '—';
+            const debtStr = r.debtsCount > 0 ? ` | ❌ Боргів: ${r.debtsCount} (${r.missingList.join(', ')})` : ' | 🌟 Без боргів';
+            msg += `${idx + 1}. ${r.name}: виконано ${r.doneCount}, сер. бал ${avgStr} (${r.dynShort})${debtStr}\n`;
+        });
+
+        document.getElementById('messenger-report-text').value = msg;
+
+        // 2. Формуємо документ А4 для друку та PDF
+        let tableRowsHtml = '';
+        studentStatsRows.forEach((r, idx) => {
+            tableRowsHtml += `<tr>
+                <td>${idx + 1}</td>
+                <td><b>${escapeHtml(r.name)}</b></td>
+                <td>${escapeHtml(r.categoryName)}</td>
+                <td style="text-align:center; font-weight:bold;">${r.doneCount}</td>
+                <td style="text-align:center; font-weight:bold;">${r.avgPct !== null ? r.avgPct + '%' : '—'}</td>
+                <td style="text-align:center;">${escapeHtml(r.dynShort)}</td>
+                <td style="color:${r.debtsCount > 0 ? '#dc2626' : '#059669'}; font-weight:bold;">
+                    ${r.debtsCount > 0 ? `❌ ${r.debtsCount} (${escapeHtml(r.missingList.join(', '))})` : '✅ Виконано все'}
+                </td>
+            </tr>`;
+        });
+
+        let printHtml = `
+            <div class="print-preview-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:16px;">
+                    <div>
+                        <h2 style="margin:0; font-size:22px;">Зведена відомість успішності класу</h2>
+                        <p style="margin:5px 0 0 0; color:#475569; font-size:14px;">Клас / Група: <b>${escapeHtml(catTitle)}</b> | Учнів: <b>${studentsInScope.length}</b></p>
+                    </div>
+                    <div style="text-align:right; font-size:13px; color:#475569;">
+                        <div>Період: <b>${escapeHtml(periodText)}</b></div>
+                        <div>Дата формування: ${new Date().toLocaleDateString('uk-UA')}</div>
+                    </div>
+                </div>
+
+                <div class="print-summary-grid">
+                    <div class="print-stat-box">
+                        <div class="lbl">Усього учнів</div>
+                        <div class="val">${studentsInScope.length}</div>
+                    </div>
+                    <div class="print-stat-box">
+                        <div class="lbl">Здано робіт</div>
+                        <div class="val">${totalWorksCount}</div>
+                    </div>
+                    <div class="print-stat-box">
+                        <div class="lbl">Середній бал класу</div>
+                        <div class="val">${allClassPctsChronological.length > 0 ? classAvgPct + '%' : '—'}</div>
+                    </div>
+                    <div class="print-stat-box">
+                        <div class="lbl">Усього боргів по ДЗ</div>
+                        <div class="val" style="color:${totalDebtsCount > 0 ? '#dc2626' : '#059669'};">${totalDebtsCount}</div>
+                    </div>
+                </div>
+
+                <p style="font-size:14px; background:#f1f5f9; padding:10px 14px; border-radius:6px; border-left:4px solid #3b82f6; margin-bottom:16px;">
+                    <b>Загальна динаміка групи:</b> ${escapeHtml(classDyn.text)}
+                </p>
+
+                <h3 style="font-size:16px; margin-bottom:8px;">Таблиця результатів по учнях</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Ім'я учня</th>
+                            <th>Клас</th>
+                            <th style="text-align:center;">Виконано</th>
+                            <th style="text-align:center;">Середній %</th>
+                            <th style="text-align:center;">Динаміка</th>
+                            <th>Невиконані ДЗ (борги)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRowsHtml || '<tr><td colspan="7" style="text-align:center;">Немає учнів у вибраній категорії</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        document.getElementById('summary-print-preview').innerHTML = printHtml;
+        document.getElementById('printable-a4-Wrapper').innerHTML = printHtml;
+    }
+
+    function copyMessengerReportText() {
+        const textarea = document.getElementById('messenger-report-text');
+        textarea.select();
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            alert("Текст звіту скопійовано! Тепер ви можете вставити його у Viber, Telegram або WhatsApp.");
+        });
+    }
+
+    function printReportA4() {
+        window.print();
+    }
+
+    function closeSummaryReportModal() {
+        document.getElementById('summary-report-modal').style.display = 'none';
     }
 
     // --- ПОВНЕ РЕДАГУВАННЯ ЗАПИСУ (ТАЄМНИЙ РЕЖИМ 1982) ---
@@ -1623,10 +2652,8 @@
             return alert("Будь ласка, заповніть Ім'я учня, Назву гри та Дату!");
         }
 
-        // Визначаємо гілку місяця (РРРР-ММ)
         const newMonth = newDate.slice(0, 7);
 
-        // Якщо це додавання нового запису з нуля
         if (!origDate || !origGame || !origStudent) {
             const newPath = `homework_reports/${newMonth}/${newDate}/${newGame}/${newStudent}`;
             db.ref(newPath).set({
@@ -1643,7 +2670,6 @@
         const newPath = `homework_reports/${newMonth}/${newDate}/${newGame}/${newStudent}`;
 
         db.ref(oldPath).once('value').then(snapshot => {
-            // Зберігаємо всі додаткові поля звіту (відповіді дитини в грі тощо)
             let fullReportObj = snapshot.val() || {};
             fullReportObj.score = newScore;
             fullReportObj.timestamp = newTimestamp;
@@ -1654,7 +2680,6 @@
             }
             updates[newPath] = fullReportObj;
 
-            // Якщо увімкнено галочку "Перейменувати у всіх інших роботах цього гостя"
             if (renameAll && origStudent !== newStudent) {
                 for (const m in cachedReportsData) {
                     for (const d in cachedReportsData[m]) {
