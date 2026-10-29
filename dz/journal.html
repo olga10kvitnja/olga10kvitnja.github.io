@@ -586,6 +586,19 @@
         .att-mini-pill.p-abs { background: rgba(239, 68, 68, 0.2); color: #f87171; }
         .att-mini-pill.p-exc { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
 
+        .att-class-group-header {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-left: 4px solid #38bdf8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 12px 0 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
         .att-student-row {
             display: flex;
             justify-content: space-between;
@@ -857,11 +870,12 @@
                 <div class="student-dropdown-menu" id="student-dropdown-menu"></div>
             </div>
             
-            <input type="text" id="search-game" list="all-games-datalist" placeholder="Назва гри (напр. дз, см, game1...)" oninput="loadReports()" style="flex: 1; min-width: 170px;">
+            <input type="text" id="search-game" list="all-games-datalist" placeholder="Пошук гри (будь-які літери, скорочення або частина назви...)" oninput="loadReports()" style="flex: 1; min-width: 190px;">
             
             <select id="report-category" onchange="loadReports()">
-                <option value="all">Всі категорії (всі класи)</option>
-                <option value="individual">Тільки Індивідуальні</option>
+                <option value="all">Всі категорії (разом)</option>
+                <option value="only_classes">🏫 Тільки Класи (без індивідуальних)</option>
+                <option value="individual">👤 Тільки Індивідуальні</option>
             </select>
 
             <div class="view-switcher">
@@ -939,14 +953,30 @@
     <!-- Вкладка: Календар Відвідуваності -->
     <div id="tab-attendance" class="tab-content">
         <div class="control-group" style="justify-content: space-between;">
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <label style="color:#94a3b8; font-size:13px; font-weight:bold;">Клас / Група:</label>
-                <select id="att-class-select" onchange="renderAttendanceAll()">
-                    <option value="all">Всі класи та учні</option>
-                    <option value="individual">Тільки Індивідуальні</option>
-                </select>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <!-- Головний перемикач: Класи окремо, Індивідуальні окремо -->
+                <div class="view-switcher">
+                    <button type="button" id="att-scope-classes" class="active" onclick="setAttendanceScope('classes')">🏫 Класи</button>
+                    <button type="button" id="att-scope-individual" onclick="setAttendanceScope('individual')">👤 Індивідуальні учні</button>
+                </div>
 
-                <input type="text" id="att-student-filter" placeholder="Фільтр за ім'ям учня..." oninput="renderAttendanceAll()" style="min-width:190px;">
+                <!-- Вибір конкретного класу (показується тільки в режимі "Класи") -->
+                <div id="att-class-select-wrap" style="display:flex; align-items:center; gap:8px;">
+                    <label style="color:#94a3b8; font-size:13px; font-weight:bold;">Клас:</label>
+                    <select id="att-class-select" onchange="renderAttendanceAll()">
+                        <option value="all_classes">Усі класи (без індивідуальних)</option>
+                    </select>
+                </div>
+
+                <!-- Вибір конкретного індивідуального учня (показується тільки в режимі "Індивідуальні") -->
+                <div id="att-indiv-select-wrap" style="display:none; align-items:center; gap:8px;">
+                    <label style="color:#94a3b8; font-size:13px; font-weight:bold;">Учень:</label>
+                    <select id="att-indiv-select" onchange="renderAttendanceAll()">
+                        <option value="all_indiv">Усі індивідуальні учні</option>
+                    </select>
+                </div>
+
+                <input type="text" id="att-student-filter" placeholder="Пошук за ім'ям учня..." oninput="renderAttendanceAll()" style="min-width:170px;">
             </div>
 
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -994,7 +1024,7 @@
         <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:18px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:10px;">
                 <div>
-                    <h3 style="margin:0; color:#38bdf8;">📊 Табель відвідуваності по кожній дитині за місяць</h3>
+                    <h3 id="att-matrix-heading" style="margin:0; color:#38bdf8;">📊 Табель відвідуваності класів за місяць</h3>
                     <small style="color:#94a3b8;">Натискайте прямо на клітинку в таблиці, щоб перемкнути: ✅ Був → ❌ Не був → 🏥 Поважна → —</small>
                 </div>
                 <div class="view-switcher">
@@ -1009,7 +1039,7 @@
     <!-- Вкладка 2: Список усіх ігор -->
     <div id="tab-games" class="tab-content">
         <div class="control-group">
-            <input type="text" id="filter-games-input" placeholder="Пошук гри (напр. дз, см, або частина назви)..." oninput="renderGamesCatalog()" style="flex: 1;">
+            <input type="text" id="filter-games-input" placeholder="Пошук гри (будь-які літери, скорочення або частина назви)..." oninput="renderGamesCatalog()" style="flex: 1;">
             <input type="text" id="new-catalog-game-id" placeholder="Додати гру до списку (напр. game15)" style="flex: 1;">
             <input type="text" id="new-catalog-game-note" placeholder="Опис / тема (необов'язково)" style="flex: 1;">
             <button onclick="addGameToCatalog()" class="btn-blue">➕ Зберегти гру в каталог</button>
@@ -1147,7 +1177,7 @@
     let assignmentsData = {}; 
     let catalogGamesData = {};
     let cachedReportsData = {};
-    let attendanceData = {}; // Зберігає дані відвідуваності: { 'YYYY-MM': { 'YYYY-MM-DD': { 'catId': { 'StudentName': 'present'|'absent'|'excused' } } } }
+    let attendanceData = {}; // { 'YYYY-MM': { 'YYYY-MM-DD': { 'catId': { 'StudentName': 'present'|'absent'|'excused' } } } }
     let studentChartInstance = null; 
     let currentChartStudentName = "";
     let currentChartRawSubs = [];
@@ -1157,6 +1187,7 @@
     let lastExportRows = []; // Масив рядків для експорту поточного вигляду в CSV
 
     // Стан календаря відвідуваності
+    let attendanceScope = 'classes'; // 'classes' (тільки класи без індивідуальних) або 'individual' (окремо індивідуальні)
     let selectedAttDate = formatLocalYYYYMMDD(new Date());
     let selectedAttMonth = selectedAttDate.slice(0, 7);
     let attMatrixColsMode = 'lessons'; // 'lessons' або 'all'
@@ -1211,7 +1242,7 @@
         });
     }
 
-    // --- РОЗУМНИЙ / НЕЧІТКИЙ ПОШУК ІГОР ТА ЗАВДАНЬ (ДЗ <-> ЩЗ, СМ <-> СР, РОЗКЛАДКА, ОДРУКІВКИ) ---
+    // --- УНІВЕРСАЛЬНИЙ РОЗУМНИЙ ТА НЕЧІТКИЙ ПОШУК ДЛЯ БУДЬ-ЯКИХ ЛІТЕР, СКОРОЧЕНЬ ТА ОДРУКІВОК ---
     const EN_TO_UK_MAP = {
         'q':'й','w':'ц','e':'у','r':'к','t':'е','y':'н','u':'г','i':'ш','o':'щ','p':'з','[':'х',']':'ї',
         'a':'ф','s':'і','d':'в','f':'а','g':'п','h':'р','j':'о','k':'л','l':'д',';':'ж',"'":'є',
@@ -1228,45 +1259,112 @@
         return String(str || '').toLowerCase().replace(/[\s_\-\.\/\\,;:()\[\]]+/g, '');
     }
 
-    // Групи синонімів, скорочень та типових клавіатурних одруківок
-    const SMART_SYNONYM_GROUPS = [
-        // Домашнє завдання (дз часто друкується як щз, жз, вз, дх, dz, hw)
-        ['дз', 'щз', 'жз', 'вз', 'дх', 'щх', 'дз_', 'щз_', 'домашн', 'домашка', 'дом', 'dz', 'hw'],
-        // Самостійна робота (см, ср, сам, чм, ім, самостійна)
-        ['см', 'ср', 'сам', 'чм', 'ім', 'см_', 'ср_', 'самостійн', 'самост', 'sm', 'sr'],
-        // Контрольна робота
-        ['кр', 'кр_', 'контр', 'контрольн', 'kr'],
-        // Тренажер
-        ['тр', 'трен', 'тренажер', 'tr'],
-        // Класна робота / Урок
-        ['кл', 'класн', 'ур', 'урок', 'lesson']
-    ];
-
-    function getLevenshteinDist(a, b) {
+    // Відстань Дамерау-Левенштейна (враховує заміну, пропуск, вставку та переставляння сусідніх літер)
+    function getDamerauLevenshteinDist(a, b) {
         if (a === b) return 0;
         if (!a.length) return b.length;
         if (!b.length) return a.length;
-        const matrix = [];
-        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-        for (let i = 1; i <= b.length; i++) {
-            for (let j = 1; j <= a.length; j++) {
-                const cost = b.charAt(i - 1) === a.charAt(j - 1) ? 0 : 1;
-                matrix[i][j] = Math.min(
-                    matrix[i - 1][j] + 1,
-                    matrix[i][j - 1] + 1,
-                    matrix[i - 1][j - 1] + cost
+        const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+        for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+        for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+
+        for (let i = 1; i <= a.length; i++) {
+            for (let j = 1; j <= b.length; j++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                dp[i][j] = Math.min(
+                    dp[i - 1][j] + 1,       // видалення
+                    dp[i][j - 1] + 1,       // вставка
+                    dp[i - 1][j - 1] + cost // заміна
                 );
+                if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+                    dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1); // транспозиція сусідніх літер
+                }
             }
         }
-        return matrix[b.length][a.length];
+        return dp[a.length][b.length];
+    }
+
+    // Перевірка, чи є запит абревіатурою / підпослідовністю літер у слові (напр. "см" -> "самостійна", "чт" -> "читання", "мт" -> "математика")
+    function isAbbreviationMatch(queryClean, word) {
+        if (queryClean.length < 2 || queryClean.length > 4 || word.length < queryClean.length) return false;
+        // Перша літера скорочення має збігатися з першою літерою слова, а решта літер — йти по порядку у першій частині слова
+        if (queryClean[0] !== word[0]) return false;
+        const searchWindow = word.slice(0, Math.min(word.length, queryClean.length * 3 + 1));
+        let qIdx = 0;
+        for (let i = 0; i < searchWindow.length && qIdx < queryClean.length; i++) {
+            if (searchWindow[i] === queryClean[qIdx]) {
+                qIdx++;
+            }
+        }
+        return qIdx === queryClean.length;
+    }
+
+    // Перевірка, чи утворюють літери запиту ініціали кількох слів поспіль (напр. "дз" -> "домашнє завдання", "ср" -> "самостійна робота")
+    function isMultiWordInitialsMatch(queryClean, wordsArray) {
+        if (queryClean.length < 2 || wordsArray.length < queryClean.length) return false;
+        const initials = wordsArray.map(w => w[0]).join('');
+        return initials.includes(queryClean);
+    }
+
+    function testSingleVariantToken(qVariant, fullTarget, cleanTarget, targetWords) {
+        const qClean = normalizeSearchToken(qVariant);
+        if (!qClean) return true;
+
+        // 1. Будь-який прямий збіг підрядка або збіг без роздільників (_, -, пробіл)
+        if (fullTarget.includes(qVariant) || cleanTarget.includes(qClean)) return true;
+
+        // 2. Перевірка за ініціалами слів (напр. будь-які перші літери слів назви/опису)
+        if (isMultiWordInitialsMatch(qClean, targetWords)) return true;
+
+        // 3. Перевірка по кожному окремому слову/префіксу у назві гри та описі
+        for (const word of targetWords) {
+            if (!word) continue;
+
+            // 3а. Скорочення від будь-якого слова (напр. "см" -> "самостійна", "чт" -> "читання", "мт" -> "математика", "дз" -> "домашка")
+            if (isAbbreviationMatch(qClean, word)) return true;
+
+            // 3б. Універсальний допуск одруківки для коротких префіксів/тегів (2 літери, напр. "дз" <-> "щз", "см" <-> "ср", "зд" <-> "дз")
+            if (qClean.length === 2 && word.length >= 2) {
+                const wordPrefix2 = word.slice(0, 2);
+                // Якщо це короткий префікс-тег (2–3 літери перед _ або цифрою, як-от щз_1, ср_2) — дозволяємо 1 будь-яку помилку або переставлені літери
+                if (word.length <= 3 && getDamerauLevenshteinDist(qClean, wordPrefix2) <= 1) {
+                    return true;
+                }
+                // Для довших слів дозволяємо переставлені перші 2 літери
+                if (qClean[0] === wordPrefix2[1] && qClean[1] === wordPrefix2[0]) {
+                    return true;
+                }
+            }
+
+            // 3в. Універсальний нечіткий пошук для запитів від 3 літер (допускає 1 одруківку для 3-5 літер і 2 одруківки для 6+ літер у будь-якій частині слова)
+            if (qClean.length >= 3) {
+                const maxAllowedDist = qClean.length >= 6 ? 2 : 1;
+                if (Math.abs(word.length - qClean.length) <= maxAllowedDist) {
+                    if (getDamerauLevenshteinDist(qClean, word) <= maxAllowedDist) return true;
+                }
+                // Ковзне вікно всередині довгого слова або префікса
+                if (word.length > qClean.length) {
+                    for (let len = Math.max(2, qClean.length - 1); len <= Math.min(word.length, qClean.length + 1); len++) {
+                        for (let start = 0; start <= word.length - len; start++) {
+                            const sub = word.slice(start, start + len);
+                            if (getDamerauLevenshteinDist(qClean, sub) <= maxAllowedDist) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     function smartGameMatch(gameId, gameNote, rawQuery) {
         if (!rawQuery || rawQuery.trim() === '') return true;
         const fullTarget = `${gameId || ''} ${gameNote || ''}`.toLowerCase();
         const cleanTarget = normalizeSearchToken(fullTarget);
-        // Розбиваємо назву гри та опис на окремі смислові частини (за _, -, пробілами, або межею літер і цифр)
+
+        // Розбиваємо назву гри та тему на окремі токени (за _, -, пробілами, та межею між літерами і цифрами: напр. "щз12" -> ["щз", "12"])
         const targetWords = fullTarget
             .replace(/([a-zа-яіїєґ])(\d)/gi, '$1 $2')
             .replace(/(\d)([a-zа-яіїєґ])/gi, '$1 $2')
@@ -1276,63 +1374,16 @@
         const queryTokens = rawQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
 
         return queryTokens.every(qToken => {
-            const qClean = normalizeSearchToken(qToken);
-            if (!qClean) return true;
-
-            // 1. Прямий збіг або збіг без роздільників (_, -, .)
-            if (fullTarget.includes(qToken) || cleanTarget.includes(qClean)) return true;
-
-            // 2. Перевірка автоматичної зміни розкладки (EN <-> UKR)
+            // Перевіряємо введений варіант, а також варіанти з автоматично перемкнутою розкладкою клавіатури (EN <-> UKR)
             const qUk = convertLayoutStr(qToken, EN_TO_UK_MAP);
             const qEn = convertLayoutStr(qToken, UK_TO_EN_MAP);
-            if (fullTarget.includes(qUk) || cleanTarget.includes(normalizeSearchToken(qUk))) return true;
-            if (fullTarget.includes(qEn) || cleanTarget.includes(normalizeSearchToken(qEn))) return true;
 
-            // 3. Перевірка за словником скорочень та одруківок (дз <-> щз, см <-> ср/самостійна тощо)
-            for (const group of SMART_SYNONYM_GROUPS) {
-                const tokenMatchesGroup = group.some(alias => {
-                    const cleanAlias = normalizeSearchToken(alias);
-                    return qClean === cleanAlias || qUk === cleanAlias || (qClean.length >= 3 && cleanAlias.startsWith(qClean));
-                });
-                if (tokenMatchesGroup) {
-                    const targetHasAnyFromGroup = group.some(alias => {
-                        const cleanAlias = normalizeSearchToken(alias);
-                        return fullTarget.includes(alias) || cleanTarget.includes(cleanAlias) || targetWords.some(w => w.startsWith(cleanAlias));
-                    });
-                    if (targetHasAnyFromGroup) return true;
-                }
-            }
-
-            // 4. Нечіткий збіг (допускаємо 1 одруківку в слові або префіксі слова)
-            if (qClean.length >= 2) {
-                for (const word of targetWords) {
-                    if (word.length < 2) continue;
-                    const prefix = word.slice(0, qClean.length);
-                    // Для слів з 2 літер (напр. "дз" і "щз") дозволяємо 1 одруківку, якщо це початок назви або окремий токен
-                    if (qClean.length === 2 && word.length >= 2) {
-                        if (getLevenshteinDist(qClean, prefix) <= 1 && (qClean[0] === prefix[0] || qClean[1] === prefix[1])) {
-                            return true;
-                        }
-                    } else if (qClean.length >= 3) {
-                        if (getLevenshteinDist(qClean, prefix) <= 1 || getLevenshteinDist(qClean, word) <= 1) {
-                            return true;
-                        }
-                    }
-                }
-            }
+            if (testSingleVariantToken(qToken, fullTarget, cleanTarget, targetWords)) return true;
+            if (qUk !== qToken && testSingleVariantToken(qUk, fullTarget, cleanTarget, targetWords)) return true;
+            if (qEn !== qToken && testSingleVariantToken(qEn, fullTarget, cleanTarget, targetWords)) return true;
 
             return false;
         });
-    }
-
-    // Допоміжні ключові слова для datalist, щоб браузер також підказував щз при введенні дз
-    function getSmartDatalistKeywords(gameId, note) {
-        const combined = `${gameId || ''} ${note || ''}`.toLowerCase();
-        let hints = [];
-        if (/(дз|щз|жз|вз|домаш|dz|hw)/i.test(combined)) hints.push('дз щз домашнє');
-        if (/(см|ср|сам|самост|sm|sr)/i.test(combined)) hints.push('см ср самостійна');
-        if (/(кр|контр|kr)/i.test(combined)) hints.push('кр контрольна');
-        return hints.join(' ');
     }
 
     // --- ТАЄМНИЙ РЕЖИМ (ПАРОЛЬ 1982) ТА РЕЗЕРВНА КОПІЯ (BACKUP) ---
@@ -1536,33 +1587,48 @@
         const reportSelect = document.getElementById('report-category');
         const assignSelect = document.getElementById('assign-class-select');
         const attClassSelect = document.getElementById('att-class-select');
+        const attIndivSelect = document.getElementById('att-indiv-select');
         
         const currentStudentVal = studentSelect.value;
         const currentReportVal = reportSelect.value;
         const currentAssignVal = assignSelect.value;
-        const currentAttClassVal = attClassSelect ? attClassSelect.value : 'all';
+        const currentAttClassVal = attClassSelect ? attClassSelect.value : 'all_classes';
+        const currentAttIndivVal = attIndivSelect ? attIndivSelect.value : 'all_indiv';
 
         studentSelect.innerHTML = `<option value="individual">Індивідуально</option>`;
-        reportSelect.innerHTML = `<option value="all">Всі категорії (всі класи)</option><option value="individual">Тільки Індивідуальні</option>`;
+        reportSelect.innerHTML = `
+            <option value="all">Всі категорії (разом)</option>
+            <option value="only_classes">🏫 Тільки Класи (без індивідуальних)</option>
+            <option value="individual">👤 Тільки Індивідуальні</option>
+        `;
         assignSelect.innerHTML = `<option value="individual">Індивідуально</option>`;
         if (attClassSelect) {
-            attClassSelect.innerHTML = `<option value="all">Всі класи та учні</option><option value="individual">Тільки Індивідуальні</option>`;
+            attClassSelect.innerHTML = `<option value="all_classes">Усі класи (без індивідуальних)</option>`;
         }
 
         Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
             const className = classesData[classId].name;
             studentSelect.innerHTML += `<option value="${classId}">${escapeHtml(className)}</option>`;
-            reportSelect.innerHTML += `<option value="${classId}">${escapeHtml(className)}</option>`;
+            reportSelect.innerHTML += `<option value="${classId}">👥 ${escapeHtml(className)}</option>`;
             assignSelect.innerHTML += `<option value="${classId}">${escapeHtml(className)}</option>`;
             if (attClassSelect) {
-                attClassSelect.innerHTML += `<option value="${classId}">${escapeHtml(className)}</option>`;
+                attClassSelect.innerHTML += `<option value="${classId}">👥 ${escapeHtml(className)}</option>`;
             }
         });
+
+        if (attIndivSelect) {
+            attIndivSelect.innerHTML = `<option value="all_indiv">Усі індивідуальні учні</option>`;
+            const indivNames = studentsData.individual ? Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)) : [];
+            indivNames.forEach(name => {
+                attIndivSelect.innerHTML += `<option value="${escapeHtml(name)}">👤 ${escapeHtml(name)}</option>`;
+            });
+        }
 
         if (document.querySelector(`#new-student-category option[value="${currentStudentVal}"]`)) studentSelect.value = currentStudentVal;
         if (document.querySelector(`#report-category option[value="${currentReportVal}"]`)) reportSelect.value = currentReportVal;
         if (document.querySelector(`#assign-class-select option[value="${currentAssignVal}"]`)) assignSelect.value = currentAssignVal;
         if (attClassSelect && document.querySelector(`#att-class-select option[value="${currentAttClassVal}"]`)) attClassSelect.value = currentAttClassVal;
+        if (attIndivSelect && document.querySelector(`#att-indiv-select option[value="${currentAttIndivVal}"]`)) attIndivSelect.value = currentAttIndivVal;
 
         const allStudentsDatalist = document.getElementById('all-students-datalist');
         let registeredNames = new Set();
@@ -1601,13 +1667,13 @@
         document.getElementById('clear-student-btn').style.display = searchVal ? 'block' : 'none';
 
         let groups = [];
-        let indivList = studentsData.individual ? Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)) : [];
-        groups.push({ id: 'grp-indiv', title: '👤 Індивідуальні учні', items: indivList });
-
         Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
             let clsList = studentsData[classId] ? Object.values(studentsData[classId]).sort((a,b) => a.localeCompare(b)) : [];
             groups.push({ id: `grp-${classId}`, title: `👥 ${classesData[classId].name}`, items: clsList });
         });
+
+        let indivList = studentsData.individual ? Object.values(studentsData.individual).sort((a,b) => a.localeCompare(b)) : [];
+        groups.push({ id: 'grp-indiv', title: '👤 Індивідуальні учні', items: indivList });
 
         let guestSet = new Set();
         for (const month in cachedReportsData) {
@@ -1740,9 +1806,7 @@
         if (datalist) {
             datalist.innerHTML = '';
             allGames.forEach(g => {
-                const kw = getSmartDatalistKeywords(g.id, g.note);
-                const labelTxt = [g.note || '', kw].filter(Boolean).join(' • ');
-                datalist.innerHTML += `<option value="${escapeHtml(g.id)}">${escapeHtml(labelTxt)}</option>`;
+                datalist.innerHTML += `<option value="${escapeHtml(g.id)}">${escapeHtml(g.note || '')}</option>`;
             });
         }
         renderGamesCatalog();
@@ -2005,7 +2069,6 @@
                         }
                     }
                 }
-                // Переносимо також історію відвідуваності цього учня на нове ім'я
                 for (const m in attendanceData) {
                     for (const d in attendanceData[m]) {
                         if (attendanceData[m][d] && attendanceData[m][d][categoryId] && attendanceData[m][d][categoryId][oldName]) {
@@ -2024,12 +2087,26 @@
         });
     }
 
-    // --- КАЛЕНДАР ВІДВІДУВАНОСТІ ТА ТАБЕЛЬ ---
+    // --- КАЛЕНДАР ВІДВІДУВАНОСТІ ТА ТАБЕЛЬ (КЛАСИ ОКРЕМО ВІД ІНДИВІДУАЛЬНИХ) ---
     const UK_MONTH_NAMES = [
         'Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень',
         'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'
     ];
     const UK_WEEKDAY_FULL = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота'];
+
+    function setAttendanceScope(scope) {
+        attendanceScope = scope;
+        document.getElementById('att-scope-classes').classList.toggle('active', scope === 'classes');
+        document.getElementById('att-scope-individual').classList.toggle('active', scope === 'individual');
+
+        document.getElementById('att-class-select-wrap').style.display = (scope === 'classes') ? 'flex' : 'none';
+        document.getElementById('att-indiv-select-wrap').style.display = (scope === 'individual') ? 'flex' : 'none';
+        document.getElementById('att-matrix-heading').innerText = (scope === 'classes')
+            ? '📊 Табель відвідуваності класів за місяць'
+            : '📊 Табель відвідуваності індивідуальних учнів за місяць';
+
+        renderAttendanceAll();
+    }
 
     function getStudentAttendanceStatus(dateStr, catId, studentName) {
         const m = dateStr.slice(0, 7);
@@ -2102,16 +2179,40 @@
         renderAttendanceAll();
     }
 
+    // Повертає учнів строго залежно від обраного режиму: АБО тільки класи, АБО тільки індивідуальні
     function getFilteredAttendanceStudents() {
         const baseRoster = getBaseRoster();
-        const catFilter = document.getElementById('att-class-select')?.value || 'all';
         const stuQuery = (document.getElementById('att-student-filter')?.value || '').trim();
 
-        return baseRoster.filter(st => {
-            if (catFilter !== 'all' && st.category !== catFilter) return false;
-            if (stuQuery && !smartGameMatch(st.name, st.categoryName, stuQuery)) return false;
-            return true;
+        if (attendanceScope === 'classes') {
+            const classVal = document.getElementById('att-class-select')?.value || 'all_classes';
+            return baseRoster.filter(st => {
+                if (st.category === 'individual') return false; // Індивідуальні ніколи не змішуються з класами
+                if (classVal !== 'all_classes' && st.category !== classVal) return false;
+                if (stuQuery && !smartGameMatch(st.name, st.categoryName, stuQuery)) return false;
+                return true;
+            });
+        } else {
+            const indivVal = document.getElementById('att-indiv-select')?.value || 'all_indiv';
+            return baseRoster.filter(st => {
+                if (st.category !== 'individual') return false; // Тільки індивідуальні
+                if (indivVal !== 'all_indiv' && st.name !== indivVal) return false;
+                if (stuQuery && !smartGameMatch(st.name, '', stuQuery)) return false;
+                return true;
+            });
+        }
+    }
+
+    function markClassOnSelectedDay(catId, status) {
+        const baseRoster = getBaseRoster();
+        const classStudents = baseRoster.filter(st => st.category === catId);
+        if (classStudents.length === 0) return;
+        const m = selectedAttDate.slice(0, 7);
+        const updates = {};
+        classStudents.forEach(st => {
+            updates[`journal_attendance/${m}/${selectedAttDate}/${catId}/${st.name}`] = status;
         });
+        db.ref().update(updates);
     }
 
     function markAllOnSelectedDay(status) {
@@ -2128,7 +2229,7 @@
     function clearSelectedDayAttendance() {
         const students = getFilteredAttendanceStudents();
         if (students.length === 0) return;
-        if (!confirm(`Очистити всі відмітки відвідуваності за ${selectedAttDate} для обраного списку учнів?`)) return;
+        if (!confirm(`Очистити всі відмітки відвідуваності за ${selectedAttDate} для обраного списку?`)) return;
         const m = selectedAttDate.slice(0, 7);
         const updates = {};
         students.forEach(st => {
@@ -2145,7 +2246,6 @@
         const [yearNum, monthNum] = selectedAttMonth.split('-').map(Number);
         const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
         const firstDayDate = new Date(yearNum, monthNum - 1, 1);
-        // Понеділок = 0 ... Неділя = 6
         const startOffset = (firstDayDate.getDay() + 6) % 7;
 
         const monthLabel = `${UK_MONTH_NAMES[monthNum - 1]} ${yearNum}`;
@@ -2153,7 +2253,6 @@
 
         const todayStr = formatLocalYYYYMMDD(new Date());
 
-        // Збираємо статистику по кожному дню місяця для вибраного класу/списку
         let totalPresentMonth = 0;
         let totalAbsentMonth = 0;
         let totalExcusedMonth = 0;
@@ -2200,34 +2299,31 @@
 
         gridEl.innerHTML = calendarHtml;
 
-        // Верхні картки статистики за місяць
         const totalCounted = totalPresentMonth + totalAbsentMonth;
         const avgAttPct = totalCounted > 0 ? Math.round((totalPresentMonth / totalCounted) * 100) : null;
         const avgColor = avgAttPct !== null ? getColorForPct(avgAttPct) : '#94a3b8';
+        const scopeLabel = (attendanceScope === 'classes') ? 'по класах' : 'індивідуальних';
 
         document.getElementById('att-stats-bar').innerHTML = `
             <div class="att-stat-card">
-                <span class="lbl">📊 Середня відвідуваність (за місяць)</span>
+                <span class="lbl">📊 Середня відвідуваність (${scopeLabel})</span>
                 <span class="val" style="color:${avgColor};">${avgAttPct !== null ? avgAttPct + '%' : '—'}</span>
             </div>
             <div class="att-stat-card">
-                <span class="lbl">📅 Днів із відміченими уроками</span>
+                <span class="lbl">📅 Днів із проведеними уроками</span>
                 <span class="val" style="color:#38bdf8;">${activeLessonDays.length}</span>
             </div>
             <div class="att-stat-card">
-                <span class="lbl">✅ Відвідано уроків (відміток)</span>
+                <span class="lbl">✅ Присутні (відміток за місяць)</span>
                 <span class="val" style="color:#10b981;">${totalPresentMonth}</span>
             </div>
             <div class="att-stat-card">
-                <span class="lbl">❌ Пропущено уроків / 🏥 Поважна</span>
+                <span class="lbl">❌ Пропущено / 🏥 Поважна</span>
                 <span class="val" style="color:#ef4444;">${totalAbsentMonth} <small style="color:#f59e0b; font-size:15px;">(🏥 ${totalExcusedMonth})</small></span>
             </div>
         `;
 
-        // Права панель: список учнів на обраний день
         renderSelectedDayPanel(students);
-
-        // Нижня таблиця: зведений табель по кожній дитині за місяць
         renderMonthlyAttendanceMatrix(students, daysInMonth, activeLessonDays);
     }
 
@@ -2247,16 +2343,18 @@
             else if (s === 'excused') dayExc++;
         });
         const dayTotal = dayPres + dayAbs;
-        const dayPctText = dayTotal > 0 ? ` • Відвідуваність дня: ${Math.round((dayPres / dayTotal) * 100)}%` : '';
+        const dayPctText = dayTotal > 0 ? ` • Відвідуваність: ${Math.round((dayPres / dayTotal) * 100)}%` : '';
         document.getElementById('att-selected-date-sub').innerText = `Присутні: ${dayPres} | Відсутні: ${dayAbs} | Поважна: ${dayExc}${dayPctText}`;
 
         const listContainer = document.getElementById('att-day-students-list');
         if (students.length === 0) {
-            listContainer.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Немає учнів у вибраній категорії. Додайте учнів у вкладці "Учні та Класи".</p>`;
+            const emptyMsg = (attendanceScope === 'classes')
+                ? 'Немає створених класів або учнів у класах. Додайте клас у вкладці "Учні та Класи".'
+                : 'Немає індивідуальних учнів за цим фільтром.';
+            listContainer.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">${emptyMsg}</p>`;
             return;
         }
 
-        // Групуємо за класами для зручності
         const groupsMap = {};
         students.forEach(st => {
             if (!groupsMap[st.category]) {
@@ -2269,8 +2367,15 @@
         Object.keys(groupsMap).forEach(catId => {
             const grp = groupsMap[catId];
             grp.list.sort((a, b) => a.name.localeCompare(b.name));
-            html += `<div style="color:#38bdf8; font-weight:bold; font-size:13px; margin:10px 0 6px 2px; display:flex; justify-content:space-between; align-items:center;">
-                <span>📁 ${escapeHtml(grp.title)} (${grp.list.length})</span>
+
+            let quickClassBtn = '';
+            if (catId !== 'individual') {
+                quickClassBtn = `<button type="button" style="padding:4px 10px; font-size:12px;" onclick="markClassOnSelectedDay('${escapeJsStr(catId)}', 'present')">✅ Увесь клас був</button>`;
+            }
+
+            html += `<div class="att-class-group-header">
+                <span style="color:#38bdf8; font-weight:bold; font-size:14px;">👥 ${escapeHtml(grp.title)} <small style="color:#94a3b8;">(${grp.list.length})</small></span>
+                ${quickClassBtn}
             </div>`;
 
             grp.list.forEach(st => {
@@ -2323,9 +2428,11 @@
             dayColumns = Array.from(setDays).sort();
         }
 
+        const showClassCol = (attendanceScope === 'classes');
+
         let html = `<div class="matrix-scroll-wrapper"><table class="matrix-table"><thead><tr>
             <th class="sticky-col">Учень</th>
-            <th>Клас</th>`;
+            ${showClassCol ? '<th>Клас</th>' : ''}`;
 
         dayColumns.forEach(dStr => {
             const dayNum = dStr.slice(8, 10);
@@ -2349,7 +2456,6 @@
             let stPres = 0, stAbs = 0, stExc = 0;
             let missedDatesList = [];
 
-            // Рахуємо підсумок учня за весь місяць (усі дні місяця)
             for (let d = 1; d <= daysInMonth; d++) {
                 const fullD = `${selectedAttMonth}-${String(d).padStart(2, '0')}`;
                 const s = getStudentAttendanceStatus(fullD, st.category, st.name);
@@ -2379,7 +2485,7 @@
 
             html += `<tr>
                 <td class="sticky-col" style="font-weight:bold; color:#f8fafc;">${escapeHtml(st.name)}</td>
-                <td style="color:#94a3b8;">${escapeHtml(st.categoryName)}</td>
+                ${showClassCol ? `<td style="color:#94a3b8;">${escapeHtml(st.categoryName)}</td>` : ''}
                 ${rowCells}
                 <td style="color:#10b981; font-weight:bold;">${stPres}</td>
                 <td style="color:${stAbs > 0 ? '#ef4444' : '#64748b'}; font-weight:bold;" title="${missedDatesList.length ? 'Пропущені дати: ' + missedDatesList.join(', ') : ''}">${stAbs}</td>
@@ -2388,7 +2494,6 @@
             </tr>`;
         });
 
-        // Підсумковий рядок середньої відвідуваності по класу за кожен день та за місяць
         let footerDayCells = '';
         dayColumns.forEach(dStr => {
             const tot = dayPresentTotals[dStr] + dayAbsentTotals[dStr];
@@ -2400,8 +2505,8 @@
         const classAvgPct = grandTotal > 0 ? Math.round((grandPresent / grandTotal) * 100) : null;
 
         html += `<tr style="background:#0f172a; border-top:2px solid #475569;">
-            <td class="sticky-col" style="font-weight:bold; color:#38bdf8;">Середня по класу</td>
-            <td style="color:#94a3b8;">Підсумок</td>
+            <td class="sticky-col" style="font-weight:bold; color:#38bdf8;">Середня відвідуваність</td>
+            ${showClassCol ? `<td style="color:#94a3b8;">Підсумок</td>` : ''}
             ${footerDayCells}
             <td style="color:#10b981; font-weight:bold;">${grandPresent}</td>
             <td style="color:#ef4444; font-weight:bold;">${grandAbsent}</td>
@@ -2432,7 +2537,7 @@
         }
 
         const rows = [];
-        rows.push(['Учень', 'Клас', ...dayCols.map(d => `${d.slice(8, 10)}.${d.slice(5, 7)}`), 'Був (днів)', 'Пропустив (днів)', 'Поважна', 'Відвідуваність (%)']);
+        rows.push(['Учень', 'Клас / Категорія', ...dayCols.map(d => `${d.slice(8, 10)}.${d.slice(5, 7)}`), 'Був (днів)', 'Пропустив (днів)', 'Поважна', 'Відвідуваність (%)']);
 
         students.slice().sort((a, b) => a.categoryName.localeCompare(b.categoryName) || a.name.localeCompare(b.name)).forEach(st => {
             let pres = 0, abs = 0, exc = 0;
@@ -2455,7 +2560,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `vidviduvanist_${selectedAttMonth}.csv`;
+        a.download = `vidviduvanist_${attendanceScope}_${selectedAttMonth}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2487,7 +2592,6 @@
         return '#8b5cf6'; 
     }
 
-    // Розрахунок динаміки прогресу за списком оцінок у хронологічному порядку
     function computeDynamicsInfo(chronologicalPctArray) {
         if (!chronologicalPctArray || chronologicalPctArray.length < 2) {
             return { diff: 0, text: 'Недостатньо робіт для порівняння динаміки', shortText: '—' };
@@ -2734,11 +2838,17 @@
         return baseRoster;
     }
 
+    function isCategoryMatchingFilter(catId, filterId) {
+        if (filterId === 'all') return true;
+        if (filterId === 'only_classes') return catId !== 'individual';
+        return catId === filterId;
+    }
+
     function loadReports() {
         const studentQ = document.getElementById('search-student').value.trim().toLowerCase();
         const gameQ = document.getElementById('search-game').value.trim();
         const filterId = document.getElementById('report-category').value;
-        const statusFilter = document.getElementById('filter-status').value; // all | debtors | new | completed
+        const statusFilter = document.getElementById('filter-status').value;
         const output = document.getElementById('reports-output');
         
         document.getElementById('chart-section').style.display = 'none';
@@ -2777,14 +2887,12 @@
 
             const matchesSearch = (name) => !studentQ || smartGameMatch(name, '', studentQ);
 
-            // Якщо увімкнено режим МАТРИЦІ КЛАСУ (ТАБЕЛЯ)
             if (reportViewMode === 'matrix') {
                 renderMatrixView(baseRoster, submissions, gameQ, filterId, statusFilter, matchesSearch);
             } else {
                 renderListView(baseRoster, submissions, gameDates, gameQ, filterId, statusFilter, matchesSearch);
             }
 
-            // Якщо знайдено конкретного учня — показуємо графік прогресу
             if (studentQ) {
                 let exactMatches = [...new Set(submissions.filter(s => matchesSearch(s.studentName)).map(s => s.studentName))];
                 if (exactMatches.length === 0) {
@@ -2834,7 +2942,7 @@
             let processedStudents = new Set(); 
 
             const processCategory = (catId, catName) => {
-                if (filterId !== 'all' && filterId !== catId) return;
+                if (!isCategoryMatchingFilter(catId, filterId)) return;
                 let studentsInCat = baseRoster.filter(r => r.category === catId);
                 if (studentsInCat.length === 0) return;
 
@@ -2849,7 +2957,7 @@
                     let studentSubsForGame = gameSubmissions.filter(s => s.studentName === student.name);
 
                     if (studentSubsForGame.length > 0) {
-                        if (statusFilter === 'debtors') return; // У режимі боржників пропускаємо виконані
+                        if (statusFilter === 'debtors') return;
 
                         studentSubsForGame.sort((a,b) => b.date.localeCompare(a.date)).forEach(sub => {
                             const checked = isReportChecked(sub.date, targetGameId, student.name);
@@ -2900,12 +3008,11 @@
                 }
             };
 
-            processCategory('individual', 'Індивідуальні');
             Object.keys(classesData).sort((a,b) => classesData[a].name.localeCompare(classesData[b].name)).forEach(classId => {
                 processCategory(classId, classesData[classId].name);
             });
+            processCategory('individual', 'Індивідуальні');
 
-            // Гості (поза списком)
             if ((filterId === 'all' || document.getElementById('search-student').value.trim() !== '') && statusFilter !== 'debtors') {
                 let guests = gameSubmissions.filter(s => !processedStudents.has(s.studentName) && matchesSearch(s.studentName));
                 if (statusFilter === 'new') {
@@ -2950,22 +3057,18 @@
     function renderMatrixView(baseRoster, submissions, gameQ, filterId, statusFilter, matchesSearch) {
         const output = document.getElementById('reports-output');
 
-        // Відбираємо учнів для матриці
         let studentsList = baseRoster.filter(r => {
-            if (filterId !== 'all' && r.category !== filterId) return false;
+            if (!isCategoryMatchingFilter(r.category, filterId)) return false;
             return matchesSearch(r.name);
         });
 
-        // Визначаємо перелік ігор для стовпців матриці
         let gameSet = new Set();
-        if (filterId !== 'all') {
-            if (assignmentsData[filterId]) Object.keys(assignmentsData[filterId]).forEach(g => gameSet.add(g));
-        } else {
-            Object.keys(assignmentsData).forEach(cId => {
-                if (assignmentsData[cId]) Object.keys(assignmentsData[cId]).forEach(g => gameSet.add(g));
-            });
-        }
-        // Додаємо ігри, які ці учні фактично проходили за обраний період
+        Object.keys(assignmentsData).forEach(cId => {
+            if (isCategoryMatchingFilter(cId, filterId) && assignmentsData[cId]) {
+                Object.keys(assignmentsData[cId]).forEach(g => gameSet.add(g));
+            }
+        });
+
         const studentNamesSet = new Set(studentsList.map(s => s.name));
         submissions.forEach(sub => {
             if (studentNamesSet.has(sub.studentName)) gameSet.add(sub.gameId);
@@ -2982,7 +3085,6 @@
             return;
         }
 
-        // Готуємо заголовок для Excel-експорту матриці
         lastExportRows = [];
         lastExportRows.push(['Учень', 'Клас', ...gamesCols.map(g => getGameNote(g) ? `${g} (${getGameNote(g)})` : g), 'Виконано', 'Боргів', 'Середній %']);
 
@@ -3010,7 +3112,6 @@
                 const stuSubs = submissions.filter(s => s.studentName === st.name && s.gameId === gId);
 
                 if (stuSubs.length > 0) {
-                    // Беремо найсвіжішу або найкращу спробу
                     stuSubs.sort((a,b) => b.date.localeCompare(a.date));
                     const bestSub = stuSubs[0];
                     const pct = calculatePercentage(bestSub.report.score);
@@ -3072,7 +3173,6 @@
                 return `"${str}"`;
             }).join(';')
         );
-        // Додаємо UTF-8 BOM (\uFEFF), щоб Excel у Windows коректно відкривав українські літери
         const csvContent = '\uFEFF' + csvLines.join('\r\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -3101,7 +3201,6 @@
         const searchStudentInput = (forcedStudentName || document.getElementById('search-student').value || '').trim();
         const filterCatId = document.getElementById('report-category').value;
 
-        // Збираємо всі роботи за поточний вибраний період
         let periodSubs = [];
         for (const month in cachedReportsData) {
             for (const date in cachedReportsData[month]) {
@@ -3120,7 +3219,6 @@
             }
         }
 
-        // Перевіряємо, чи обрано одного конкретного учня
         let matchedStudentName = null;
         if (searchStudentInput) {
             const lowerQ = searchStudentInput.toLowerCase();
@@ -3161,7 +3259,6 @@
 
         document.getElementById('summary-modal-title').innerText = `📄 Звіт для батьків: ${studentName}`;
 
-        // 1. Формуємо текст для месенджерів (Viber / Telegram / WhatsApp)
         let msg = `📊 ЗВІТ ПРО НАВЧАННЯ УЧНЯ\n`;
         msg += `👤 Учень: ${studentName} (${catName})\n`;
         msg += `📅 Період: ${periodText}\n`;
@@ -3191,7 +3288,6 @@
 
         document.getElementById('messenger-report-text').value = msg;
 
-        // 2. Формуємо охайний документ А4 для друку та збереження в PDF
         let rowsHtml = '';
         stuSubs.slice().reverse().forEach(s => {
             const note = getGameNote(s.gameId);
@@ -3272,13 +3368,14 @@
 
     function generateClassSummaryReport(filterCatId, baseRoster, periodSubs) {
         const periodText = getPeriodLabelText();
-        const catTitle = filterCatId === 'all'
-            ? 'Усі класи та індивідуальні учні'
-            : (filterCatId === 'individual' ? 'Індивідуальні учні' : (classesData[filterCatId]?.name || filterCatId));
+        let catTitle = 'Усі класи та індивідуальні учні';
+        if (filterCatId === 'only_classes') catTitle = 'Усі класи (без індивідуальних)';
+        else if (filterCatId === 'individual') catTitle = 'Індивідуальні учні';
+        else if (classesData[filterCatId]) catTitle = classesData[filterCatId].name;
 
         document.getElementById('summary-modal-title').innerText = `📊 Зведений звіт по класу: ${catTitle}`;
 
-        let studentsInScope = baseRoster.filter(r => filterCatId === 'all' || r.category === filterCatId);
+        let studentsInScope = baseRoster.filter(r => isCategoryMatchingFilter(r.category, filterCatId));
         studentsInScope.sort((a,b) => a.categoryName.localeCompare(b.categoryName) || a.name.localeCompare(b.name));
 
         let totalWorksCount = 0;
@@ -3286,7 +3383,6 @@
         let allClassPctsChronological = [];
         let studentStatsRows = [];
 
-        // Сортуємо всі здані роботи хронологічно для загальної динаміки класу
         const sortedScopeSubs = periodSubs
             .filter(s => studentsInScope.some(st => st.name === s.studentName))
             .sort((a,b) => (a.date + (a.report.timestamp || '')).localeCompare(b.date + (b.report.timestamp || '')));
@@ -3325,7 +3421,6 @@
             : 0;
         const classDyn = computeDynamicsInfo(allClassPctsChronological);
 
-        // 1. Формуємо текст для месенджерів (Viber / Telegram)
         let msg = `📊 ЗВЕДЕНИЙ ЗВІТ ПО КЛАСУ / ГРУПІ\n`;
         msg += `👥 Категорія: ${catTitle}\n`;
         msg += `📅 Період: ${periodText}\n`;
@@ -3345,7 +3440,6 @@
 
         document.getElementById('messenger-report-text').value = msg;
 
-        // 2. Формуємо документ А4 для друку та PDF
         let tableRowsHtml = '';
         studentStatsRows.forEach((r, idx) => {
             tableRowsHtml += `<tr>
