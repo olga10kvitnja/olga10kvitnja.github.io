@@ -39,6 +39,7 @@
             border-bottom: 2px solid #334155;
             padding-bottom: 15px;
             flex-wrap: wrap;
+            align-items: center;
         }
         .tab-btn {
             padding: 12px 22px;
@@ -59,6 +60,26 @@
             background: #6366f1;
             color: #ffffff;
             box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+        .backup-main-btn {
+            margin-left: auto;
+            padding: 12px 18px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+            border: 1px solid #34d399;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .backup-main-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
         }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -709,6 +730,62 @@
             resize: vertical;
         }
 
+        /* Стилі Центру Збереження та Перенесення Даних */
+        .backup-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 15px;
+        }
+        .backup-action-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .backup-action-card h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #38bdf8;
+        }
+        .backup-action-card p {
+            margin: 0;
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.45;
+        }
+        .backup-stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+            gap: 10px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+        .backup-stat-pill {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 10px 12px;
+            text-align: center;
+        }
+        .backup-stat-pill .num {
+            font-size: 20px;
+            font-weight: bold;
+            color: #10b981;
+            display: block;
+        }
+        .backup-stat-pill .txt {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
         /* Область попереднього перегляду А4 звіту */
         .print-preview-card {
             background: #ffffff;
@@ -842,6 +919,9 @@
         <button class="tab-btn" onclick="switchTab('games', this)">🎮 Усі ігри</button>
         <button class="tab-btn" onclick="switchTab('assignments', this)">📋 Призначення ДЗ</button>
         <button class="tab-btn" onclick="switchTab('students', this)">👥 Учні та Класи</button>
+        <button type="button" class="backup-main-btn" onclick="openBackupCenterModal()" title="Зберегти всі дані журналу у файл або перенести в новий журнал">
+            🛡️ Зберегти / Перенести все
+        </button>
     </div>
 
     <!-- Вкладка 1: Звіти та Пошук -->
@@ -857,7 +937,7 @@
                 <button onclick="downloadFullBackup()" class="btn-blue" style="padding:7px 14px; font-size:13px;">📥 Завантажити резервну копію (Backup)</button>
                 <label style="background:#334155; color:#f8fafc; padding:7px 14px; border-radius:6px; font-size:13px; font-weight:bold; cursor:pointer;">
                     📤 Відновити з копії
-                    <input type="file" accept=".json" style="display:none;" onchange="restoreFromBackupFile(event)">
+                    <input type="file" accept=".json" style="display:none;" onchange="restoreFromBackupFile(event, 'merge')">
                 </label>
             </div>
         </div>
@@ -945,7 +1025,7 @@
 
         <!-- Нижня панель: Непомітна версія (таємний вхід) та Кошик -->
         <div class="bottom-utility-bar">
-            <button class="sys-version-btn" id="sys-version-btn" onclick="triggerSystemCheck()" title="Версія збірки">v2.4</button>
+            <button class="sys-version-btn" id="sys-version-btn" onclick="triggerSystemCheck()" title="Версія збірки">v2.5</button>
             <button class="trash-btn-open" onclick="openTrash()" title="Видалені роботи">🗑️</button>
         </div>
     </div>
@@ -1073,6 +1153,73 @@
             <button onclick="addStudent()">➕ Додати учня</button>
         </div>
         <div class="students-grid" id="classes-container"></div>
+    </div>
+</div>
+
+<!-- Модальне вікно ЦЕНТРУ ЗБЕРЕЖЕННЯ ТА ПЕРЕНЕСЕННЯ ВСІХ ДАНИХ -->
+<div id="backup-center-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h2 style="margin: 0; color: #10b981; font-size: 22px;">🛡️ Центр збереження та перенесення даних журналу</h2>
+            <button onclick="closeBackupCenterModal()" style="background: transparent; border: none; font-size: 28px; color: #94a3b8; cursor: pointer;">&times;</button>
+        </div>
+
+        <p style="color: #cbd5e1; font-size: 14px; margin-top: 0; margin-bottom: 14px; line-height: 1.5;">
+            Усі ваші дані зберігаються у хмарній базі даних Firebase і <b>не зникають</b> під час зміни коду сторінки. Але перед будь-якими оновленнями ви можете завантажити повну копію на комп'ютер або зробити миттєву точку збереження у хмарі.
+        </p>
+
+        <!-- Жива статистика того, що зараз є в журналі -->
+        <div class="backup-stats-summary" id="backup-live-stats"></div>
+
+        <div class="backup-cards-grid">
+            <!-- Картка 1: Завантажити файл на комп'ютер -->
+            <div class="backup-action-card">
+                <div>
+                    <h3>1. Зберегти все у файл на комп'ютер</h3>
+                    <p style="margin-top:8px;">Завантажує єдиний файл <b>.json</b>, у якому збережено абсолютно все: виконані роботи й відповіді дітей, календар відвідуваності, учнів, класи, призначені ДЗ, каталог ігор, кошик та позначки «Перевірено».</p>
+                </div>
+                <button type="button" onclick="downloadFullBackup()" style="width:100%; padding:12px; font-size:15px;">
+                    📥 Завантажити повну копію (.json)
+                </button>
+            </div>
+
+            <!-- Картка 2: Перенести дані у новий журнал (Безпечне доповнення) -->
+            <div class="backup-action-card">
+                <div>
+                    <h3>2. Перенести дані з файлу в журнал</h3>
+                    <p style="margin-top:8px;">Оберіть раніше збережений файл <b>.json</b>. Усі роботи, учні та відвідуваність автоматично перенесуться в журнал, <b>не стираючи</b> нових робіт, які діти здали пізніше.</p>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label class="btn-blue" style="text-align:center; padding:11px; border-radius:6px; font-weight:bold; cursor:pointer; display:block;">
+                        📤 Безпечно об'єднати / Доповнити з файлу
+                        <input type="file" accept=".json" style="display:none;" onchange="restoreFromBackupFile(event, 'merge')">
+                    </label>
+                    <label class="btn-slate" style="text-align:center; padding:8px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; display:block;" title="Повністю замінити базу точним станом із файлу">
+                        🔄 Повна заміна бази з файлу
+                        <input type="file" accept=".json" style="display:none;" onchange="restoreFromBackupFile(event, 'overwrite')">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Картка 3: Хмарний сейф прямо у Firebase -->
+            <div class="backup-action-card">
+                <div>
+                    <h3>3. Миттєва точка збереження в хмарі</h3>
+                    <p style="margin-top:8px;">Створює захищену резервну копію прямо всередині вашої бази Firebase перед редагуванням коду. Відновити її можна одним натисканням.</p>
+                </div>
+                <button type="button" class="btn-purple" onclick="createCloudSnapshot()" style="width:100%; padding:12px; font-size:14px;">
+                    ☁️ Створити точку збереження зараз
+                </button>
+            </div>
+        </div>
+
+        <!-- Список збережених хмарних точок відновлення -->
+        <div style="margin-top: 20px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 15px; color: #38bdf8;">☁️ Збережені точки відновлення у хмарному сейфі (останні 10):</h3>
+            <div id="cloud-snapshots-list">
+                <p style="color:#64748b; font-size:13px; margin:0;">Завантаження списку...</p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1287,7 +1434,6 @@
     // Перевірка, чи є запит абревіатурою / підпослідовністю літер у слові (напр. "см" -> "самостійна", "чт" -> "читання", "мт" -> "математика")
     function isAbbreviationMatch(queryClean, word) {
         if (queryClean.length < 2 || queryClean.length > 4 || word.length < queryClean.length) return false;
-        // Перша літера скорочення має збігатися з першою літерою слова, а решта літер — йти по порядку у першій частині слова
         if (queryClean[0] !== word[0]) return false;
         const searchWindow = word.slice(0, Math.min(word.length, queryClean.length * 3 + 1));
         let qIdx = 0;
@@ -1326,11 +1472,9 @@
             // 3б. Універсальний допуск одруківки для коротких префіксів/тегів (2 літери, напр. "дз" <-> "щз", "см" <-> "ср", "зд" <-> "дз")
             if (qClean.length === 2 && word.length >= 2) {
                 const wordPrefix2 = word.slice(0, 2);
-                // Якщо це короткий префікс-тег (2–3 літери перед _ або цифрою, як-от щз_1, ср_2) — дозволяємо 1 будь-яку помилку або переставлені літери
                 if (word.length <= 3 && getDamerauLevenshteinDist(qClean, wordPrefix2) <= 1) {
                     return true;
                 }
-                // Для довших слів дозволяємо переставлені перші 2 літери
                 if (qClean[0] === wordPrefix2[1] && qClean[1] === wordPrefix2[0]) {
                     return true;
                 }
@@ -1342,7 +1486,6 @@
                 if (Math.abs(word.length - qClean.length) <= maxAllowedDist) {
                     if (getDamerauLevenshteinDist(qClean, word) <= maxAllowedDist) return true;
                 }
-                // Ковзне вікно всередині довгого слова або префікса
                 if (word.length > qClean.length) {
                     for (let len = Math.max(2, qClean.length - 1); len <= Math.min(word.length, qClean.length + 1); len++) {
                         for (let start = 0; start <= word.length - len; start++) {
@@ -1364,7 +1507,6 @@
         const fullTarget = `${gameId || ''} ${gameNote || ''}`.toLowerCase();
         const cleanTarget = normalizeSearchToken(fullTarget);
 
-        // Розбиваємо назву гри та тему на окремі токени (за _, -, пробілами, та межею між літерами і цифрами: напр. "щз12" -> ["щз", "12"])
         const targetWords = fullTarget
             .replace(/([a-zа-яіїєґ])(\d)/gi, '$1 $2')
             .replace(/(\d)([a-zа-яіїєґ])/gi, '$1 $2')
@@ -1374,7 +1516,6 @@
         const queryTokens = rawQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
 
         return queryTokens.every(qToken => {
-            // Перевіряємо введений варіант, а також варіанти з автоматично перемкнутою розкладкою клавіатури (EN <-> UKR)
             const qUk = convertLayoutStr(qToken, EN_TO_UK_MAP);
             const qEn = convertLayoutStr(qToken, UK_TO_EN_MAP);
 
@@ -1386,13 +1527,76 @@
         });
     }
 
-    // --- ТАЄМНИЙ РЕЖИМ (ПАРОЛЬ 1982) ТА РЕЗЕРВНА КОПІЯ (BACKUP) ---
+    // --- ЦЕНТР ЗБЕРЕЖЕННЯ ТА ПЕРЕНЕСЕННЯ ВСІХ ДАНИХ + ТАЄМНИЙ РЕЖИМ (1982) ---
+    function countDatabaseStats(repObj, attObj) {
+        let reportsCount = 0;
+        for (const m in (repObj || {})) {
+            for (const d in repObj[m]) {
+                for (const g in repObj[m][d]) {
+                    reportsCount += Object.keys(repObj[m][d][g] || {}).length;
+                }
+            }
+        }
+        let attCount = 0;
+        for (const m in (attObj || {})) {
+            for (const d in attObj[m]) {
+                for (const c in attObj[m][d]) {
+                    attCount += Object.keys(attObj[m][d][c] || {}).length;
+                }
+            }
+        }
+        return { reportsCount, attCount };
+    }
+
+    function openBackupCenterModal() {
+        const modal = document.getElementById('backup-center-modal');
+        modal.style.display = 'flex';
+        renderBackupLiveStats();
+        loadCloudSnapshotsList();
+    }
+
+    function closeBackupCenterModal() {
+        document.getElementById('backup-center-modal').style.display = 'none';
+    }
+
+    function renderBackupLiveStats() {
+        const box = document.getElementById('backup-live-stats');
+        if (!box) return;
+        const { reportsCount, attCount } = countDatabaseStats(cachedReportsData, attendanceData);
+        const rosterCount = getBaseRoster().length;
+        const classesCount = Object.keys(classesData || {}).length;
+        const gamesCount = getAllGamesStats().length;
+
+        box.innerHTML = `
+            <div class="backup-stat-pill">
+                <span class="num">${reportsCount}</span>
+                <span class="txt">Виконаних робіт ДЗ</span>
+            </div>
+            <div class="backup-stat-pill">
+                <span class="num">${attCount}</span>
+                <span class="txt">Відміток відвідуваності</span>
+            </div>
+            <div class="backup-stat-pill">
+                <span class="num">${rosterCount}</span>
+                <span class="txt">Учнів у списку</span>
+            </div>
+            <div class="backup-stat-pill">
+                <span class="num">${classesCount}</span>
+                <span class="txt">Класів</span>
+            </div>
+            <div class="backup-stat-pill">
+                <span class="num">${gamesCount}</span>
+                <span class="txt">Ігор у базі</span>
+            </div>
+        `;
+    }
+
     function triggerSystemCheck() {
         if (isSecretMode) {
             if (confirm("Вимкнути розширений режим редагування?")) {
                 isSecretMode = false;
                 document.getElementById('sys-version-btn').classList.remove('unlocked');
-                document.getElementById('sys-version-btn').innerText = 'v2.4';
+                document.getElementById('sys-version-btn').innerText = 'v2.5';
                 document.getElementById('secret-admin-bar').style.display = 'none';
                 loadReports();
                 renderGamesCatalog();
@@ -1404,7 +1608,7 @@
         if (code.trim() === "1982") {
             isSecretMode = true;
             document.getElementById('sys-version-btn').classList.add('unlocked');
-            document.getElementById('sys-version-btn').innerText = '• v2.4';
+            document.getElementById('sys-version-btn').innerText = '• v2.5';
             document.getElementById('secret-admin-bar').style.display = 'flex';
             loadReports();
             renderGamesCatalog();
@@ -1413,8 +1617,8 @@
         }
     }
 
+    // Доступно завжди (без пароля) з верхньої кнопки та з панелі 1982
     function downloadFullBackup() {
-        if (!isSecretMode) return;
         Promise.all([
             db.ref('homework_reports').once('value'),
             db.ref('journal_classes').once('value'),
@@ -1424,22 +1628,31 @@
             db.ref('deleted_reports').once('value'),
             db.ref('journal_attendance').once('value')
         ]).then(([repSnap, clsSnap, stuSnap, asgSnap, catSnap, delSnap, attSnap]) => {
+            const repVal = repSnap.val() || {};
+            const attVal = attSnap.val() || {};
+            const stats = countDatabaseStats(repVal, attVal);
+
             const backupPayload = {
+                backupVersion: "2.5",
                 backupCreatedAt: new Date().toISOString(),
-                homework_reports: repSnap.val() || {},
+                statsSummary: stats,
+                homework_reports: repVal,
                 journal_classes: clsSnap.val() || {},
                 journal_students: stuSnap.val() || {},
                 journal_assignments: asgSnap.val() || {},
                 journal_games_catalog: catSnap.val() || {},
                 deleted_reports: delSnap.val() || {},
-                journal_attendance: attSnap.val() || {}
+                journal_attendance: attVal,
+                checked_reports_local: checkedReportsMap || {}
             };
             const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            const today = new Date().toISOString().slice(0, 10);
+            const now = new Date();
+            const datePart = formatLocalYYYYMMDD(now);
+            const timePart = `${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}`;
             a.href = url;
-            a.download = `journal_backup_${today}.json`;
+            a.download = `zhurnal_povna_kopiya_${datePart}_${timePart}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1447,40 +1660,189 @@
         });
     }
 
-    function restoreFromBackupFile(event) {
-        if (!isSecretMode) return;
+    // Рекурсивне безпечне об'єднання об'єктів (не видаляє існуючі ключі, яких немає у файлі)
+    function buildDeepMergeUpdates(prefix, obj, updatesOut) {
+        if (!obj || typeof obj !== 'object') return;
+        Object.keys(obj).forEach(key => {
+            const val = obj[key];
+            const path = `${prefix}/${key}`;
+            if (val !== null && typeof val === 'object' && !Array.isArray(val) && !('score' in val) && !('name' in val) && !('addedAt' in val) && !('deletedAt' in val)) {
+                buildDeepMergeUpdates(path, val, updatesOut);
+            } else {
+                updatesOut[path] = val;
+            }
+        });
+    }
+
+    function restoreFromBackupFile(event, mode = 'merge') {
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result);
-                if (!data.homework_reports && !data.journal_students) {
+                if (!data.homework_reports && !data.journal_students && !data.journal_attendance) {
+                    event.target.value = '';
                     return alert("Помилка: обраний файл не є коректною резервною копією журналу!");
                 }
-                if (!confirm("УВАГА! Ви впевнені, що хочете відновити базу даних із цього файлу? Усі дані з файлу будуть записані в журнал.")) {
+
+                const stats = countDatabaseStats(data.homework_reports, data.journal_attendance);
+                const modeTitle = (mode === 'merge')
+                    ? "БЕЗПЕЧНЕ ОБ'ЄДНАННЯ (усі дані з файлу будуть додані в журнал, жодна нова робота не зітреться)"
+                    : "ПОВНА ЗАМІНА БАЗИ (база повернеться точно до стану з цього файлу)";
+
+                if (!confirm(`Ви обрали режим: ${modeTitle}.\n\nУ файлі знайдено:\n• Виконаних робіт: ${stats.reportsCount}\n• Відміток відвідуваності: ${stats.attCount}\n\nПродовжити перенесення даних?`)) {
                     event.target.value = '';
                     return;
                 }
+
                 const updates = {};
-                if (data.homework_reports) updates['homework_reports'] = data.homework_reports;
-                if (data.journal_classes) updates['journal_classes'] = data.journal_classes;
-                if (data.journal_students) updates['journal_students'] = data.journal_students;
-                if (data.journal_assignments) updates['journal_assignments'] = data.journal_assignments;
-                if (data.journal_games_catalog) updates['journal_games_catalog'] = data.journal_games_catalog;
-                if (data.deleted_reports) updates['deleted_reports'] = data.deleted_reports;
-                if (data.journal_attendance) updates['journal_attendance'] = data.journal_attendance;
+                if (mode === 'overwrite') {
+                    if (data.homework_reports) updates['homework_reports'] = data.homework_reports;
+                    if (data.journal_classes) updates['journal_classes'] = data.journal_classes;
+                    if (data.journal_students) updates['journal_students'] = data.journal_students;
+                    if (data.journal_assignments) updates['journal_assignments'] = data.journal_assignments;
+                    if (data.journal_games_catalog) updates['journal_games_catalog'] = data.journal_games_catalog;
+                    if (data.deleted_reports) updates['deleted_reports'] = data.deleted_reports;
+                    if (data.journal_attendance) updates['journal_attendance'] = data.journal_attendance;
+                } else {
+                    if (data.homework_reports) buildDeepMergeUpdates('homework_reports', data.homework_reports, updates);
+                    if (data.journal_classes) buildDeepMergeUpdates('journal_classes', data.journal_classes, updates);
+                    if (data.journal_students) buildDeepMergeUpdates('journal_students', data.journal_students, updates);
+                    if (data.journal_assignments) buildDeepMergeUpdates('journal_assignments', data.journal_assignments, updates);
+                    if (data.journal_games_catalog) buildDeepMergeUpdates('journal_games_catalog', data.journal_games_catalog, updates);
+                    if (data.deleted_reports) buildDeepMergeUpdates('deleted_reports', data.deleted_reports, updates);
+                    if (data.journal_attendance) buildDeepMergeUpdates('journal_attendance', data.journal_attendance, updates);
+                }
+
+                if (data.checked_reports_local && typeof data.checked_reports_local === 'object') {
+                    checkedReportsMap = Object.assign({}, checkedReportsMap, data.checked_reports_local);
+                    localStorage.setItem('journal_checked_reports_v1', JSON.stringify(checkedReportsMap));
+                }
 
                 db.ref().update(updates).then(() => {
-                    alert("Резервну копію успішно відновлено!");
+                    alert(`Успішно перенесено! Відновлено робіт: ${stats.reportsCount}, відміток відвідуваності: ${stats.attCount}.`);
                     event.target.value = '';
+                    renderBackupLiveStats();
                     loadReports();
+                    renderAttendanceAll();
                 });
             } catch (err) {
+                event.target.value = '';
                 alert("Не вдалося прочитати JSON-файл резервної копії!");
             }
         };
         reader.readAsText(file);
+    }
+
+    // --- ХМАРНИЙ СЕЙФ У FIREBASE (ТОЧКИ ЗБЕРЕЖЕННЯ ПРЯМО В БАЗІ) ---
+    function createCloudSnapshot() {
+        const comment = prompt("Назва точки збереження (наприклад: Перед оновленням дизайну):", "Перед змінами в коді");
+        if (comment === null) return;
+
+        Promise.all([
+            db.ref('homework_reports').once('value'),
+            db.ref('journal_classes').once('value'),
+            db.ref('journal_students').once('value'),
+            db.ref('journal_assignments').once('value'),
+            db.ref('journal_games_catalog').once('value'),
+            db.ref('deleted_reports').once('value'),
+            db.ref('journal_attendance').once('value')
+        ]).then(([repSnap, clsSnap, stuSnap, asgSnap, catSnap, delSnap, attSnap]) => {
+            const repVal = repSnap.val() || {};
+            const attVal = attSnap.val() || {};
+            const stats = countDatabaseStats(repVal, attVal);
+
+            const snapData = {
+                createdAt: new Date().toISOString(),
+                note: comment.trim() || 'Точка збереження',
+                stats: stats,
+                payload: {
+                    homework_reports: repVal,
+                    journal_classes: clsSnap.val() || {},
+                    journal_students: stuSnap.val() || {},
+                    journal_assignments: asgSnap.val() || {},
+                    journal_games_catalog: catSnap.val() || {},
+                    deleted_reports: delSnap.val() || {},
+                    journal_attendance: attVal,
+                    checked_reports_local: checkedReportsMap || {}
+                }
+            };
+
+            db.ref('journal_backups_vault').push(snapData).then(() => {
+                loadCloudSnapshotsList();
+                alert(`Точку збереження створено у хмарі!\nЗахищено робіт: ${stats.reportsCount}, відміток відвідуваності: ${stats.attCount}.`);
+            });
+        });
+    }
+
+    function loadCloudSnapshotsList() {
+        const container = document.getElementById('cloud-snapshots-list');
+        if (!container) return;
+
+        db.ref('journal_backups_vault').limitToLast(10).once('value').then(snap => {
+            const val = snap.val();
+            if (!val) {
+                container.innerHTML = `<p style="color:#64748b; font-size:13px; margin:0;">У хмарному сейфі ще немає створених точок збереження.</p>`;
+                return;
+            }
+            const entries = Object.entries(val).sort((a, b) => new Date(b[1].createdAt) - new Date(a[1].createdAt));
+            let html = `<table><thead><tr><th>Дата і час</th><th>Опис</th><th>Вміст копії</th><th>Дії</th></tr></thead><tbody>`;
+            entries.forEach(([key, item]) => {
+                const dt = new Date(item.createdAt).toLocaleString('uk-UA');
+                const rCnt = item.stats ? item.stats.reportsCount : '—';
+                const aCnt = item.stats ? item.stats.attCount : '—';
+                html += `<tr>
+                    <td style="font-size:13px; color:#cbd5e1;">${escapeHtml(dt)}</td>
+                    <td style="font-weight:bold; color:#f8fafc;">${escapeHtml(item.note || 'Точка збереження')}</td>
+                    <td style="font-size:13px; color:#10b981;">Робіт: <b>${rCnt}</b> | Відвідуваність: <b>${aCnt}</b></td>
+                    <td>
+                        <div class="btn-group">
+                            <button type="button" class="btn-blue" style="padding:6px 11px; font-size:12px;" onclick="restoreFromCloudSnapshot('${key}')">♻️ Відновити (Без втрат)</button>
+                            <button type="button" class="btn-delete" style="padding:6px 9px; font-size:12px;" onclick="deleteCloudSnapshot('${key}')" title="Видалити цю точку">🗑️</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        });
+    }
+
+    function restoreFromCloudSnapshot(snapKey) {
+        db.ref(`journal_backups_vault/${snapKey}`).once('value').then(snap => {
+            const item = snap.val();
+            if (!item || !item.payload) return alert("Точку збереження не знайдено!");
+            if (!confirm(`Відновити та об'єднати всі дані з точки "${item.note}" від ${new Date(item.createdAt).toLocaleString('uk-UA')}?\nЖодні новіші дані не зітруться.`)) return;
+
+            const data = item.payload;
+            const updates = {};
+            if (data.homework_reports) buildDeepMergeUpdates('homework_reports', data.homework_reports, updates);
+            if (data.journal_classes) buildDeepMergeUpdates('journal_classes', data.journal_classes, updates);
+            if (data.journal_students) buildDeepMergeUpdates('journal_students', data.journal_students, updates);
+            if (data.journal_assignments) buildDeepMergeUpdates('journal_assignments', data.journal_assignments, updates);
+            if (data.journal_games_catalog) buildDeepMergeUpdates('journal_games_catalog', data.journal_games_catalog, updates);
+            if (data.deleted_reports) buildDeepMergeUpdates('deleted_reports', data.deleted_reports, updates);
+            if (data.journal_attendance) buildDeepMergeUpdates('journal_attendance', data.journal_attendance, updates);
+
+            if (data.checked_reports_local) {
+                checkedReportsMap = Object.assign({}, checkedReportsMap, data.checked_reports_local);
+                localStorage.setItem('journal_checked_reports_v1', JSON.stringify(checkedReportsMap));
+            }
+
+            db.ref().update(updates).then(() => {
+                alert("Усі дані з хмарної точки успішно відновлено!");
+                renderBackupLiveStats();
+                loadReports();
+                renderAttendanceAll();
+            });
+        });
+    }
+
+    function deleteCloudSnapshot(snapKey) {
+        if (confirm("Видалити цю точку збереження з хмарного сейфа?")) {
+            db.ref(`journal_backups_vault/${snapKey}`).remove().then(() => loadCloudSnapshotsList());
+        }
     }
 
     // --- ФІЛЬТРИ ДАТ ТА СТАТУСІВ ("НОВІ" / "ПЕРЕВІРЕНІ") ---
@@ -2187,7 +2549,7 @@
         if (attendanceScope === 'classes') {
             const classVal = document.getElementById('att-class-select')?.value || 'all_classes';
             return baseRoster.filter(st => {
-                if (st.category === 'individual') return false; // Індивідуальні ніколи не змішуються з класами
+                if (st.category === 'individual') return false;
                 if (classVal !== 'all_classes' && st.category !== classVal) return false;
                 if (stuQuery && !smartGameMatch(st.name, st.categoryName, stuQuery)) return false;
                 return true;
@@ -2195,7 +2557,7 @@
         } else {
             const indivVal = document.getElementById('att-indiv-select')?.value || 'all_indiv';
             return baseRoster.filter(st => {
-                if (st.category !== 'individual') return false; // Тільки індивідуальні
+                if (st.category !== 'individual') return false;
                 if (indivVal !== 'all_indiv' && st.name !== indivVal) return false;
                 if (stuQuery && !smartGameMatch(st.name, '', stuQuery)) return false;
                 return true;
