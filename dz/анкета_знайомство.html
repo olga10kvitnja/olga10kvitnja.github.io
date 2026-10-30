@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Завдання</title>
+
+    <!-- Підключення Firebase SDK (Compat) для роботи з Realtime Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --paper-bg: #ffffff;
+            --grid-line: #e8f4fc;
+            --margin-line: #ffccd5;
+            --marker-black: #111111;
+            --accent-orange: #ff5722;
+            --accent-orange-hover: #e64a19;
+            --correct-green: #2e7d32;
+            --correct-bg: #e8f5e9;
+            --wrong-red: #c62828;
+            --wrong-bg: #ffebee;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--paper-bg);
+            /* Імітація аркуша шкільного зошита в клітинку */
+            background-image: 
+                linear-gradient(to right, var(--grid-line) 1.5px, transparent 1.5px),
+                linear-gradient(to bottom, var(--grid-line) 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            color: var(--marker-black);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Червона лінія полів зошита */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 36px;
+            width: 2px;
+            background-color: var(--margin-line);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Плашка вчительського режиму перевірки */
+        #review-banner {
+            display: none;
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--marker-black);
+            color: #ffffff;
+            text-align: center;
+            padding: 12px 16px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 2000;
+            border-bottom: 4px solid var(--accent-orange);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Модальне вікно авторизації */
+        #auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(17, 17, 17, 0.78);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            padding: 16px;
+        }
+
+        .auth-modal {
+            background: var(--paper-bg);
+            background-image: 
+                linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border: 4px solid var(--marker-black);
+            border-radius: 16px;
+            box-shadow: 8px 8px 0px var(--marker-black);
+            padding: 28px 24px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .auth-modal h2 {
+            font-size: 24px;
+            margin-bottom: 18px;
+            color: var(--marker-black);
+        }
+
+        .auth-modal input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 18px;
+            border: 3px solid var(--marker-black);
+            border-radius: 10px;
+            margin-bottom: 16px;
+            outline: none;
+            background: #ffffff;
+            color: var(--marker-black);
+            font-weight: bold;
+        }
+
+        .auth-modal input:focus {
+            border-color: var(--accent-orange);
+        }
+
+        /* Головний контейнер для масштабування (Лупа) */
+        #zoom-wrapper {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px 16px 90px 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        #zoom-container {
+            width: 100%;
+            max-width: 900px;
+            transform-origin: top center;
+            transition: transform 0.2s ease;
+        }
+
+        /* Картка гри у стилі малюнка маркером */
+        .notebook-card {
+            background: rgba(255, 255, 255, 0.92);
+            border: 4px solid var(--marker-black);
+            border-radius: 18px;
+            box-shadow: 7px 7px 0px var(--marker-black);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Сцена з персонажем Stickman та стежинкою */
+        .path-stage-wrapper {
+            width: 100%;
+            background: #ffffff;
+            border: 3px solid var(--marker-black);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        #stickman-canvas {
+            width: 100%;
+            height: 175px;
+            display: block;
+        }
+
+        /* Індикатор прогресу */
+        .progress-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .question-box {
+            background: #fffdf7;
+            border: 3px solid var(--marker-black);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+            box-shadow: 4px 4px 0px var(--marker-black);
+        }
+
+        .question-text {
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.35;
+            color: var(--marker-black);
+        }
+
+        /* Панель інструментів малювання / вводу */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tool-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .marker-btn {
+            cursor: pointer;
+            background: #ffffff;
+            color: var(--marker-black);
+            border: 3px solid var(--marker-black);
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 15px;
+            font-weight: bold;
+            box-shadow: 3px 3px 0px var(--marker-black);
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            user-select: none;
+        }
+
+        .marker-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .marker-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px var(--marker-black);
+        }
+
+        .marker-btn.active-tool {
+            background: var(--marker-black);
+            color: #ffffff;
+        }
+
+        .marker-btn.primary-btn {
+            background: var(--accent-orange);
+            color: #ffffff;
+            font-size: 17px;
+            padding: 12px 22px;
+        }
+
+        .marker-btn.primary-btn:hover {
+            background: var(--accent-orange-hover);
+        }
+
+        /* Зона для малювання відповіді (Canvas) */
+        .answer-workspace {
+            position: relative;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 230px;
+            border: 3px solid var(--marker-black);
+            border-radius: 14px;
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+            background-size: 24px 24px;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #drawing-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .canvas-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #b0bec5;
+            font-size: 18px;
+            font-weight: bold;
+            pointer-events: none;
+            text-align: center;
+            padding: 10px;
+            transition: opacity 0.2s;
+        }
+
+        /* Альтернативне поле вводу з клавіатури */
+        .keyboard-container {
+            display: none;
+            width: 100%;
+        }
+
+        #keyboard-input {
+            width: 100%;
+            height: 230px;
+            padding: 18px;
+            font-size: 26px;
+            font-weight: bold;
+            font-style: italic;
+            letter-spacing: 1px;
+            color: var(--marker-black);
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+            background-size: 24px 24px;
+            border: 3px solid var(--marker-black);
+            border-radius: 14px;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+        }
+
+        #keyboard-input:focus {
+            border-color: var(--accent-orange);
+        }
+
+        /* Нижня панель навігації по питаннях */
+        .action-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .status-hint {
+            font-size: 14px;
+            font-weight: bold;
+            color: #d32f2f;
+            min-height: 20px;
+        }
+
+        /* Фінальний екран */
+        #final-screen {
+            display: none;
+            text-align: center;
+            padding: 20px 10px;
+        }
+
+        .final-title {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .final-subtitle {
+            font-size: 18px;
+            margin-bottom: 22px;
+            color: #333333;
+        }
+
+        #submit-status-box {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border: 4px solid var(--marker-black);
+            border-radius: 14px;
+            background: #e8f5e9;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--marker-black);
+            box-shadow: 5px 5px 0px var(--marker-black);
+        }
+
+        /* Секція вчительського режиму перевірки */
+        #teacher-review-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .review-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 14px;
+        }
+
+        .review-item {
+            border: 3px solid var(--marker-black);
+            border-radius: 12px;
+            padding: 14px;
+            background: #ffffff;
+            position: relative;
+        }
+
+        .review-item.review-correct {
+            background-color: var(--correct-bg);
+            border-color: var(--correct-green);
+        }
+
+        .review-item.review-wrong {
+            background-color: var(--wrong-bg);
+            border-color: var(--wrong-red);
+        }
+
+        .review-q-title {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .review-student-answer {
+            border: 2px dashed var(--marker-black);
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 8px;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .review-student-answer img {
+            max-width: 100%;
+            max-height: 110px;
+            object-fit: contain;
+        }
+
+        .review-expected-box {
+            font-size: 13px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        /* Зелена рамка для правильної відповіді, яку учень не вказав */
+        .review-expected-unselected {
+            border: 3px solid var(--correct-green);
+            background: #ffffff;
+            color: var(--correct-green);
+        }
+
+        .review-expected-matched {
+            color: var(--correct-green);
+        }
+
+        /* Блокування ігрового процесу у режимі перевірки */
+        .blocked-gameplay {
+            pointer-events: none !important;
+            user-select: none !important;
+        }
+
+        /* Універсальний інструмент масштабування (Лупа) */
+        .zoom-controls {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            display: flex;
+            gap: 10px;
+            z-index: 2500;
+        }
+
+        #zoom-in-btn,
+        #zoom-out-btn {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--marker-black);
+            border-radius: 12px;
+            background: #ffffff;
+            color: var(--marker-black);
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px var(--marker-black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        #zoom-in-btn:active,
+        #zoom-out-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--marker-black);
+        }
+
+        /* Адаптивність для мобільних пристроїв */
+        @media (max-width: 640px) {
+            body::before {
+                left: 14px;
+            }
+            #zoom-wrapper {
+                padding: 12px 10px 85px 10px;
+            }
+            .notebook-card {
+                padding: 14px;
+            }
+            .question-text {
+                font-size: 18px;
+            }
+            #stickman-canvas {
+                height: 145px;
+            }
+            .canvas-container,
+            #keyboard-input {
+                height: 190px;
+            }
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .tool-group {
+                justify-content: space-between;
+            }
+            .marker-btn {
+                flex: 1;
+                padding: 10px 10px;
+                font-size: 14px;
+            }
+            .action-footer {
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+            .action-footer .marker-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Плашка Вчительського Режиму Перевірки -->
+    <div id="review-banner">👀 Режим перевірки: Робота учня <span id="review-student-name"></span></div>
+
+    <!-- Модальне вікно обов'язкової авторизації -->
+    <div id="auth-overlay">
+        <div class="auth-modal">
+            <h2>👋 Привіт! Як тебе звати?</h2>
+            <input type="text" id="auth-name-input" placeholder="Введи своє ім'я та прізвище..." autocomplete="off">
+            <button class="marker-btn primary-btn" id="auth-start-btn" style="width: 100%;">Почати гру</button>
+        </div>
+    </div>
+
+    <!-- Головна обгортка для масштабування -->
+    <div id="zoom-wrapper">
+        <div id="zoom-container">
+            <div class="notebook-card" id="main-game-card">
+                <!-- Canvas для анімації персонажа Stickman та стежинки з 10 точками -->
+                <div class="path-stage-wrapper">
+                    <canvas id="stickman-canvas"></canvas>
+                </div>
+
+                <!-- Блок активного проходження 10 питань -->
+                <div id="question-gameplay-area">
+                    <div class="progress-row">
+                        <span id="progress-label">Питання 1 з 10</span>
+                    </div>
+
+                    <div class="question-box">
+                        <div class="question-text" id="q-text-display">Завантаження питання...</div>
+                    </div>
+
+                    <!-- Панель інструментів -->
+                    <div class="toolbar">
+                        <div class="tool-group" id="canvas-tools-group">
+                            <button type="button" class="marker-btn active-tool" id="pen-tool-btn">✏️ Маркер</button>
+                            <button type="button" class="marker-btn" id="eraser-tool-btn">🧽 Ластик</button>
+                            <button type="button" class="marker-btn" id="clear-canvas-btn">🗑️ Очистити</button>
+                        </div>
+                        <div class="tool-group">
+                            <button type="button" class="marker-btn" id="toggle-input-mode-btn">⌨️ Ввести з клавіатури</button>
+                        </div>
+                    </div>
+
+                    <!-- Робоча область для відповіді -->
+                    <div class="answer-workspace">
+                        <!-- Варіант 1: Малювання на Canvas -->
+                        <div class="canvas-container" id="canvas-mode-box">
+                            <div class="canvas-placeholder" id="canvas-placeholder-text">✍️ Пиши відповідь тут пальцем, стилусом або мишкою</div>
+                            <canvas id="drawing-canvas"></canvas>
+                        </div>
+
+                        <!-- Варіант 2: Введення з клавіатури -->
+                        <div class="keyboard-container" id="keyboard-mode-box">
+                            <textarea id="keyboard-input" placeholder="Напиши свою відповідь тут..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Нижня панель навігації -->
+                    <div class="action-footer">
+                        <div class="status-hint" id="validation-warning"></div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button type="button" class="marker-btn" id="prev-q-btn" style="display: none;">⬅️ Назад</button>
+                            <button type="button" class="marker-btn primary-btn" id="next-q-btn">Далі ➡️</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Фінальний екран після 10 питань -->
+                <div id="final-screen">
+                    <div class="final-title">🎉 Усі 10 кроків пройдено!</div>
+                    <div class="final-subtitle">Наш герой дістався фінішного прапорця і танцює переможний танець!</div>
+                    <button type="button" class="marker-btn primary-btn" id="submit-homework-btn">📤 Відправити в журнал</button>
+                    <div id="submit-status-box"></div>
+                </div>
+
+                <!-- Розділ для Вчительського Режиму Перевірки -->
+                <div id="teacher-review-section">
+                    <h3 style="font-size: 20px; margin-bottom: 6px;">📋 Детальний розбір відповідей учня:</h3>
+                    <p style="font-size: 14px; color: #444; margin-bottom: 12px;">
+                        Зеленим підсвічені зараховані відповіді, червоним — пропущені або помилкові, зеленою рамкою обведено очікуваний зразок.
+                    </p>
+                    <div class="review-grid" id="review-cards-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Універсальний інструмент масштабування (Лупа) -->
+    <div class="zoom-controls">
+        <button type="button" id="zoom-out-btn" title="Віддалити">➖</button>
+        <button type="button" id="zoom-in-btn" title="Наблизити">➕</button>
+    </div>
+
+    <script>
+        /********************************************************************
+         * 1. НАЛАШТУВАННЯ FIREBASE ТА АВТОМАТИЧНОГО GAME ID
+         ********************************************************************/
+        const firebaseConfig = {
+            databaseURL: "https://lesson-13c44-default-rtdb.firebaseio.com/",
+            projectId: "lesson-13c44"
+        };
+
+        let db = null;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.database();
+        } catch (err) {
+            console.warn("Firebase SDK попередження, використовується резервний REST канал:", err);
+        }
+
+        // Отримання gameId з назви HTML-файлу з розкодуванням decodeURIComponent
+        function getAutomaticGameId() {
+            try {
+                const decodedPath = decodeURIComponent(window.location.pathname);
+                let fileName = decodedPath.substring(decodedPath.lastIndexOf('/') + 1);
+                fileName = fileName.replace(/\.html?$/i, '').trim();
+                // Очищення заборонених у ключах Firebase символів (.$#[]/)
+                fileName = fileName.replace(/[.$#[\]/]/g, '_');
+                return fileName || "index";
+            } catch (e) {
+                return "index";
+            }
+        }
+
+        const GAME_ID = getAutomaticGameId();
+
+        /********************************************************************
+         * 2. БАЗА З 10 ПИТАНЬ
+         ********************************************************************/
+        const QUESTIONS = [
+            {
+                id: 1,
+                question: "Де спить ведмідь?",
+                expectedText: "У барлозі",
+                acceptedKeywords: ["барлоз", "барліг", "берлоз", "берліг"]
+            },
+            {
+                id: 2,
+                question: "Скільки буде 15 + 8?",
+                expectedText: "23 (двадцять три)",
+                acceptedKeywords: ["23", "двадцять три"]
+            },
+            {
+                id: 3,
+                question: "Яка пора року наступає після зими?",
+                expectedText: "Весна",
+                acceptedKeywords: ["весн"]
+            },
+            {
+                id: 4,
+                question: "Якого кольору помідор?",
+                expectedText: "Червоного",
+                acceptedKeywords: ["червон"]
+            },
+            {
+                id: 5,
+                question: "Скільки кутів у прямокутника?",
+                expectedText: "4 (чотири)",
+                acceptedKeywords: ["4", "чотир"]
+            },
+            {
+                id: 6,
+                question: "На якому пристрої грають у Roblox?",
+                expectedText: "Комп'ютер, телефон, планшет тощо",
+                acceptedKeywords: ["комп", "телефон", "планшет", "ноутбук", "мобільн", "консол"]
+            },
+            {
+                id: 7,
+                question: "Як назвати одним словом бабку, коника і сонечко?",
+                expectedText: "Комахи",
+                acceptedKeywords: ["комах"]
+            },
+            {
+                id: 8,
+                question: "У мене 8 цукерок і це в 3 рази менше ніж у тебе. Скільки у тебе цукерок?",
+                expectedText: "24 (двадцять чотири)",
+                acceptedKeywords: ["24", "двадцять чотири"]
+            },
+            {
+                id: 9,
+                question: "Як звати вчительку цього уроку?",
+                expectedText: "Ім'я вчительки (вільна відповідь)",
+                acceptedKeywords: []
+            },
+            {
+                id: 10,
+                question: "У кішки кошеня, а у песика...?",
+                expectedText: "Цуценя",
+                acceptedKeywords: ["цуцен", "щен"]
+            }
+        ];
+
+        /********************************************************************
+         * 3. СИНТЕЗАТОР ЗВУКІВ (WEB AUDIO API БЕЗ ЗОВНІШНІХ ФАЙЛІВ)
+         ********************************************************************/
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) {
+                        this.ctx = new AudioCtx();
+                    }
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playClick() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(520, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(240, this.ctx.currentTime + 0.06);
+                    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.06);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.065);
+                } catch (e) {}
+            }
+
+            playStepSuccess() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const now = this.ctx.currentTime;
+                    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+                    notes.forEach((freq, idx) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        gain.gain.setValueAtTime(0.15, now + idx * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.22);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + idx * 0.08);
+                        osc.stop(now + idx * 0.08 + 0.24);
+                    });
+                } catch (e) {}
+            }
+
+            playVictoryFanfare() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const now = this.ctx.currentTime;
+                    const melody = [
+                        { f: 523.25, t: 0.0, d: 0.14 },
+                        { f: 659.25, t: 0.15, d: 0.14 },
+                        { f: 783.99, t: 0.30, d: 0.14 },
+                        { f: 1046.50, t: 0.45, d: 0.35 },
+                        { f: 783.99, t: 0.82, d: 0.15 },
+                        { f: 1046.50, t: 1.00, d: 0.45 }
+                    ];
+                    melody.forEach(n => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(n.f, now + n.t);
+                        gain.gain.setValueAtTime(0.18, now + n.t);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + n.t);
+                        osc.stop(now + n.t + n.d + 0.02);
+                    });
+                } catch (e) {}
+            }
+        }
+
+        const sfx = new SoundEffects();
+
+        /********************************************************************
+         * 4. СТАН ГРИ ТА ЗБЕРЕЖЕННЯ ВІДПОВІДЕЙ УЧНЯ
+         ********************************************************************/
+        let studentName = "";
+        let isReviewMode = false;
+        let currentQuestionIndex = 0;
+        let currentInputMode = "canvas"; // "canvas" | "keyboard"
+        let currentDrawingTool = "pen";  // "pen" | "eraser"
+        let isDrawing = false;
+        let lastPt = { x: 0, y: 0 };
+
+        // Масив відповідей для всіх 10 питань
+        const userResponses = QUESTIONS.map(q => ({
+            questionId: q.id,
+            questionText: q.question,
+            mode: "canvas",
+            typedText: "",
+            canvasDataUrl: "",
+            hasCanvasStrokes: false,
+            strokeCount: 0
+        }));
+
+        /********************************************************************
+         * 5. ІНСТРУМЕНТ МАСШТАБУВАННЯ (ЛУПА)
+         ********************************************************************/
+        let currentZoom = 1;
+        const zoomContainer = document.getElementById('zoom-container');
+        document.getElementById('zoom-in-btn').addEventListener('click', () => {
+            sfx.playClick();
+            currentZoom = Math.min(1.6, +(currentZoom + 0.1).toFixed(2));
+            zoomContainer.style.transform = `scale(${currentZoom})`;
+        });
+        document.getElementById('zoom-out-btn').addEventListener('click', () => {
+            sfx.playClick();
+            currentZoom = Math.max(0.6, +(currentZoom - 0.1).toFixed(2));
+            zoomContainer.style.transform = `scale(${currentZoom})`;
+        });
+
+        /********************************************************************
+         * 6. АНІМАЦІЯ STICKMAN ТА СТЕЖИНКИ З 10 КОНТРОЛЬНИМИ ТОЧКАМИ
+         ********************************************************************/
+        const stickmanCanvas = document.getElementById('stickman-canvas');
+        const sCtx = stickmanCanvas.getContext('2d');
+
+        const characterAnim = {
+            currentStep: 0,     // 0..10 (де 10 — біля фінішного прапорця)
+            visualProgress: 0,  // Плавна інтерполяція між точками
+            isDancing: false,
+            time: 0
+        };
+
+        function resizeStickmanCanvas() {
+            const rect = stickmanCanvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            stickmanCanvas.width = rect.width * dpr;
+            stickmanCanvas.height = rect.height * dpr;
+            sCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function getCheckpointCoords(stepIndex, width, height) {
+            const leftPad = 44;
+            const rightPad = 56;
+            const usableW = Math.max(100, width - leftPad - rightPad);
+            const t = stepIndex / 10; // 0..1
+            const x = leftPad + usableW * t;
+            // Легка хвиляста стежинка, намальована від руки
+            const baseY = height * 0.74;
+            const y = baseY + Math.sin(t * Math.PI * 2.5) * 10;
+            return { x, y };
+        }
+
+        function drawStickmanScene(timestamp) {
+            characterAnim.time = timestamp * 0.001;
+            const rect = stickmanCanvas.getBoundingClientRect();
+            const w = rect.width;
+            const h = rect.height;
+
+            sCtx.clearRect(0, 0, w, h);
+
+            // Плавне пересування персонажа до цільової точки
+            const diff = characterAnim.currentStep - characterAnim.visualProgress;
+            if (Math.abs(diff) > 0.005) {
+                characterAnim.visualProgress += diff * 0.08;
+            } else {
+                characterAnim.visualProgress = characterAnim.currentStep;
+            }
+
+            const isMoving = Math.abs(diff) > 0.02;
+
+            // 1. Малюємо стежинку маркером
+            sCtx.save();
+            sCtx.strokeStyle = "#111111";
+            sCtx.lineWidth = 3.5;
+            sCtx.lineCap = "round";
+            sCtx.beginPath();
+            for (let i = 0; i <= 100; i++) {
+                const stepVal = (i / 100) * 10;
+                const pt = getCheckpointCoords(stepVal, w, h);
+                if (i === 0) sCtx.moveTo(pt.x, pt.y);
+                else sCtx.lineTo(pt.x, pt.y);
+            }
+            sCtx.stroke();
+            sCtx.restore();
+
+            // 2. Малюємо 10 контрольних точок (кружечки з номерами)
+            for (let step = 0; step <= 10; step++) {
+                const pt = getCheckpointCoords(step, w, h);
+                sCtx.save();
+                sCtx.beginPath();
+                sCtx.arc(pt.x, pt.y, step === 0 ? 6 : 10, 0, Math.PI * 2);
+                if (step <= characterAnim.currentStep) {
+                    sCtx.fillStyle = "#ff5722";
+                } else {
+                    sCtx.fillStyle = "#ffffff";
+                }
+                sCtx.fill();
+                sCtx.lineWidth = 2.5;
+                sCtx.strokeStyle = "#111111";
+                sCtx.stroke();
+
+                if (step > 0) {
+                    sCtx.fillStyle = step <= characterAnim.currentStep ? "#ffffff" : "#111111";
+                    sCtx.font = "bold 10px Arial";
+                    sCtx.textAlign = "center";
+                    sCtx.textBaseline = "middle";
+                    sCtx.fillText(String(step), pt.x, pt.y);
+                }
+                sCtx.restore();
+            }
+
+            // 3. Малюємо фінішний прапорець на 10-й точці
+            const flagPt = getCheckpointCoords(10, w, h);
+            sCtx.save();
+            sCtx.strokeStyle = "#111111";
+            sCtx.lineWidth = 3;
+            sCtx.beginPath();
+            sCtx.moveTo(flagPt.x + 14, flagPt.y);
+            sCtx.lineTo(flagPt.x + 14, flagPt.y - 48);
+            sCtx.stroke();
+
+            // Помаранчевий прапорець, що майорить
+            const wave = Math.sin(characterAnim.time * 6) * 3;
+            sCtx.fillStyle = "#ff5722";
+            sCtx.beginPath();
+            sCtx.moveTo(flagPt.x + 14, flagPt.y - 48);
+            sCtx.lineTo(flagPt.x + 42, flagPt.y - 38 + wave);
+            sCtx.lineTo(flagPt.x + 14, flagPt.y - 28);
+            sCtx.closePath();
+            sCtx.fill();
+            sCtx.stroke();
+            sCtx.restore();
+
+            // 4. Обчислюємо координати персонажа Stickman
+            const charPos = getCheckpointCoords(characterAnim.visualProgress, w, h);
+            let jumpOffset = 0;
+            let armWave = 0;
+            let legSwing = 0;
+
+            if (characterAnim.isDancing) {
+                jumpOffset = Math.abs(Math.sin(characterAnim.time * 9)) * 18;
+                armWave = Math.sin(characterAnim.time * 14) * 1.1;
+                legSwing = Math.cos(characterAnim.time * 9) * 0.55;
+            } else if (isMoving) {
+                jumpOffset = Math.abs(Math.sin(characterAnim.time * 15)) * 6;
+                armWave = Math.sin(characterAnim.time * 15) * 0.6;
+                legSwing = Math.sin(characterAnim.time * 15) * 0.65;
+            } else {
+                // Легке дихання у стані спокою
+                jumpOffset = Math.sin(characterAnim.time * 3) * 1.5;
+            }
+
+            drawStickmanFigure(charPos.x, charPos.y - 10 - jumpOffset, armWave, legSwing, characterAnim.isDancing);
+
+            requestAnimationFrame(drawStickmanScene);
+        }
+
+        // Функція малювання кумедного Stickman з яскравим помаранчевим шарфиком і рюкзаком
+        function drawStickmanFigure(x, groundY, armAngle, legAngle, isDancing) {
+            sCtx.save();
+            sCtx.lineCap = "round";
+            sCtx.lineJoin = "round";
+
+            const footY = groundY;
+            const hipY = footY - 22;
+            const shoulderY = hipY - 24;
+            const headY = shoulderY - 14;
+
+            // Яскравий акцентний рюкзак за спиною (#ff5722)
+            sCtx.fillStyle = "#ff5722";
+            sCtx.strokeStyle = "#111111";
+            sCtx.lineWidth = 2.5;
+            sCtx.beginPath();
+            sCtx.roundRect(x - 16, shoulderY - 2, 12, 20, 4);
+            sCtx.fill();
+            sCtx.stroke();
+
+            // Ноги (чорний маркер)
+            sCtx.strokeStyle = "#111111";
+            sCtx.lineWidth = 3.5;
+            sCtx.beginPath();
+            // Ліва нога
+            sCtx.moveTo(x, hipY);
+            sCtx.lineTo(x - 10 * Math.cos(legAngle) - 4, footY);
+            // Права нога
+            sCtx.moveTo(x, hipY);
+            sCtx.lineTo(x + 10 * Math.cos(legAngle) + 4, footY);
+            sCtx.stroke();
+
+            // Тулуб
+            sCtx.beginPath();
+            sCtx.moveTo(x, hipY);
+            sCtx.lineTo(x, shoulderY);
+            sCtx.stroke();
+
+            // Руки
+            sCtx.beginPath();
+            if (isDancing) {
+                // У переможному танці руки підняті вгору і махають
+                sCtx.moveTo(x, shoulderY + 3);
+                sCtx.lineTo(x - 16, shoulderY - 14 + Math.sin(armAngle) * 8);
+                sCtx.moveTo(x, shoulderY + 3);
+                sCtx.lineTo(x + 16, shoulderY - 14 - Math.sin(armAngle) * 8);
+            } else {
+                sCtx.moveTo(x, shoulderY + 3);
+                sCtx.lineTo(x - 12, shoulderY + 15 + armAngle * 8);
+                sCtx.moveTo(x, shoulderY + 3);
+                sCtx.lineTo(x + 12, shoulderY + 15 - armAngle * 8);
+            }
+            sCtx.stroke();
+
+            // Голова
+            sCtx.fillStyle = "#ffffff";
+            sCtx.beginPath();
+            sCtx.arc(x, headY, 11, 0, Math.PI * 2);
+            sCtx.fill();
+            sCtx.stroke();
+
+            // Очі та усмішка
+            sCtx.fillStyle = "#111111";
+            sCtx.beginPath();
+            sCtx.arc(x + 3, headY - 2, 1.7, 0, Math.PI * 2);
+            sCtx.arc(x + 8, headY - 2, 1.7, 0, Math.PI * 2);
+            sCtx.fill();
+
+            sCtx.lineWidth = 2;
+            sCtx.beginPath();
+            sCtx.arc(x + 5, headY + 2, 4, 0.1 * Math.PI, 0.85 * Math.PI);
+            sCtx.stroke();
+
+            // Яскравий помаранчевий шарфик, що майорить
+            const scarfWave = Math.sin(characterAnim.time * 10) * 4;
+            sCtx.strokeStyle = "#ff5722";
+            sCtx.lineWidth = 5;
+            sCtx.beginPath();
+            sCtx.moveTo(x - 7, shoulderY);
+            sCtx.lineTo(x + 8, shoulderY);
+            sCtx.stroke();
+
+            // Хвостик шарфика
+            sCtx.beginPath();
+            sCtx.moveTo(x - 5, shoulderY);
+            sCtx.quadraticCurveTo(x - 18, shoulderY + 4 + scarfWave, x - 24, shoulderY + 10 - scarfWave);
+            sCtx.stroke();
+
+            sCtx.restore();
+        }
+
+        /********************************************************************
+         * 7. РОБОТА З ПОЛОТНОМ ДЛЯ ВІДПОВІДЕЙ (DRAWING CANVAS)
+         ********************************************************************/
+        const drawCanvas = document.getElementById('drawing-canvas');
+        const dCtx = drawCanvas.getContext('2d');
+        const placeholderEl = document.getElementById('canvas-placeholder-text');
+
+        function setupDrawingCanvas(restoreDataUrl = "") {
+            const rect = drawCanvas.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+            const dpr = window.devicePixelRatio || 1;
+
+            drawCanvas.width = rect.width * dpr;
+            drawCanvas.height = rect.height * dpr;
+            dCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            dCtx.lineCap = "round";
+            dCtx.lineJoin = "round";
+
+            if (restoreDataUrl) {
+                const img = new Image();
+                img.onload = () => {
+                    dCtx.drawImage(img, 0, 0, rect.width, rect.height);
+                };
+                img.src = restoreDataUrl;
+            }
+        }
+
+        function getCanvasPoint(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            // Врахування масштабування Лупи (#zoom-container)
+            const scaleX = rect.width / drawCanvas.offsetWidth || 1;
+            const scaleY = rect.height / drawCanvas.offsetHeight || 1;
+            return {
+                x: (clientX - rect.left) / scaleX,
+                y: (clientY - rect.top) / scaleY
+            };
+        }
+
+        function startStroke(e) {
+            if (isReviewMode || currentInputMode !== "canvas") return;
+            if (e.cancelable) e.preventDefault();
+            isDrawing = true;
+            lastPt = getCanvasPoint(e);
+            placeholderEl.style.opacity = "0";
+            document.getElementById('validation-warning').textContent = "";
+
+            const resp = userResponses[currentQuestionIndex];
+            if (currentDrawingTool === "pen") {
+                resp.hasCanvasStrokes = true;
+                resp.strokeCount += 1;
+            }
+
+            // Малюємо початкову крапку при кліку/торканні
+            dCtx.save();
+            if (currentDrawingTool === "eraser") {
+                dCtx.globalCompositeOperation = "destination-out";
+                dCtx.lineWidth = 24;
+            } else {
+                dCtx.globalCompositeOperation = "source-over";
+                dCtx.strokeStyle = "#111111";
+                dCtx.lineWidth = 4;
+            }
+            dCtx.beginPath();
+            dCtx.moveTo(lastPt.x, lastPt.y);
+            dCtx.lineTo(lastPt.x + 0.1, lastPt.y + 0.1);
+            dCtx.stroke();
+            dCtx.restore();
+        }
+
+        function moveStroke(e) {
+            if (!isDrawing || isReviewMode) return;
+            if (e.cancelable) e.preventDefault();
+            const pt = getCanvasPoint(e);
+
+            dCtx.save();
+            if (currentDrawingTool === "eraser") {
+                dCtx.globalCompositeOperation = "destination-out";
+                dCtx.lineWidth = 24;
+            } else {
+                dCtx.globalCompositeOperation = "source-over";
+                dCtx.strokeStyle = "#111111";
+                dCtx.lineWidth = 4;
+            }
+            dCtx.beginPath();
+            dCtx.moveTo(lastPt.x, lastPt.y);
+            dCtx.lineTo(pt.x, pt.y);
+            dCtx.stroke();
+            dCtx.restore();
+
+            lastPt = pt;
+        }
+
+        function endStroke(e) {
+            if (!isDrawing) return;
+            if (e && e.cancelable) e.preventDefault();
+            isDrawing = false;
+            saveCurrentQuestionState();
+        }
+
+        // Події миші
+        drawCanvas.addEventListener('mousedown', startStroke);
+        drawCanvas.addEventListener('mousemove', moveStroke);
+        window.addEventListener('mouseup', endStroke);
+        drawCanvas.addEventListener('mouseleave', endStroke);
+
+        // Події тачскрінів (телефони, планшети, стилуси)
+        drawCanvas.addEventListener('touchstart', startStroke, { passive: false });
+        drawCanvas.addEventListener('touchmove', moveStroke, { passive: false });
+        drawCanvas.addEventListener('touchend', endStroke, { passive: false });
+        drawCanvas.addEventListener('touchcancel', endStroke, { passive: false });
+
+        /********************************************************************
+         * 8. ПЕРЕМИКАННЯ ІНСТРУМЕНТІВ ТА ПИТАНЬ
+         ********************************************************************/
+        const penBtn = document.getElementById('pen-tool-btn');
+        const eraserBtn = document.getElementById('eraser-tool-btn');
+        const clearBtn = document.getElementById('clear-canvas-btn');
+        const toggleModeBtn = document.getElementById('toggle-input-mode-btn');
+        const keyboardInput = document.getElementById('keyboard-input');
+
+        penBtn.addEventListener('click', () => {
+            sfx.playClick();
+            currentDrawingTool = "pen";
+            penBtn.classList.add('active-tool');
+            eraserBtn.classList.remove('active-tool');
+        });
+
+        eraserBtn.addEventListener('click', () => {
+            sfx.playClick();
+            currentDrawingTool = "eraser";
+            eraserBtn.classList.add('active-tool');
+            penBtn.classList.remove('active-tool');
+        });
+
+        clearBtn.addEventListener('click', () => {
+            sfx.playClick();
+            const rect = drawCanvas.getBoundingClientRect();
+            dCtx.clearRect(0, 0, rect.width, rect.height);
+            const resp = userResponses[currentQuestionIndex];
+            resp.hasCanvasStrokes = false;
+            resp.strokeCount = 0;
+            resp.canvasDataUrl = "";
+            placeholderEl.style.opacity = "1";
+        });
+
+        toggleModeBtn.addEventListener('click', () => {
+            sfx.playClick();
+            saveCurrentQuestionState();
+            if (currentInputMode === "canvas") {
+                setInputMode("keyboard");
+            } else {
+                setInputMode("canvas");
+            }
+        });
+
+        function setInputMode(mode) {
+            currentInputMode = mode;
+            const canvasBox = document.getElementById('canvas-mode-box');
+            const keyboardBox = document.getElementById('keyboard-mode-box');
+            const canvasTools = document.getElementById('canvas-tools-group');
+
+            if (mode === "keyboard") {
+                canvasBox.style.display = "none";
+                keyboardBox.style.display = "block";
+                canvasTools.style.display = "none";
+                toggleModeBtn.innerHTML = "✏️ Малювати маркером";
+                keyboardInput.focus();
+            } else {
+                canvasBox.style.display = "block";
+                keyboardBox.style.display = "none";
+                canvasTools.style.display = "flex";
+                toggleModeBtn.innerHTML = "⌨️ Ввести з клавіатури";
+                setupDrawingCanvas(userResponses[currentQuestionIndex].canvasDataUrl);
+            }
+        }
+
+        keyboardInput.addEventListener('input', () => {
+            document.getElementById('validation-warning').textContent = "";
+            userResponses[currentQuestionIndex].typedText = keyboardInput.value;
+        });
+
+        function saveCurrentQuestionState() {
+            const resp = userResponses[currentQuestionIndex];
+            resp.mode = currentInputMode;
+            resp.typedText = keyboardInput.value.trim();
+            if (currentInputMode === "canvas" && resp.hasCanvasStrokes) {
+                resp.canvasDataUrl = drawCanvas.toDataURL("image/png");
+            }
+        }
+
+        function loadQuestion(index) {
+            currentQuestionIndex = index;
+            const q = QUESTIONS[index];
+            const resp = userResponses[index];
+
+            document.getElementById('progress-label').textContent = `Питання ${index + 1} з ${QUESTIONS.length}`;
+            document.getElementById('q-text-display').textContent = q.question;
+            document.getElementById('validation-warning').textContent = "";
+
+            // Кнопки навігації
+            document.getElementById('prev-q-btn').style.display = index > 0 ? "inline-flex" : "none";
+            document.getElementById('next-q-btn').innerHTML = index === QUESTIONS.length - 1 ? "Фініш 🏁" : "Далі ➡️";
+
+            keyboardInput.value = resp.typedText || "";
+            setInputMode(resp.mode || "canvas");
+
+            if (resp.mode === "canvas") {
+                const rect = drawCanvas.getBoundingClientRect();
+                dCtx.clearRect(0, 0, rect.width, rect.height);
+                setupDrawingCanvas(resp.canvasDataUrl);
+                placeholderEl.style.opacity = resp.hasCanvasStrokes ? "0" : "1";
+            }
+        }
+
+        function hasCurrentAnswer() {
+            saveCurrentQuestionState();
+            const resp = userResponses[currentQuestionIndex];
+            if (resp.typedText && resp.typedText.length > 0) return true;
+            if (resp.hasCanvasStrokes && resp.strokeCount > 0) return true;
+            return false;
+        }
+
+        document.getElementById('prev-q-btn').addEventListener('click', () => {
+            sfx.playClick();
+            saveCurrentQuestionState();
+            if (currentQuestionIndex > 0) {
+                loadQuestion(currentQuestionIndex - 1);
+            }
+        });
+
+        document.getElementById('next-q-btn').addEventListener('click', () => {
+            if (!hasCurrentAnswer()) {
+                sfx.playClick();
+                document.getElementById('validation-warning').textContent = "Будь ласка, напиши або намалюй свою відповідь перед переходом далі!";
+                return;
+            }
+
+            // Якщо дитина ввела відповідь з клавіатури, створюємо також рукописний знімок Canvas для звіту
+            const resp = userResponses[currentQuestionIndex];
+            if (resp.mode === "keyboard" && resp.typedText) {
+                resp.canvasDataUrl = renderTextToCanvasImage(resp.typedText);
+            }
+
+            // Крок персонажа вперед по стежинці
+            characterAnim.currentStep = Math.max(characterAnim.currentStep, currentQuestionIndex + 1);
+
+            if (currentQuestionIndex < QUESTIONS.length - 1) {
+                sfx.playStepSuccess();
+                loadQuestion(currentQuestionIndex + 1);
+            } else {
+                // Усі 10 питань пройдено -> Фінал та Переможний танець!
+                showFinalScreen();
+            }
+        });
+
+        // Допоміжна функція генерації Base64-зображення для текстової відповіді
+        function renderTextToCanvasImage(text) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 500;
+            tempCanvas.height = 180;
+            const ctx = tempCanvas.getContext('2d');
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            ctx.strokeStyle = "#e8f4fc";
+            ctx.lineWidth = 1;
+            for (let x = 0; x < tempCanvas.width; x += 24) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, tempCanvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < tempCanvas.height; y += 24) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(tempCanvas.width, y); ctx.stroke();
+            }
+            ctx.fillStyle = "#111111";
+            ctx.font = "italic bold 28px Arial";
+            ctx.textBaseline = "middle";
+            ctx.fillText(text.substring(0, 40), 20, tempCanvas.height / 2);
+            return tempCanvas.toDataURL("image/png");
+        }
+
+        function showFinalScreen() {
+            characterAnim.currentStep = 10;
+            characterAnim.isDancing = true;
+            sfx.playVictoryFanfare();
+
+            document.getElementById('question-gameplay-area').style.display = "none";
+            document.getElementById('final-screen').style.display = "block";
+        }
+
+        /********************************************************************
+         * 9. ОЦІНЮВАННЯ ТА ФОРМУВАННЯ ЗВІТУ ДЛЯ FIREBASE
+         ********************************************************************/
+        function evaluateAnswerItem(questionObj, responseObj) {
+            const text = (responseObj.typedText || "").toLowerCase().trim();
+            const hasDrawing = Boolean(responseObj.hasCanvasStrokes && responseObj.strokeCount > 0);
+
+            // Якщо відповідь надана рукописно на Canvas — зараховується як виконана
+            if (responseObj.mode === "canvas" && hasDrawing) {
+                return true;
+            }
+
+            // Якщо введено з клавіатури
+            if (text.length > 0) {
+                if (questionObj.acceptedKeywords.length === 0) {
+                    return true; // Вільні питання (№9 — ім'я вчительки)
+                }
+                return questionObj.acceptedKeywords.some(kw => text.includes(kw));
+            }
+
+            return false;
+        }
+
+        // Генерація зведеного зображення-аркуша Base64 з ім'ям дитини та всіма 10 відповідями
+        function generateSummarySheetBase64() {
+            const sheet = document.createElement('canvas');
+            sheet.width = 800;
+            sheet.height = 1120;
+            const ctx = sheet.getContext('2d');
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, sheet.width, sheet.height);
+
+            // Сітка зошита
+            ctx.strokeStyle = "#e8f4fc";
+            ctx.lineWidth = 1;
+            for (let x = 0; x < sheet.width; x += 24) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, sheet.height); ctx.stroke();
+            }
+            for (let y = 0; y < sheet.height; y += 24) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(sheet.width, y); ctx.stroke();
+            }
+
+            ctx.fillStyle = "#111111";
+            ctx.font = "bold 24px Arial";
+            ctx.fillText(`Учень: ${studentName}`, 24, 42);
+
+            QUESTIONS.forEach((q, idx) => {
+                const topY = 70 + idx * 102;
+                ctx.strokeStyle = "#111111";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(24, topY, 752, 92);
+                ctx.font = "bold 15px Arial";
+                ctx.fillStyle = "#ff5722";
+                ctx.fillText(`${idx + 1}. ${q.question}`, 36, topY + 24);
+
+                const r = userResponses[idx];
+                ctx.fillStyle = "#111111";
+                ctx.font = "bold 18px Arial";
+                if (r.typedText) {
+                    ctx.fillText(`Відповідь: ${r.typedText}`, 36, topY + 60);
+                } else if (r.hasCanvasStrokes) {
+                    ctx.fillText(`[Рукописна відповідь на Canvas]`, 36, topY + 60);
+                } else {
+                    ctx.fillText(`[Без відповіді]`, 36, topY + 60);
+                }
+            });
+
+            return sheet.toDataURL("image/jpeg", 0.75);
+        }
+
+        function getFormattedDateParts() {
+            const now = new Date();
+            const dd = String(now.getDate()).padStart(2, '0');
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yyyy = now.getFullYear();
+            return {
+                monthYear: `${mm}-${yyyy}`,
+                fullDate: `${dd}-${mm}-${yyyy}`,
+                isoTime: now.toISOString()
+            };
+        }
+
+        document.getElementById('submit-homework-btn').addEventListener('click', async () => {
+            sfx.playClick();
+            const submitBtn = document.getElementById('submit-homework-btn');
+            const statusBox = document.getElementById('submit-status-box');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "⏳ Відправка...";
+
+            // Підрахунок балів для вчительського журналу (дитині НЕ показується!)
+            let correctCount = 0;
+            const detailedAnswers = {};
+
+            QUESTIONS.forEach((q, idx) => {
+                const resp = userResponses[idx];
+                const isCorrect = evaluateAnswerItem(q, resp);
+                if (isCorrect) correctCount++;
+
+                detailedAnswers[`q_${q.id}`] = {
+                    questionId: q.id,
+                    question: q.question,
+                    expectedAnswer: q.expectedText,
+                    mode: resp.mode,
+                    typedText: resp.typedText || "",
+                    canvasDataUrl: resp.canvasDataUrl || "",
+                    hasCanvasStrokes: resp.hasCanvasStrokes,
+                    isCorrect: isCorrect
+                };
+            });
+
+            const { monthYear, fullDate, isoTime } = getFormattedDateParts();
+            const sanitizedStudentName = studentName.replace(/[.$#[\]/]/g, '_').trim();
+            const firebasePath = `homework_reports/${monthYear}/${fullDate}/${GAME_ID}/${sanitizedStudentName}`;
+
+            const reportPayload = {
+                studentName: studentName,
+                gameId: GAME_ID,
+                gameTitle: "Завдання",
+                date: fullDate,
+                timestamp: isoTime,
+                // Поле score ОБОВ'ЯЗКОВО зі словом "із"
+                score: `Вірно ${correctCount} із ${QUESTIONS.length}`,
+                rawAnswers: {
+                    items: detailedAnswers,
+                    summarySheetBase64: generateSummarySheetBase64()
+                }
+            };
+
+            let sentSuccess = false;
+            try {
+                if (db) {
+                    await db.ref(firebasePath).set(reportPayload);
+                    sentSuccess = true;
+                }
+            } catch (sdkErr) {
+                console.warn("Помилка SDK, спроба через REST API:", sdkErr);
+            }
+
+            if (!sentSuccess) {
+                try {
+                    const encodedPath = firebasePath.split('/').map(encodeURIComponent).join('/');
+                    const res = await fetch(`https://lesson-13c44-default-rtdb.firebaseio.com/${encodedPath}.json`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(reportPayload)
+                    });
+                    if (res.ok) sentSuccess = true;
+                } catch (restErr) {
+                    console.error("Помилка відправки звіту:", restErr);
+                }
+            }
+
+            // Ховаємо кнопку і виводимо повідомлення учню БЕЗ показу балів чи підсвітки правильних відповідей
+            submitBtn.style.display = "none";
+            statusBox.style.display = "block";
+            statusBox.textContent = "Твоя робота відправлена на перевірку. Успішно надіслано в журнал! Дякуємо за гру!";
+        });
+
+        /********************************************************************
+         * 10. АВТОРИЗАЦІЯ ТА ВЧИТЕЛЬСЬКИЙ РЕЖИМ ПЕРЕВІРКИ
+         ********************************************************************/
+        async function activateTeacherReviewMode(reportUser, reportDate) {
+            isReviewMode = true;
+            studentName = decodeURIComponent(reportUser);
+
+            // Показуємо плашку режиму перевірки
+            const banner = document.getElementById('review-banner');
+            document.getElementById('review-student-name').textContent = studentName;
+            banner.style.display = "block";
+
+            document.getElementById('auth-overlay').style.display = "none";
+
+            // Блокуємо ігровий процес і ховаємо кнопку відправки
+            document.getElementById('question-gameplay-area').classList.add('blocked-gameplay');
+            document.getElementById('question-gameplay-area').style.display = "none";
+            document.getElementById('final-screen').style.display = "none";
+            document.getElementById('submit-homework-btn').style.display = "none";
+
+            characterAnim.currentStep = 10;
+            characterAnim.visualProgress = 10;
+            characterAnim.isDancing = true;
+
+            // Визначаємо MM-YYYY із reportDate (формат DD-MM-YYYY)
+            const parts = reportDate.split('-');
+            const monthYear = parts.length === 3 ? `${parts[1]}-${parts[2]}` : reportDate;
+            const sanitizedUser = studentName.replace(/[.$#[\]/]/g, '_').trim();
+            const firebasePath = `homework_reports/${monthYear}/${reportDate}/${GAME_ID}/${sanitizedUser}`;
+
+            let reportData = null;
+            try {
+                if (db) {
+                    const snap = await db.ref(firebasePath).once('value');
+                    reportData = snap.val();
+                }
+            } catch (e) {}
+
+            if (!reportData) {
+                try {
+                    const encodedPath = firebasePath.split('/').map(encodeURIComponent).join('/');
+                    const res = await fetch(`https://lesson-13c44-default-rtdb.firebaseio.com/${encodedPath}.json`);
+                    if (res.ok) {
+                        reportData = await res.json();
+                    }
+                } catch (e) {}
+            }
+
+            renderTeacherReviewCards(reportData);
+        }
+
+        function renderTeacherReviewCards(reportData) {
+            const section = document.getElementById('teacher-review-section');
+            const container = document.getElementById('review-cards-container');
+            section.style.display = "block";
+            container.innerHTML = "";
+
+            const rawItems = (reportData && reportData.rawAnswers && reportData.rawAnswers.items)
+                ? reportData.rawAnswers.items
+                : {};
+
+            QUESTIONS.forEach((q, idx) => {
+                const key = `q_${q.id}`;
+                const saved = rawItems[key] || {};
+                const isCorrect = Boolean(saved.isCorrect);
+
+                const card = document.createElement('div');
+                card.className = `review-item ${isCorrect ? 'review-correct' : 'review-wrong'}`;
+
+                const qTitle = document.createElement('div');
+                qTitle.className = 'review-q-title';
+                qTitle.textContent = `${idx + 1}. ${q.question}`;
+                card.appendChild(qTitle);
+
+                const ansBox = document.createElement('div');
+                ansBox.className = 'review-student-answer';
+
+                if (saved.typedText && saved.typedText.trim().length > 0) {
+                    ansBox.innerHTML = `<span style="font-size:18px;font-weight:bold;">${escapeHtml(saved.typedText)}</span>`;
+                } else if (saved.canvasDataUrl) {
+                    const img = document.createElement('img');
+                    img.src = saved.canvasDataUrl;
+                    img.alt = `Відповідь учня на питання ${idx + 1}`;
+                    ansBox.appendChild(img);
+                } else {
+                    ansBox.innerHTML = `<span style="color:#c62828;font-weight:bold;">Відповідь відсутня</span>`;
+                }
+                card.appendChild(ansBox);
+
+                const expectedDiv = document.createElement('div');
+                // Якщо учень помилився — обводимо правильну відповідь зеленою рамкою
+                expectedDiv.className = `review-expected-box ${isCorrect ? 'review-expected-matched' : 'review-expected-unselected'}`;
+                expectedDiv.textContent = isCorrect
+                    ? `✅ Зараховано (Зразок: ${q.expectedText})`
+                    : `❌ Очікувана відповідь: ${q.expectedText}`;
+                card.appendChild(expectedDiv);
+
+                container.appendChild(card);
+            });
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function initializeAuthAndMode() {
+            const params = new URLSearchParams(window.location.search);
+            const reportUser = params.get('reportUser');
+            const reportDate = params.get('reportDate');
+
+            // 1. Якщо є параметри reportUser та reportDate — запускаємо Вчительський Режим Перевірки без вводу імені
+            if (reportUser && reportDate) {
+                activateTeacherReviewMode(reportUser, reportDate);
+                return;
+            }
+
+            // 2. Перевіряємо ім'я в URL (?user=) або в sessionStorage
+            const urlUser = params.get('user');
+            const storedUser = sessionStorage.getItem('studentName');
+
+            if (urlUser && urlUser.trim() !== "") {
+                studentName = decodeURIComponent(urlUser.trim());
+                sessionStorage.setItem('studentName', studentName);
+                startGameForStudent();
+            } else if (storedUser && storedUser.trim() !== "") {
+                studentName = storedUser.trim();
+                startGameForStudent();
+            } else {
+                // Показуємо обов'язкове модальне вікно авторизації
+                const authOverlay = document.getElementById('auth-overlay');
+                const nameInput = document.getElementById('auth-name-input');
+                const startBtn = document.getElementById('auth-start-btn');
+
+                authOverlay.style.display = "flex";
+                nameInput.focus();
+
+                const confirmName = () => {
+                    const val = nameInput.value.trim();
+                    if (!val) {
+                        nameInput.style.borderColor = "#c62828";
+                        nameInput.focus();
+                        return;
+                    }
+                    sfx.playClick();
+                    studentName = val;
+                    sessionStorage.setItem('studentName', studentName);
+                    authOverlay.style.display = "none";
+                    startGameForStudent();
+                };
+
+                startBtn.addEventListener('click', confirmName);
+                nameInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') confirmName();
+                });
+            }
+        }
+
+        function startGameForStudent() {
+            loadQuestion(0);
+        }
+
+        // Ініціалізація при завантаженні сторінки та зміні розміру екрана
+        window.addEventListener('DOMContentLoaded', () => {
+            resizeStickmanCanvas();
+            setupDrawingCanvas();
+            requestAnimationFrame(drawStickmanScene);
+            initializeAuthAndMode();
+        });
+
+        window.addEventListener('resize', () => {
+            resizeStickmanCanvas();
+            if (!isReviewMode && currentInputMode === "canvas") {
+                setupDrawingCanvas(userResponses[currentQuestionIndex].canvasDataUrl);
+            }
+        });
+    </script>
+</body>
+</html>
