@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Домашнє завдання</title>
+    <style>
+        /* Базові налаштування та шрифт Arial для всієї гри */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(180deg, #ffe6f0 0%, #fff5e4 55%, #ffd6e7 100%);
+            color: #4a2c3a;
+        }
+
+        /* Головний контейнер для масштабування (Лупа) */
+        #zoom-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-origin: center center;
+            transition: transform 0.2s ease-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Плашка режиму перевірки вчителя */
+        #teacher-banner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
+            color: #ffffff;
+            text-align: center;
+            padding: 12px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 9000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+            letter-spacing: 0.5px;
+        }
+
+        /* ==================== ЕКРАН ДОМАШНЬОГО ЗАВДАННЯ ==================== */
+        #homework-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #fff0f6 0%, #fff9f0 100%);
+            z-index: 500;
+            overflow-y: auto;
+            padding: 30px 16px 90px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hw-container {
+            width: 100%;
+            max-width: 680px;
+            background: #ffffff;
+            border: 4px solid #ff9ec4;
+            border-radius: 28px;
+            padding: 28px 24px;
+            box-shadow: 0 16px 40px rgba(181, 43, 101, 0.15);
+            margin-top: 10px;
+        }
+
+        .hw-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .hw-title {
+            font-size: 26px;
+            font-weight: bold;
+            color: #b52b65;
+            margin-bottom: 8px;
+        }
+
+        .hw-subtitle {
+            font-size: 16px;
+            color: #6d4357;
+            line-height: 1.4;
+        }
+
+        .question-card {
+            background: #fff8fb;
+            border: 2px solid #ffd0e3;
+            border-radius: 20px;
+            padding: 18px 16px;
+            margin-bottom: 18px;
+        }
+
+        .question-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4a2c3a;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background: #ffffff;
+            border: 2px solid #ffb8d1;
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #5c3547;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+        }
+
+        .option-btn:hover {
+            background: #fff0f6;
+            border-color: #ff6b9d;
+        }
+
+        /* Вибір учня під час проходження ДЗ */
+        .option-btn.selected {
+            background: #ff5c8a;
+            border-color: #d81b60;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(216, 27, 96, 0.25);
+        }
+
+        /* Стилі для режиму перевірки вчителя */
+        .teacher-locked .options-grid,
+        .teacher-locked .pos-options,
+        .teacher-locked .comp-options {
+            pointer-events: none;
+        }
+
+        /* Правильна відповідь, яку обрав учень — зелена */
+        .option-btn.review-correct-selected {
+            background: #2ecc71 !important;
+            border: 3px solid #1e8449 !important;
+            color: #ffffff !important;
+        }
+
+        /* Помилка учня — червона */
+        .option-btn.review-wrong-selected {
+            background: #e74c3c !important;
+            border: 3px solid #922b21 !important;
+            color: #ffffff !important;
+        }
+
+        /* Правильна відповідь, яку учень НЕ обрав — зелена рамка */
+        .option-btn.review-correct-missed {
+            background: #eafaf1 !important;
+            border: 3px solid #2ecc71 !important;
+            color: #196f3d !important;
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.35);
+        }
+
+        /* ==================== НАВЧАЛЬНІ ЗАВДАННЯ (слова + компоненти) ==================== */
+        .hw-section {
+            margin-bottom: 26px;
+        }
+
+        .section-title {
+            font-size: 19px;
+            font-weight: bold;
+            color: #b52b65;
+            margin-bottom: 6px;
+        }
+
+        .section-hint {
+            font-size: 14px;
+            color: #6d4357;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .pos-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #5c3547;
+        }
+
+        .pos-legend span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .word-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .word-card {
+            background: linear-gradient(180deg, #fffdfe 0%, #fff1f7 100%);
+            border: 2px solid #ffd0e3;
+            border-radius: 16px;
+            padding: 12px 10px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(255, 158, 196, 0.18);
+        }
+
+        .word-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #7a284f;
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+
+        .pos-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+
+        .pos-btn {
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1.15;
+            padding: 8px 2px;
+            border-radius: 10px;
+            border: 2px solid #ffd0e3;
+            background: #ffffff;
+            color: #7a284f;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+        }
+
+        .pos-btn:hover {
+            border-color: #ff85b3;
+        }
+
+        .pos-btn.selected {
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .pos-btn.pos-noun.selected {
+            background: #3b82f6;
+            border-color: #1d4ed8;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.35);
+        }
+
+        .pos-btn.pos-adj.selected {
+            background: #10b981;
+            border-color: #047857;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
+        }
+
+        .pos-btn.pos-verb.selected {
+            background: #f59e0b;
+            border-color: #b45309;
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+        }
+
+        .comp-card {
+            --theme: #3b82f6;
+            background: linear-gradient(180deg, #ffffff 0%, #fdfcff 100%);
+            border: 3px solid var(--theme);
+            border-radius: 18px;
+            padding: 14px 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 6px 16px rgba(90, 20, 50, 0.08);
+        }
+
+        .comp-expression {
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            color: var(--theme);
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .comp-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .comp-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .comp-number {
+            flex: 0 0 auto;
+            min-width: 44px;
+            height: 36px;
+            padding: 0 10px;
+            border-radius: 12px;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+        }
+
+        .comp-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .comp-btn {
+            flex: 1 1 0;
+            min-width: 66px;
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1.15;
+            padding: 8px 4px;
+            border-radius: 10px;
+            border: 2px solid #ffe0ec;
+            background: #ffffff;
+            color: #4a2c3a;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .comp-btn:hover {
+            border-color: var(--theme);
+        }
+
+        .comp-btn.selected {
+            background: var(--theme);
+            border-color: var(--theme);
+            color: #ffffff;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+        }
+
+        #hw-warning-msg {
+            display: none;
+            color: #d63031;
+            background: #ffeaa7;
+            border: 2px solid #fdcb6e;
+            padding: 12px;
+            border-radius: 14px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 14px;
+            font-size: 15px;
+        }
+
+        #hw-submitted-box {
+            display: none;
+            text-align: center;
+            padding: 20px 10px 10px 10px;
+        }
+
+        .submitted-banner-text {
+            background: linear-gradient(135deg, #e8f8f0, #d1f2e1);
+            border: 2px solid #2ecc71;
+            color: #196f3d;
+            padding: 18px;
+            border-radius: 18px;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 18px;
+            box-shadow: 0 6px 16px rgba(46, 204, 113, 0.2);
+        }
+
+        /* ==================== ІГРОВИЙ ІНТЕРФЕЙС ТА КАНВАС ==================== */
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        /* Верхня панель керування (HUD) */
+        #hud-bar {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 94%;
+            max-width: 680px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border: 2px solid #ffb8d1;
+            border-radius: 22px;
+            box-shadow: 0 8px 24px rgba(186, 85, 130, 0.16);
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .hud-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .hud-badge {
+            background: linear-gradient(135deg, #fff0f6, #ffe3ee);
+            border: 1px solid #ff9ec4;
+            padding: 6px 14px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #7a284f;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.9);
+        }
+
+        #lives-display {
+            font-size: 20px;
+            letter-spacing: 3px;
+        }
+
+        .hud-btn {
+            background: linear-gradient(135deg, #ff6b9d, #ff477e);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 10px 18px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 71, 126, 0.35);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .hud-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 71, 126, 0.45);
+        }
+
+        .hud-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Модальні вікна (Авторизація, Меню, Пауза, Завершення) */
+        .overlay-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(65, 25, 45, 0.48);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        #auth-overlay {
+            position: fixed;
+            z-index: 9500;
+            background: rgba(52, 18, 36, 0.72);
+        }
+
+        .modal-card {
+            background: linear-gradient(180deg, #ffffff 0%, #fff7fa 100%);
+            border: 4px solid #ff9ec4;
+            border-radius: 30px;
+            padding: 32px 28px;
+            width: 100%;
+            max-width: 460px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(90, 20, 50, 0.3);
+            position: relative;
+            animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.85);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #b52b65;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 0 #ffe0ec;
+        }
+
+        .modal-subtitle {
+            font-size: 16px;
+            color: #6d4357;
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .sweet-icon-banner {
+            font-size: 52px;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 6px 8px rgba(181, 43, 101, 0.2));
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 15px 18px;
+            font-size: 18px;
+            border: 2px solid #ff9ec4;
+            border-radius: 16px;
+            outline: none;
+            margin-bottom: 18px;
+            text-align: center;
+            background: #fff;
+            color: #4a2c3a;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .text-input:focus {
+            border-color: #ff477e;
+            box-shadow: 0 0 0 4px rgba(255, 71, 126, 0.2);
+        }
+
+        .primary-btn {
+            display: inline-block;
+            width: 100%;
+            padding: 16px 24px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+            background: linear-gradient(135deg, #ff5c8a 0%, #e03168 100%);
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(224, 49, 104, 0.38);
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-bottom: 10px;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(224, 49, 104, 0.48);
+        }
+
+        .primary-btn:active {
+            transform: translateY(1px);
+        }
+
+        .secondary-btn {
+            display: inline-block;
+            width: 100%;
+            padding: 14px 22px;
+            font-size: 17px;
+            font-weight: bold;
+            color: #9e2a5b;
+            background: #ffe3ee;
+            border: 2px solid #ffb3d1;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.15s;
+            margin-top: 6px;
+        }
+
+        .secondary-btn:hover {
+            background: #ffd0e3;
+            transform: translateY(-1px);
+        }
+
+        .info-pill {
+            background: #fff0f6;
+            border: 1px dashed #ff85b3;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 16px;
+            color: #7a284f;
+            font-weight: bold;
+        }
+
+        /* Універсальний інструмент масштабування (Лупа) */
+        #zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 9999;
+        }
+
+        #zoom-in-btn, #zoom-out-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #ff85b3;
+            background: #ffffff;
+            color: #b52b65;
+            font-size: 22px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(181, 43, 101, 0.28);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, background 0.15s;
+        }
+
+        #zoom-in-btn:hover, #zoom-out-btn:hover {
+            background: #fff0f6;
+            transform: scale(1.08);
+        }
+
+        #zoom-in-btn:active, #zoom-out-btn:active {
+            transform: scale(0.95);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Адаптивність для мобільних пристроїв та планшетів */
+        @media (max-width: 768px) {
+            #homework-screen {
+                padding: 18px 10px 85px 10px;
+            }
+
+            .hw-container {
+                padding: 18px 14px;
+                border-radius: 20px;
+            }
+
+            .hw-title {
+                font-size: 21px;
+            }
+
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .question-title {
+                font-size: 16px;
+            }
+
+            .option-btn {
+                font-size: 15px;
+                padding: 11px 12px;
+            }
+
+            .section-title {
+                font-size: 17px;
+            }
+
+            .section-hint {
+                font-size: 13px;
+            }
+
+            .pos-legend {
+                font-size: 12px;
+                gap: 9px;
+            }
+
+            .word-grid {
+                gap: 8px;
+            }
+
+            .word-card {
+                padding: 10px 8px;
+            }
+
+            .word-text {
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+
+            .pos-options {
+                grid-template-columns: 1fr;
+            }
+
+            .pos-btn {
+                font-size: 12px;
+                padding: 6px 4px;
+            }
+
+            .comp-expression {
+                font-size: 19px;
+            }
+
+            .comp-number {
+                min-width: 38px;
+                height: 32px;
+                font-size: 15px;
+                padding: 0 8px;
+            }
+
+            .comp-btn {
+                min-width: 56px;
+                font-size: 10px;
+                padding: 7px 3px;
+            }
+
+            #hud-bar {
+                top: 10px;
+                width: 96%;
+                padding: 8px 12px;
+                border-radius: 16px;
+                gap: 6px;
+            }
+
+            .hud-badge {
+                font-size: 13px;
+                padding: 5px 10px;
+            }
+
+            #lives-display {
+                font-size: 16px;
+                letter-spacing: 1px;
+            }
+
+            .hud-btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            .modal-card {
+                padding: 22px 18px;
+                border-radius: 22px;
+                max-width: 94%;
+            }
+
+            .modal-title {
+                font-size: 22px;
+            }
+
+            .modal-subtitle {
+                font-size: 14px;
+            }
+
+            .primary-btn {
+                font-size: 18px;
+                padding: 14px 18px;
+            }
+
+            #zoom-controls {
+                bottom: 14px;
+                right: 14px;
+            }
+
+            #zoom-in-btn, #zoom-out-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Плашка вчительського режиму перевірки -->
+    <div id="teacher-banner"></div>
+
+    <!-- Модальне вікно обов'язкової авторизації -->
+    <div id="auth-overlay" class="overlay-screen hidden">
+        <div class="modal-card">
+            <div class="sweet-icon-banner">🧁🍰🍩</div>
+            <div class="modal-title">👋 Привіт! Як тебе звати?</div>
+            <p class="modal-subtitle">Введи своє ім'я, щоб розпочати виконання домашнього завдання</p>
+            <input type="text" id="student-name-input" class="text-input" placeholder="Введи своє ім'я..." autocomplete="off">
+            <button id="auth-start-btn" class="primary-btn">Почати гру</button>
+        </div>
+    </div>
+
+    <!-- Головний контейнер з підтримкою масштабування (Лупа) -->
+    <div id="zoom-container">
+
+        <!-- ==================== ЕТАП 1: БЛОК ДОМАШНЬОГО ЗАВДАННЯ ==================== -->
+        <div id="homework-screen" class="hidden">
+            <div class="hw-container" id="hw-card-container">
+                <div class="hw-header">
+                    <div class="hw-title" id="hw-main-title">📚 Домашнє завдання</div>
+                    <p class="hw-subtitle" id="hw-main-subtitle">
+                        Виконай два завдання: розподіли слова за частинами мови та назви компоненти прикладів. Потім відправ роботу в журнал, щоб відкрити безлімітний доступ до гри «Казкова вежа солодощів»!
+                    </p>
+                </div>
+
+                <!-- Контейнер для завдань -->
+                <div id="questions-list"></div>
+
+                <!-- Попередження, якщо дитина виконала не всі завдання -->
+                <div id="hw-warning-msg">Будь ласка, виконай усі завдання: обери частину мови для кожного слова та назву для кожного числа!</div>
+
+                <!-- Кнопка відправки ДЗ в журнал -->
+                <button id="submit-hw-btn" class="primary-btn">📤 Відправити роботу</button>
+
+                <!-- Повідомлення після відправки (без показу балів та без підсвічування відповідей) -->
+                <div id="hw-submitted-box">
+                    <div class="submitted-banner-text">Твоя робота відправлена на перевірку</div>
+                    <button id="unlock-game-btn" class="primary-btn">🎮 Перейти до гри «Казкова вежа солодощів»</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ЕТАП 2: НАГОРОДА — ГРА «КАЗКОВА ВЕЖА СОЛОДОЩІВ» ==================== -->
+        <!-- Верхня ігрова панель -->
+        <div id="hud-bar" class="hidden">
+            <div class="hud-group">
+                <div class="hud-badge">👤 <span id="hud-user-name">Учень</span></div>
+                <div class="hud-badge">🍰 Поверх: <span id="hud-floor">0</span></div>
+                <div class="hud-badge">🏆 Рекорд: <span id="hud-best">0</span></div>
+            </div>
+            <div class="hud-group">
+                <div id="lives-display" title="Життя">❤️❤️❤️</div>
+                <button id="pause-btn" class="hud-btn">⏸ Пауза</button>
+            </div>
+        </div>
+
+        <!-- Основне полотно гри -->
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Екран МЕНЮ (STATE: MENU) -->
+        <div id="menu-screen" class="overlay-screen hidden">
+            <div class="modal-card">
+                <div class="sweet-icon-banner">🎂🍓🍫</div>
+                <div class="modal-title">Казкова вежа солодощів</div>
+                <p class="modal-subtitle">
+                    Домашнє завдання виконано! Тепер складай бісквіти, шоколад, зефір та желе якомога вище. Грати можна скільки завгодно!
+                </p>
+                <div class="info-pill">🏆 Твій рекорд висоти: <span id="menu-best-score">0</span></div>
+                <button id="play-btn" class="primary-btn">Грати</button>
+            </div>
+        </div>
+
+        <!-- Екран ПАУЗИ (STATE: PAUSED) -->
+        <div id="pause-screen" class="overlay-screen hidden">
+            <div class="modal-card">
+                <div class="sweet-icon-banner">⏸️🍩</div>
+                <div class="modal-title">Пауза</div>
+                <p class="modal-subtitle">Перепочинь та продовжуй будувати солодку вежу!</p>
+                <button id="resume-btn" class="primary-btn">Продовжити</button>
+                <button id="restart-pause-btn" class="secondary-btn">Почати спочатку</button>
+            </div>
+        </div>
+
+        <!-- Екран ЗАВЕРШЕННЯ ГРИ (STATE: GAMEOVER) -->
+        <div id="gameover-screen" class="overlay-screen hidden">
+            <div class="modal-card">
+                <div class="sweet-icon-banner">🏰✨🍰</div>
+                <div class="modal-title">Вежу збудовано!</div>
+                <p class="modal-subtitle">Чудова спроба! Спробуй побити власний рекорд висоти.</p>
+                <div class="info-pill">🍰 Збудовано поверхів: <span id="final-score-val">0</span></div>
+                <div class="info-pill">🏆 Рекорд: <span id="gameover-best-val">0</span></div>
+                <button id="retry-btn" class="primary-btn">Спробувати знову</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Універсальний інструмент масштабування (Лупа) -->
+    <div id="zoom-controls">
+        <button id="zoom-out-btn" title="Віддалити">➖</button>
+        <button id="zoom-in-btn" title="Наблизити">➕</button>
+    </div>
+
+    <script>
+        /* =========================================================================
+           1. КОНФІГУРАЦІЯ LMS, БАЗА ЗАВДАНЬ ТА FIREBASE
+           ========================================================================= */
+        const FIREBASE_DB_URL = "https://lesson-13c44-default-rtdb.firebaseio.com";
+        const FIREBASE_PROJECT_ID = "lesson-13c44";
+
+        // Автоматичне отримання та розкодування gameId з назви HTML-файлу
+        function getDecodedGameId() {
+            try {
+                const path = window.location.pathname || "";
+                let fileName = path.substring(path.lastIndexOf("/") + 1);
+                fileName = decodeURIComponent(fileName);
+                let cleanId = fileName.replace(/\.html?$/i, "").trim();
+                if (!cleanId) {
+                    cleanId = "sweet_tower_stack";
+                }
+                return cleanId.replace(/[.$#[\]\/]/g, "_");
+            } catch (e) {
+                return "sweet_tower_stack";
+            }
+        }
+
+        const GAME_ID = getDecodedGameId();
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportUserParam = urlParams.get("reportUser");
+        const reportDateParam = urlParams.get("reportDate");
+        const isTeacherReviewMode = Boolean(reportUserParam && reportDateParam);
+
+        /* =========================================================
+           ЗАВДАННЯ 1: 12 слів -> 3 частини мови
+           ========================================================= */
+        const WORD_SORT_TASKS = [
+            { word: "сонце", pos: "noun" },
+            { word: "книга", pos: "noun" },
+            { word: "море", pos: "noun" },
+            { word: "друг", pos: "noun" },
+            { word: "веселий", pos: "adj" },
+            { word: "солодкий", pos: "adj" },
+            { word: "зелений", pos: "adj" },
+            { word: "смілива", pos: "adj" },
+            { word: "бігти", pos: "verb" },
+            { word: "співати", pos: "verb" },
+            { word: "малювати", pos: "verb" },
+            { word: "летіти", pos: "verb" }
+        ];
+
+        const POS_LIST = [
+            { key: "noun", label: "Іменник", color: "#3b82f6" },
+            { key: "adj", label: "Прикметник", color: "#10b981" },
+            { key: "verb", label: "Дієслово", color: "#f59e0b" }
+        ];
+
+        /* =========================================================
+           ЗАВДАННЯ 2: 4 приклади -> назви компонентів
+           ========================================================= */
+        const COMPONENT_TASKS = [
+            {
+                expression: "5 + 3 = 8",
+                numbers: [5, 3, 8],
+                names: ["Доданок", "Доданок", "Сума"],
+                options: ["Доданок", "Сума", "Різниця"],
+                theme: "#3b82f6"
+            },
+            {
+                expression: "9 − 4 = 5",
+                numbers: [9, 4, 5],
+                names: ["Зменшуване", "Від'ємник", "Різниця"],
+                options: ["Зменшуване", "Від'ємник", "Різниця", "Сума"],
+                theme: "#8b5cf6"
+            },
+            {
+                expression: "6 · 2 = 12",
+                numbers: [6, 2, 12],
+                names: ["Множник", "Множник", "Добуток"],
+                options: ["Множник", "Добуток", "Частка"],
+                theme: "#10b981"
+            },
+            {
+                expression: "8 : 2 = 4",
+                numbers: [8, 2, 4],
+                names: ["Ділене", "Дільник", "Частка"],
+                options: ["Ділене", "Дільник", "Частка", "Добуток"],
+                theme: "#f59e0b"
+            }
+        ];
+
+        let currentStudentName = "";
+        let selectedHomeworkQuestions = []; // усі завдання у єдиному форматі (для журналу та перевірки)
+        let studentChoices = {};            // { globalIndex: selectedOptionIndex }
+
+        // DOM-елементи
+        const authOverlay = document.getElementById("auth-overlay");
+        const studentNameInput = document.getElementById("student-name-input");
+        const authStartBtn = document.getElementById("auth-start-btn");
+
+        const homeworkScreen = document.getElementById("homework-screen");
+        const hwCardContainer = document.getElementById("hw-card-container");
+        const hwMainTitle = document.getElementById("hw-main-title");
+        const hwMainSubtitle = document.getElementById("hw-main-subtitle");
+        const questionsListEl = document.getElementById("questions-list");
+        const hwWarningMsg = document.getElementById("hw-warning-msg");
+        const submitHwBtn = document.getElementById("submit-hw-btn");
+        const hwSubmittedBox = document.getElementById("hw-submitted-box");
+        const unlockGameBtn = document.getElementById("unlock-game-btn");
+
+        const hudBar = document.getElementById("hud-bar");
+        const hudUserName = document.getElementById("hud-user-name");
+        const hudFloor = document.getElementById("hud-floor");
+        const hudBest = document.getElementById("hud-best");
+        const menuBestScore = document.getElementById("menu-best-score");
+        const finalScoreVal = document.getElementById("final-score-val");
+        const gameoverBestVal = document.getElementById("gameover-best-val");
+        const livesDisplay = document.getElementById("lives-display");
+
+        const menuScreen = document.getElementById("menu-screen");
+        const pauseScreen = document.getElementById("pause-screen");
+        const gameoverScreen = document.getElementById("gameover-screen");
+
+        const playBtn = document.getElementById("play-btn");
+        const pauseBtn = document.getElementById("pause-btn");
+        const resumeBtn = document.getElementById("resume-btn");
+        const restartPauseBtn = document.getElementById("restart-pause-btn");
+        const retryBtn = document.getElementById("retry-btn");
+        const teacherBanner = document.getElementById("teacher-banner");
+
+        /* =========================================================================
+           2. УНІВЕРСАЛЬНИЙ ІНСТРУМЕНТ МАСШТАБУВАННЯ (ЛУПА)
+           ========================================================================= */
+        let currentZoom = 1;
+        const zoomContainer = document.getElementById("zoom-container");
+        const zoomInBtn = document.getElementById("zoom-in-btn");
+        const zoomOutBtn = document.getElementById("zoom-out-btn");
+
+        function applyZoom() {
+            zoomContainer.style.transform = `scale(${currentZoom})`;
+        }
+
+        zoomInBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            currentZoom = Math.min(1.5, +(currentZoom + 0.1).toFixed(2));
+            applyZoom();
+        });
+
+        zoomOutBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            currentZoom = Math.max(0.6, +(currentZoom - 0.1).toFixed(2));
+            applyZoom();
+        });
+
+        /* =========================================================================
+           3. ДОПОМІЖНІ ФУНКЦІЇ ДАТИ ТА ПЕРЕВІРКИ СТАТУСУ ДЗ У ЖУРНАЛІ
+           ========================================================================= */
+        function getFormattedDateParts() {
+            const now = new Date();
+            const dd = String(now.getDate()).padStart(2, "0");
+            const mm = String(now.getMonth() + 1).padStart(2, "0");
+            const yyyy = now.getFullYear();
+            return {
+                monthYear: `${mm}-${yyyy}`,
+                fullDate: `${dd}-${mm}-${yyyy}`
+            };
+        }
+
+        function getSanitizedStudentKey(name) {
+            return (name || "Учень").trim().replace(/[.$#[\]\/]/g, "_");
+        }
+
+        function getLocalHwStorageKey(studentName) {
+            const { fullDate } = getFormattedDateParts();
+            return `hw_completed_${GAME_ID}_${getSanitizedStudentKey(studentName)}_${fullDate}`;
+        }
+
+        // Перевіряємо, чи дитина вже відправляла ДЗ сьогодні
+        async function checkIfHomeworkAlreadySubmitted(studentName) {
+            const localKey = getLocalHwStorageKey(studentName);
+            if (localStorage.getItem(localKey) === "true") {
+                return true;
+            }
+
+            const { monthYear, fullDate } = getFormattedDateParts();
+            const safeStudent = getSanitizedStudentKey(studentName);
+            const checkUrl = `${FIREBASE_DB_URL}/homework_reports/${encodeURIComponent(monthYear)}/${encodeURIComponent(fullDate)}/${encodeURIComponent(GAME_ID)}/${encodeURIComponent(safeStudent)}.json`;
+
+            try {
+                const res = await fetch(checkUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.score) {
+                        localStorage.setItem(localKey, "true");
+                        return true;
+                    }
+                }
+            } catch (err) {
+                // Якщо мережа тимчасово недоступна, покладаємося на localStorage
+            }
+            return false;
+        }
+
+        /* =========================================================================
+           4. ПОБУДОВА ЗАВДАНЬ, РЕНДЕР ТА ВІДПРАВКА В FIREBASE
+           ========================================================================= */
+        // Перетворює обидва завдання на єдиний масив питань (для журналу/перевірки)
+        function buildHomeworkTasks() {
+            const words = [...WORD_SORT_TASKS].sort(() => Math.random() - 0.5);
+
+            const wordQuestions = words.map((t, i) => ({
+                id: "word_" + i,
+                question: `Слово «${t.word}» — це...`,
+                options: POS_LIST.map(p => p.label),
+                correctIndex: POS_LIST.findIndex(p => p.key === t.pos)
+            }));
+
+            const compQuestions = [];
+            COMPONENT_TASKS.forEach((t, ti) => {
+                t.numbers.forEach((num, ni) => {
+                    compQuestions.push({
+                        id: `comp_${ti}_${ni}`,
+                        question: `${t.expression} — як називається число ${num}?`,
+                        options: t.options,
+                        correctIndex: t.options.indexOf(t.names[ni])
+                    });
+                });
+            });
+
+            return { words, wordQuestions, compQuestions };
+        }
+
+        function renderHomeworkQuestions() {
+            const built = buildHomeworkTasks();
+            selectedHomeworkQuestions = [...built.wordQuestions, ...built.compQuestions];
+            studentChoices = {};
+            questionsListEl.innerHTML = "";
+            hwWarningMsg.style.display = "none";
+
+            /* ---------- ЗАВДАННЯ 1: РОЗПОДІЛ СЛІВ ---------- */
+            const section1 = document.createElement("div");
+            section1.className = "hw-section";
+
+            const title1 = document.createElement("div");
+            title1.className = "section-title";
+            title1.textContent = "🍭 Завдання 1. Розподіли слова за частинами мови";
+            section1.appendChild(title1);
+
+            const hint1 = document.createElement("div");
+            hint1.className = "section-hint";
+            hint1.textContent = "Для кожного слова натисни кнопку з правильною частиною мови:";
+            section1.appendChild(hint1);
+
+            const legend = document.createElement("div");
+            legend.className = "pos-legend";
+            POS_LIST.forEach(p => {
+                const item = document.createElement("span");
+                item.innerHTML = `<i class="legend-dot" style="background:${p.color}"></i>${p.label}`;
+                legend.appendChild(item);
+            });
+            section1.appendChild(legend);
+
+            const wordGrid = document.createElement("div");
+            wordGrid.className = "word-grid";
+
+            built.words.forEach((task, i) => {
+                const card = document.createElement("div");
+                card.className = "word-card";
+
+                const wordEl = document.createElement("div");
+                wordEl.className = "word-text";
+                wordEl.textContent = task.word;
+                card.appendChild(wordEl);
+
+                const opts = document.createElement("div");
+                opts.className = "pos-options";
+
+                POS_LIST.forEach((pos, posIdx) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "pos-btn pos-" + pos.key;
+                    btn.textContent = pos.label;
+
+                    btn.addEventListener("click", () => {
+                        if (isTeacherReviewMode) return;
+                        studentChoices[i] = posIdx;
+                        hwWarningMsg.style.display = "none";
+
+                        Array.from(opts.children).forEach(c => c.classList.remove("selected"));
+                        btn.classList.add("selected");
+                    });
+
+                    opts.appendChild(btn);
+                });
+
+                card.appendChild(opts);
+                wordGrid.appendChild(card);
+            });
+
+            section1.appendChild(wordGrid);
+            questionsListEl.appendChild(section1);
+
+            /* ---------- ЗАВДАННЯ 2: КОМПОНЕНТИ ПРИКЛАДІВ ---------- */
+            const section2 = document.createElement("div");
+            section2.className = "hw-section";
+
+            const title2 = document.createElement("div");
+            title2.className = "section-title";
+            title2.textContent = "🧮 Завдання 2. Назви компоненти прикладів";
+            section2.appendChild(title2);
+
+            const hint2 = document.createElement("div");
+            hint2.className = "section-hint";
+            hint2.textContent = "Для кожного числа в прикладі обери його назву:";
+            section2.appendChild(hint2);
+
+            const wordCount = built.wordQuestions.length;
+
+            COMPONENT_TASKS.forEach((task, ti) => {
+                const card = document.createElement("div");
+                card.className = "comp-card";
+                card.style.setProperty("--theme", task.theme);
+
+                const expr = document.createElement("div");
+                expr.className = "comp-expression";
+                expr.textContent = task.expression;
+                card.appendChild(expr);
+
+                task.numbers.forEach((num, ni) => {
+                    const globalIdx = wordCount + ti * 3 + ni;
+
+                    const row = document.createElement("div");
+                    row.className = "comp-row";
+
+                    const badge = document.createElement("div");
+                    badge.className = "comp-number";
+                    badge.style.background = task.theme;
+                    badge.textContent = num;
+                    row.appendChild(badge);
+
+                    const opts = document.createElement("div");
+                    opts.className = "comp-options";
+
+                    task.options.forEach((optName, optIdx) => {
+                        const btn = document.createElement("button");
+                        btn.type = "button";
+                        btn.className = "comp-btn";
+                        btn.textContent = optName;
+
+                        btn.addEventListener("click", () => {
+                            if (isTeacherReviewMode) return;
+                            studentChoices[globalIdx] = optIdx;
+                            hwWarningMsg.style.display = "none";
+
+                            Array.from(opts.children).forEach(c => c.classList.remove("selected"));
+                            btn.classList.add("selected");
+                        });
+
+                        opts.appendChild(btn);
+                    });
+
+                    row.appendChild(opts);
+                    card.appendChild(row);
+                });
+
+                section2.appendChild(card);
+            });
+
+            questionsListEl.appendChild(section2);
+        }
+
+        async function submitHomeworkToJournal() {
+            if (isTeacherReviewMode) return;
+
+            // Перевіряємо, чи дитина виконала всі завдання
+            if (Object.keys(studentChoices).length < selectedHomeworkQuestions.length) {
+                hwWarningMsg.style.display = "block";
+                return;
+            }
+
+            submitHwBtn.disabled = true;
+            submitHwBtn.textContent = "⏳ Відправка...";
+
+            let correctCount = 0;
+            const rawAnswers = selectedHomeworkQuestions.map((qObj, qIdx) => {
+                const chosenIdx = studentChoices[qIdx];
+                const isCorrect = chosenIdx === qObj.correctIndex;
+                if (isCorrect) {
+                    correctCount++;
+                }
+                return {
+                    questionId: qObj.id,
+                    questionText: qObj.question,
+                    options: qObj.options,
+                    selectedIndex: chosenIdx,
+                    selectedText: qObj.options[chosenIdx],
+                    correctIndex: qObj.correctIndex,
+                    correctText: qObj.options[qObj.correctIndex],
+                    isCorrect: isCorrect
+                };
+            });
+
+            const totalQuestions = selectedHomeworkQuestions.length;
+            const formattedScore = `Вірно ${correctCount} із ${totalQuestions}`;
+            const { monthYear, fullDate } = getFormattedDateParts();
+            const safeStudent = getSanitizedStudentKey(currentStudentName);
+
+            const reportPayload = {
+                studentName: currentStudentName,
+                gameId: GAME_ID,
+                score: formattedScore,
+                timestamp: new Date().toISOString(),
+                date: fullDate,
+                rawAnswers: rawAnswers
+            };
+
+            const firebasePath = `${FIREBASE_DB_URL}/homework_reports/${encodeURIComponent(monthYear)}/${encodeURIComponent(fullDate)}/${encodeURIComponent(GAME_ID)}/${encodeURIComponent(safeStudent)}.json`;
+
+            try {
+                await fetch(firebasePath, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(reportPayload)
+                });
+            } catch (err) {
+                // Навіть при збої мережі зберігаємо локальний прапорець, щоб не блокувати дитину
+            }
+
+            // Позначаємо, що ця дитина вже здала ДЗ сьогодні
+            localStorage.setItem(getLocalHwStorageKey(currentStudentName), "true");
+
+            // Блокуємо зміну відповідей, НЕ підсвічуємо правильні/неправильні і НЕ показуємо бали дитині
+            hwCardContainer.classList.add("teacher-locked");
+            submitHwBtn.classList.add("hidden");
+            hwWarningMsg.style.display = "none";
+            hwSubmittedBox.style.display = "block";
+        }
+
+        submitHwBtn.addEventListener("click", submitHomeworkToJournal);
+
+        // Перехід до самої гри після відправки ДЗ
+        unlockGameBtn.addEventListener("click", () => {
+            openUnlimitedGameAccess();
+        });
+
+        function openUnlimitedGameAccess() {
+            homeworkScreen.classList.add("hidden");
+            hudBar.classList.remove("hidden");
+            menuScreen.classList.remove("hidden");
+            initNewGame();
+            gameState = GAME_STATES.MENU;
+        }
+
+        /* =========================================================================
+           5. РЕЖИМ ПЕРЕВІРКИ ВЧИТЕЛЯ (?reportUser=...&reportDate=...)
+           ========================================================================= */
+        async function initTeacherReviewMode() {
+            const cleanUser = decodeURIComponent(reportUserParam);
+            const cleanDate = decodeURIComponent(reportDateParam);
+
+            const dateParts = cleanDate.split("-");
+            const monthYear = dateParts.length === 3 ? `${dateParts[1]}-${dateParts[2]}` : getFormattedDateParts().monthYear;
+
+            // Відкривається без вводу імені
+            authOverlay.classList.add("hidden");
+            hudBar.classList.add("hidden");
+            menuScreen.classList.add("hidden");
+            pauseScreen.classList.add("hidden");
+            gameoverScreen.classList.add("hidden");
+
+            // Плашка вчителя
+            teacherBanner.style.display = "block";
+            teacherBanner.textContent = `👀 Режим перевірки: Робота учня ${cleanUser}`;
+
+            // Показуємо екран домашнього завдання у заблокованому режимі
+            homeworkScreen.classList.remove("hidden");
+            homeworkScreen.style.paddingTop = "65px";
+            hwCardContainer.classList.add("teacher-locked");
+            submitHwBtn.classList.add("hidden");
+            hwSubmittedBox.style.display = "none";
+
+            hwMainTitle.textContent = `📋 Перевірка ДЗ: ${cleanUser}`;
+            hwMainSubtitle.textContent = "Завантаження відповідей учня з бази даних...";
+            questionsListEl.innerHTML = "";
+
+            try {
+                const directUrl = `${FIREBASE_DB_URL}/homework_reports/${encodeURIComponent(monthYear)}/${encodeURIComponent(cleanDate)}/${encodeURIComponent(GAME_ID)}/${encodeURIComponent(cleanUser)}.json`;
+                let res = await fetch(directUrl);
+                let reportData = await res.json();
+
+                // Якщо файл гри мав інше ім'я при збереженні, шукаємо запис учня за цей день
+                if (!reportData) {
+                    const dayUrl = `${FIREBASE_DB_URL}/homework_reports/${encodeURIComponent(monthYear)}/${encodeURIComponent(cleanDate)}.json`;
+                    const dayRes = await fetch(dayUrl);
+                    const dayObj = await dayRes.json();
+                    if (dayObj) {
+                        for (const gKey of Object.keys(dayObj)) {
+                            if (dayObj[gKey] && dayObj[gKey][cleanUser]) {
+                                reportData = dayObj[gKey][cleanUser];
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (reportData && reportData.rawAnswers) {
+                    renderTeacherHighlightedQuiz(reportData);
+                } else {
+                    hwMainSubtitle.textContent = "Звіт учня за вказану дату не знайдено у базі даних.";
+                }
+            } catch (e) {
+                hwMainSubtitle.textContent = "Помилка завантаження даних із Firebase.";
+            }
+        }
+
+        function renderTeacherHighlightedQuiz(reportData) {
+            const answers = Array.isArray(reportData.rawAnswers)
+                ? reportData.rawAnswers
+                : Object.values(reportData.rawAnswers || {});
+
+            hwMainSubtitle.textContent = `Результат: ${reportData.score || ""} | Дата: ${reportData.date || reportDateParam}`;
+            questionsListEl.innerHTML = "";
+
+            answers.forEach((ans, idx) => {
+                const card = document.createElement("div");
+                card.className = "question-card";
+
+                const title = document.createElement("div");
+                title.className = "question-title";
+                title.textContent = `${idx + 1}. ${ans.questionText || "Запитання"}`;
+                card.appendChild(title);
+
+                const grid = document.createElement("div");
+                grid.className = "options-grid";
+
+                const optionsArr = Array.isArray(ans.options) ? ans.options : [];
+                optionsArr.forEach((optText, optIdx) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "option-btn";
+                    btn.textContent = optText;
+
+                    // Логіка підсвічування для вчителя:
+                    // 1. Якщо це правильна відповідь і учень її обрав -> зелений
+                    if (optIdx === ans.correctIndex && optIdx === ans.selectedIndex) {
+                        btn.classList.add("review-correct-selected");
+                    }
+                    // 2. Якщо учень обрав неправильну відповідь -> червоний
+                    else if (optIdx === ans.selectedIndex && optIdx !== ans.correctIndex) {
+                        btn.classList.add("review-wrong-selected");
+                    }
+                    // 3. Правильна відповідь, яку учень НЕ обрав -> обводиться зеленою рамкою
+                    else if (optIdx === ans.correctIndex && optIdx !== ans.selectedIndex) {
+                        btn.classList.add("review-correct-missed");
+                    }
+
+                    grid.appendChild(btn);
+                });
+
+                card.appendChild(grid);
+                questionsListEl.appendChild(card);
+            });
+        }
+
+        /* =========================================================================
+           6. СИНТЕЗАТОР ЗВУКІВ WEB AUDIO API (БЕЗ ЗОВНІШНІХ ФАЙЛІВ)
+           ========================================================================= */
+        class SweetSoundEngine {
+            constructor() {
+                this.ctx = null;
+                // Частоти нот мажорної пентатоніки для приємного підйому звуку з кожним поверхом
+                this.pentatonicRatios = [1, 1.125, 1.25, 1.5, 1.667, 2, 2.25, 2.5, 3, 3.333];
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) {
+                        this.ctx = new AudioCtx();
+                    }
+                }
+                if (this.ctx && this.ctx.state === "suspended") {
+                    this.ctx.resume();
+                }
+            }
+
+            // Звук успішного встановлення блоку (дзвіночок за пентатонікою)
+            playPlaceNote(floorIndex, isPerfect = false) {
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const baseFreq = 261.63; // До першої октави (C4)
+                const scaleIdx = floorIndex % this.pentatonicRatios.length;
+                const octaveBoost = Math.min(2, Math.floor(floorIndex / this.pentatonicRatios.length) * 0.5);
+                const freq = baseFreq * this.pentatonicRatios[scaleIdx] * (1 + octaveBoost * 0.25);
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = isPerfect ? "triangle" : "sine";
+                osc.frequency.setValueAtTime(freq, now);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.exponentialRampToValueAtTime(0.28, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.46);
+
+                // Додатковий гармонійний обертон при Perfect!
+                if (isPerfect) {
+                    const osc2 = this.ctx.createOscillator();
+                    const gain2 = this.ctx.createGain();
+                    osc2.type = "sine";
+                    osc2.frequency.setValueAtTime(freq * 1.5, now + 0.05);
+
+                    gain2.gain.setValueAtTime(0.001, now + 0.05);
+                    gain2.gain.exponentialRampToValueAtTime(0.2, now + 0.08);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+                    osc2.connect(gain2);
+                    gain2.connect(this.ctx.destination);
+                    osc2.start(now + 0.05);
+                    osc2.stop(now + 0.56);
+                }
+            }
+
+            // М'який звук промаху або втрати життя
+            playMissSound() {
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(190, now);
+                osc.frequency.exponentialRampToValueAtTime(85, now + 0.35);
+
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+
+            // Переможна мелодія нового рекорду
+            playFanfare() {
+                this.init();
+                if (!this.ctx) return;
+
+                const notes = [523.25, 659.25, 783.99, 1046.5];
+                notes.forEach((freq, idx) => {
+                    const now = this.ctx.currentTime + idx * 0.09;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.36);
+                });
+            }
+        }
+
+        const soundEngine = new SweetSoundEngine();
+
+        /* =========================================================================
+           7. ВІЗУАЛЬНІ СТИЛІ СОЛОДОЩІВ ТА ІГРОВА МЕХАНІКА (SWEET TOWER STACK)
+           ========================================================================= */
+        const SWEET_PRESETS = [
+            {
+                name: "Полуничний бісквіт",
+                bodyTop: "#ffd1dc",
+                bodyBottom: "#ff9ebb",
+                icingColor: "#ff477e",
+                creamStripe: "#fff8fb",
+                sprinkleColors: ["#ffffd0", "#70d6ff", "#ff9770", "#ffffff"]
+            },
+            {
+                name: "Бельгійський шоколад",
+                bodyTop: "#6f3b26",
+                bodyBottom: "#4a2515",
+                icingColor: "#36180b",
+                creamStripe: "#d4a373",
+                sprinkleColors: ["#ffd166", "#fff3b0", "#ffcad4", "#ffffff"]
+            },
+            {
+                name: "Повітряний зефір",
+                bodyTop: "#fff5fa",
+                bodyBottom: "#ffd6eb",
+                icingColor: "#ff85b3",
+                creamStripe: "#ffffff",
+                sprinkleColors: ["#ff5d8f", "#9bf6ff", "#fdffb6", "#caffbf"]
+            },
+            {
+                name: "Ванільне тістечко",
+                bodyTop: "#fff1c1",
+                bodyBottom: "#ffd275",
+                icingColor: "#ff924c",
+                creamStripe: "#ffffff",
+                sprinkleColors: ["#ff595e", "#8ac926", "#1982c4", "#6a4c93"]
+            },
+            {
+                name: "Ягідне желе з посипкою",
+                bodyTop: "#e0aaff",
+                bodyBottom: "#b56576",
+                icingColor: "#9d4edd",
+                creamStripe: "#f8edeb",
+                sprinkleColors: ["#ffbe0b", "#fb5607", "#ff006e", "#8338ec"]
+            }
+        ];
+
+        const GAME_STATES = {
+            HOMEWORK: "HOMEWORK",
+            MENU: "MENU",
+            PLAYING: "PLAYING",
+            PAUSED: "PAUSED",
+            GAMEOVER: "GAMEOVER",
+            REVIEW: "REVIEW"
+        };
+
+        let gameState = GAME_STATES.HOMEWORK;
+        const canvas = document.getElementById("game-canvas");
+        const ctx = canvas.getContext("2d");
+
+        let viewportWidth = window.innerWidth;
+        let viewportHeight = window.innerHeight;
+        let dpr = window.devicePixelRatio || 1;
+
+        // Параметри вежі та блоків
+        const BLOCK_HEIGHT = 42;
+        const INITIAL_BLOCK_WIDTH = 220;
+        const PERFECT_TOLERANCE = 4; // Допуск у пікселях для бонусу "Perfect!"
+        const MAX_LIVES = 3;
+
+        let towerBlocks = [];      // Покладені поверхи вежі
+        let activeBlock = null;    // Поточний рухомий блок зверху
+        let fallingPieces = [];    // Відрізані або промахнуті шматочки, що падають вниз
+        let particles = [];        // Частинки конфеті та зірочок
+        let floatingTexts = [];    // Плаваючі написи "Perfect! +10", "Good!"
+        let clouds = [];           // Казкові хмаринки на фоні
+
+        let currentFloor = 0;
+        let lives = MAX_LIVES;
+        let bestTowerScore = parseInt(localStorage.getItem("bestTowerScore") || "0", 10);
+        let cameraY = 0;
+        let targetCameraY = 0;
+        let lastFrameTime = performance.now();
+
+        // Генерація декоративних деталей (посипки та крапель глазурі) для блоку
+        function generateSweetDetails(width, preset) {
+            const sprinkles = [];
+            const count = Math.max(4, Math.floor(width / 16));
+            for (let i = 0; i < count; i++) {
+                sprinkles.push({
+                    rx: 0.08 + Math.random() * 0.84,
+                    ry: 0.12 + Math.random() * 0.35,
+                    angle: (Math.random() - 0.5) * 1.4,
+                    color: preset.sprinkleColors[i % preset.sprinkleColors.length]
+                });
+            }
+
+            const drips = [];
+            const dripCount = Math.max(3, Math.floor(width / 26));
+            for (let i = 0; i < dripCount; i++) {
+                drips.push({
+                    rx: (i + 0.5) / dripCount,
+                    len: 6 + (i % 3) * 3
+                });
+            }
+
+            return { sprinkles, drips };
+        }
+
+        // Ініціалізація фонових хмаринок
+        function initClouds() {
+            clouds = [];
+            for (let i = 0; i < 6; i++) {
+                clouds.push({
+                    x: Math.random() * viewportWidth,
+                    y: 70 + i * (viewportHeight / 6.5),
+                    radius: 32 + Math.random() * 24,
+                    speed: 10 + Math.random() * 14
+                });
+            }
+        }
+
+        // Адаптація Canvas під Retina/мобільні екрани
+        function resizeCanvas() {
+            viewportWidth = window.innerWidth;
+            viewportHeight = window.innerHeight;
+            dpr = window.devicePixelRatio || 1;
+
+            canvas.width = Math.floor(viewportWidth * dpr);
+            canvas.height = Math.floor(viewportHeight * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            if (clouds.length === 0) {
+                initClouds();
+            }
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        function getBaseWorldY() {
+            return viewportHeight - 110;
+        }
+
+        // Створення нового рухомого блоку для поточного поверху
+        function spawnNextActiveBlock() {
+            const topBlock = towerBlocks[towerBlocks.length - 1];
+            const preset = SWEET_PRESETS[(currentFloor + 1) % SWEET_PRESETS.length];
+            const width = topBlock.width;
+            const y = topBlock.y - BLOCK_HEIGHT;
+
+            // Швидкість зростає з кожним успішним поверхом
+            const baseSpeed = Math.min(viewportWidth * 0.72, 185 + currentFloor * 14);
+            const startFromLeft = currentFloor % 2 === 0;
+            const minBound = Math.max(16, viewportWidth * 0.5 - 240);
+            const maxBound = Math.min(viewportWidth - width - 16, viewportWidth * 0.5 + 240 - width);
+
+            activeBlock = {
+                x: startFromLeft ? minBound : maxBound,
+                y: y,
+                width: width,
+                height: BLOCK_HEIGHT,
+                vx: startFromLeft ? baseSpeed : -baseSpeed,
+                preset: preset,
+                details: generateSweetDetails(width, preset),
+                floorNumber: currentFloor + 1
+            };
+        }
+
+        // Початковий запуск нової гри
+        function initNewGame() {
+            currentFloor = 0;
+            lives = MAX_LIVES;
+            cameraY = 0;
+            targetCameraY = 0;
+            fallingPieces = [];
+            particles = [];
+            floatingTexts = [];
+
+            const responsiveBaseWidth = Math.min(INITIAL_BLOCK_WIDTH, Math.floor(viewportWidth * 0.58));
+            const baseX = (viewportWidth - responsiveBaseWidth) / 2;
+            const baseY = getBaseWorldY();
+            const basePreset = SWEET_PRESETS[0];
+
+            towerBlocks = [
+                {
+                    x: baseX,
+                    y: baseY,
+                    width: responsiveBaseWidth,
+                    height: BLOCK_HEIGHT,
+                    preset: basePreset,
+                    details: generateSweetDetails(responsiveBaseWidth, basePreset),
+                    isBase: true
+                }
+            ];
+
+            updateHudUI();
+            spawnNextActiveBlock();
+        }
+
+        function updateHudUI() {
+            hudFloor.textContent = currentFloor;
+            hudBest.textContent = bestTowerScore;
+            menuBestScore.textContent = bestTowerScore;
+            livesDisplay.textContent = "❤️".repeat(Math.max(0, lives)) + "🤍".repeat(Math.max(0, MAX_LIVES - lives));
+        }
+
+        // Спавн частинок конфеті та зірочок при "Perfect!"
+        function spawnConfetti(centerX, worldY) {
+            const palette = ["#ff477e", "#ffd166", "#06d6a0", "#118ab2", "#9d4edd", "#ffffff"];
+            for (let i = 0; i < 32; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 70 + Math.random() * 190;
+                particles.push({
+                    x: centerX + (Math.random() - 0.5) * 60,
+                    y: worldY,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 90,
+                    size: 4 + Math.random() * 5,
+                    color: palette[i % palette.length],
+                    alpha: 1,
+                    isStar: i % 3 === 0,
+                    rotation: Math.random() * Math.PI
+                });
+            }
+        }
+
+        // Додавання плаваючого тексту ("Perfect! +10" або "Good!")
+        function addFloatingText(text, x, worldY, color = "#d81b60") {
+            floatingTexts.push({
+                text: text,
+                x: x,
+                y: worldY,
+                alpha: 1,
+                vy: -48,
+                color: color
+            });
+        }
+
+        // Логіка зупинки та перевірки точності поточного блоку
+        function placeActiveBlock() {
+            if (gameState !== GAME_STATES.PLAYING || !activeBlock || isTeacherReviewMode) return;
+
+            const prevBlock = towerBlocks[towerBlocks.length - 1];
+            const curr = activeBlock;
+            const deltaX = curr.x - prevBlock.x;
+            const absDelta = Math.abs(deltaX);
+
+            // 1. Ідеальний збіг (в межах 4 пікселів) -> Бонус "Perfect!"
+            if (absDelta <= PERFECT_TOLERANCE) {
+                const placedX = prevBlock.x;
+                const placedBlock = {
+                    x: placedX,
+                    y: curr.y,
+                    width: prevBlock.width,
+                    height: BLOCK_HEIGHT,
+                    preset: curr.preset,
+                    details: curr.details,
+                    floorNumber: curr.floorNumber
+                };
+                towerBlocks.push(placedBlock);
+                currentFloor++;
+
+                soundEngine.playPlaceNote(currentFloor, true);
+                spawnConfetti(placedX + prevBlock.width / 2, curr.y);
+                addFloatingText("Perfect! +10", placedX + prevBlock.width / 2, curr.y - 10, "#ff2a6d");
+            }
+            // 2. Часткове перекриття -> зайва частина зрізається і падає
+            else if (absDelta < prevBlock.width) {
+                const overlapLeft = Math.max(curr.x, prevBlock.x);
+                const overlapRight = Math.min(curr.x + curr.width, prevBlock.x + prevBlock.width);
+                const newWidth = overlapRight - overlapLeft;
+
+                let cutX = deltaX > 0 ? prevBlock.x + prevBlock.width : curr.x;
+                let cutWidth = curr.width - newWidth;
+
+                fallingPieces.push({
+                    x: cutX,
+                    y: curr.y,
+                    width: cutWidth,
+                    height: BLOCK_HEIGHT,
+                    vy: 20,
+                    vx: deltaX > 0 ? 55 : -55,
+                    angle: 0,
+                    vAngle: deltaX > 0 ? 1.8 : -1.8,
+                    preset: curr.preset,
+                    details: generateSweetDetails(cutWidth, curr.preset)
+                });
+
+                const placedBlock = {
+                    x: overlapLeft,
+                    y: curr.y,
+                    width: newWidth,
+                    height: BLOCK_HEIGHT,
+                    preset: curr.preset,
+                    details: generateSweetDetails(newWidth, curr.preset),
+                    floorNumber: curr.floorNumber
+                };
+                towerBlocks.push(placedBlock);
+                currentFloor++;
+
+                soundEngine.playPlaceNote(currentFloor, false);
+                addFloatingText("Good!", overlapLeft + newWidth / 2, curr.y - 10, "#e67e22");
+
+                if (newWidth < 18) {
+                    updateBestScore();
+                    triggerGameOver();
+                    return;
+                }
+            }
+            // 3. Повний промах -> блок падає повністю, віднімається 1 життя
+            else {
+                fallingPieces.push({
+                    x: curr.x,
+                    y: curr.y,
+                    width: curr.width,
+                    height: BLOCK_HEIGHT,
+                    vy: 40,
+                    vx: 0,
+                    angle: 0,
+                    vAngle: deltaX > 0 ? 1.2 : -1.2,
+                    preset: curr.preset,
+                    details: curr.details
+                });
+
+                lives--;
+                soundEngine.playMissSound();
+                addFloatingText("Промах! -1 ❤️", curr.x + curr.width / 2, curr.y - 10, "#e74c3c");
+
+                updateHudUI();
+
+                if (lives <= 0) {
+                    updateBestScore();
+                    triggerGameOver();
+                    return;
+                }
+            }
+
+            updateBestScore();
+            updateHudUI();
+
+            // Плавне підняття камери вгору (починаючи з 4-го поверху)
+            if (currentFloor >= 4) {
+                targetCameraY = (currentFloor - 3) * BLOCK_HEIGHT;
+            }
+
+            spawnNextActiveBlock();
+        }
+
+        function updateBestScore() {
+            if (currentFloor > bestTowerScore) {
+                bestTowerScore = currentFloor;
+                localStorage.setItem("bestTowerScore", String(bestTowerScore));
+                soundEngine.playFanfare();
+            }
+        }
+
+        function triggerGameOver() {
+            gameState = GAME_STATES.GAMEOVER;
+            activeBlock = null;
+            finalScoreVal.textContent = currentFloor;
+            gameoverBestVal.textContent = bestTowerScore;
+            gameoverScreen.classList.remove("hidden");
+        }
+
+        /* =========================================================================
+           8. РЕНДЕРИНГ КАЗКОВИХ ОБ'ЄМНИХ СОЛОДОЩІВ НА CANVAS
+           ========================================================================= */
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            const radius = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        function drawSweetBlock(block, screenY) {
+            const { x, width, height, preset, details } = block;
+            if (width <= 1) return;
+
+            ctx.save();
+
+            // М'яка об'ємна тінь
+            ctx.shadowColor = "rgba(95, 25, 55, 0.22)";
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetY = 5;
+
+            // Основне тіло бісквіта/солодощів (градієнт)
+            const bodyGrad = ctx.createLinearGradient(x, screenY, x, screenY + height);
+            bodyGrad.addColorStop(0, preset.bodyTop);
+            bodyGrad.addColorStop(1, preset.bodyBottom);
+
+            drawRoundedRect(ctx, x, screenY, width, height, 10);
+            ctx.fillStyle = bodyGrad;
+            ctx.fill();
+
+            ctx.shadowColor = "transparent";
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // Кремовий прошарок посередині
+            ctx.fillStyle = preset.creamStripe;
+            ctx.fillRect(x + 3, screenY + height * 0.52, Math.max(0, width - 6), 5);
+
+            // Верхній шар глазурі
+            const icingHeight = height * 0.36;
+            drawRoundedRect(ctx, x, screenY, width, icingHeight, 9);
+            ctx.fillStyle = preset.icingColor;
+            ctx.fill();
+
+            // Апетитні краплі глазурі
+            if (details && details.drips) {
+                ctx.fillStyle = preset.icingColor;
+                details.drips.forEach(drip => {
+                    const dx = x + drip.rx * width;
+                    if (dx > x + 6 && dx < x + width - 6) {
+                        ctx.beginPath();
+                        ctx.arc(dx, screenY + icingHeight, 4.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+            }
+
+            // Глянцевий блік зверху для 3D-ефекту
+            ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+            drawRoundedRect(ctx, x + 6, screenY + 3, Math.max(0, width - 12), 4, 2);
+            ctx.fill();
+
+            // Кольорова цукрова посипка
+            if (details && details.sprinkles) {
+                details.sprinkles.forEach(sp => {
+                    const sx = x + sp.rx * width;
+                    const sy = screenY + sp.ry * height;
+                    if (sx > x + 5 && sx < x + width - 5) {
+                        ctx.save();
+                        ctx.translate(sx, sy);
+                        ctx.rotate(sp.angle);
+                        ctx.fillStyle = sp.color;
+                        ctx.fillRect(-3.5, -1.5, 7, 3);
+                        ctx.restore();
+                    }
+                });
+            }
+
+            ctx.restore();
+        }
+
+        function drawCakeStand(baseBlock, screenY) {
+            const centerX = baseBlock.x + baseBlock.width / 2;
+            const plateY = screenY + baseBlock.height;
+
+            ctx.save();
+            ctx.shadowColor = "rgba(120, 40, 75, 0.25)";
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetY = 6;
+
+            ctx.fillStyle = "#ffffff";
+            drawRoundedRect(ctx, centerX - baseBlock.width * 0.62, plateY, baseBlock.width * 1.24, 14, 7);
+            ctx.fill();
+
+            ctx.fillStyle = "#ffe3ee";
+            ctx.beginPath();
+            ctx.moveTo(centerX - 28, plateY + 14);
+            ctx.lineTo(centerX + 28, plateY + 14);
+            ctx.lineTo(centerX + 46, plateY + 52);
+            ctx.lineTo(centerX - 46, plateY + 52);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        /* =========================================================================
+           9. ГОЛОВНИЙ ІГРОВИЙ ЦИКЛ (ОНОВЛЕННЯ ФІЗИКИ ТА МАЛЮВАННЯ)
+           ========================================================================= */
+        function updateGame(dt) {
+            clouds.forEach(c => {
+                c.x += c.speed * dt;
+                if (c.x - c.radius * 2 > viewportWidth) {
+                    c.x = -c.radius * 2;
+                }
+            });
+
+            cameraY += (targetCameraY - cameraY) * Math.min(1, dt * 6.5);
+
+            if (gameState === GAME_STATES.PLAYING && activeBlock) {
+                activeBlock.x += activeBlock.vx * dt;
+
+                const swingRange = Math.min(viewportWidth * 0.44, 240);
+                const center = viewportWidth / 2;
+                const leftLimit = Math.max(12, center - swingRange);
+                const rightLimit = Math.min(viewportWidth - activeBlock.width - 12, center + swingRange - activeBlock.width);
+
+                if (activeBlock.x <= leftLimit) {
+                    activeBlock.x = leftLimit;
+                    activeBlock.vx = Math.abs(activeBlock.vx);
+                } else if (activeBlock.x >= rightLimit) {
+                    activeBlock.x = rightLimit;
+                    activeBlock.vx = -Math.abs(activeBlock.vx);
+                }
+            }
+
+            for (let i = fallingPieces.length - 1; i >= 0; i--) {
+                const p = fallingPieces[i];
+                p.vy += 680 * dt;
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.angle += p.vAngle * dt;
+
+                if (p.y + cameraY > viewportHeight + 120) {
+                    fallingPieces.splice(i, 1);
+                }
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.vy += 360 * dt;
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.alpha -= 0.85 * dt;
+                pt.rotation += 3 * dt;
+                if (pt.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y += ft.vy * dt;
+                ft.alpha -= 0.9 * dt;
+                if (ft.alpha <= 0) {
+                    floatingTexts.splice(i, 1);
+                }
+            }
+        }
+
+        function renderGame() {
+            ctx.clearRect(0, 0, viewportWidth, viewportHeight);
+
+            ctx.save();
+            ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+            clouds.forEach(c => {
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+                ctx.arc(c.x + c.radius * 0.75, c.y - c.radius * 0.2, c.radius * 0.8, 0, Math.PI * 2);
+                ctx.arc(c.x - c.radius * 0.75, c.y - c.radius * 0.1, c.radius * 0.75, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+
+            if (towerBlocks.length > 0) {
+                const base = towerBlocks[0];
+                drawCakeStand(base, base.y + cameraY);
+            }
+
+            towerBlocks.forEach(block => {
+                const screenY = block.y + cameraY;
+                if (screenY > -80 && screenY < viewportHeight + 80) {
+                    drawSweetBlock(block, screenY);
+                }
+            });
+
+            if (gameState === GAME_STATES.PLAYING && activeBlock) {
+                drawSweetBlock(activeBlock, activeBlock.y + cameraY);
+            }
+
+            fallingPieces.forEach(piece => {
+                const screenY = piece.y + cameraY;
+                ctx.save();
+                ctx.translate(piece.x + piece.width / 2, screenY + piece.height / 2);
+                ctx.rotate(piece.angle);
+                drawSweetBlock(
+                    {
+                        x: -piece.width / 2,
+                        width: piece.width,
+                        height: piece.height,
+                        preset: piece.preset,
+                        details: piece.details
+                    },
+                    -piece.height / 2
+                );
+                ctx.restore();
+            });
+
+            particles.forEach(pt => {
+                const screenY = pt.y + cameraY;
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, pt.alpha);
+                ctx.translate(pt.x, screenY);
+                ctx.rotate(pt.rotation);
+                ctx.fillStyle = pt.color;
+                if (pt.isStar) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, pt.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(-pt.size / 2, -pt.size / 2, pt.size, pt.size * 0.65);
+                }
+                ctx.restore();
+            });
+
+            floatingTexts.forEach(ft => {
+                const screenY = ft.y + cameraY;
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, ft.alpha);
+                ctx.font = "bold 24px Arial";
+                ctx.textAlign = "center";
+                ctx.fillStyle = ft.color;
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 4;
+                ctx.strokeText(ft.text, ft.x, screenY);
+                ctx.fillText(ft.text, ft.x, screenY);
+                ctx.restore();
+            });
+        }
+
+        function gameLoop(now) {
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+
+            updateGame(dt);
+            renderGame();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        /* =========================================================================
+           10. ОБРОБНИКИ ПОДІЙ ІГРИ (МИША, ТАЧСКРІН, КЛАВІАТУРА ТА КНОПКИ)
+           ========================================================================= */
+        canvas.addEventListener("pointerdown", (e) => {
+            if (gameState !== GAME_STATES.PLAYING || isTeacherReviewMode) return;
+            e.preventDefault();
+            placeActiveBlock();
+        });
+
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space" && gameState === GAME_STATES.PLAYING && !isTeacherReviewMode) {
+                if (document.activeElement === studentNameInput) return;
+                e.preventDefault();
+                placeActiveBlock();
+            }
+        });
+
+        playBtn.addEventListener("click", () => {
+            if (isTeacherReviewMode) return;
+            soundEngine.init();
+            menuScreen.classList.add("hidden");
+            initNewGame();
+            gameState = GAME_STATES.PLAYING;
+        });
+
+        pauseBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (isTeacherReviewMode) return;
+            if (gameState === GAME_STATES.PLAYING) {
+                gameState = GAME_STATES.PAUSED;
+                pauseScreen.classList.remove("hidden");
+            } else if (gameState === GAME_STATES.PAUSED) {
+                gameState = GAME_STATES.PLAYING;
+                pauseScreen.classList.add("hidden");
+            }
+        });
+
+        resumeBtn.addEventListener("click", () => {
+            if (isTeacherReviewMode) return;
+            pauseScreen.classList.add("hidden");
+            gameState = GAME_STATES.PLAYING;
+        });
+
+        restartPauseBtn.addEventListener("click", () => {
+            if (isTeacherReviewMode) return;
+            pauseScreen.classList.add("hidden");
+            initNewGame();
+            gameState = GAME_STATES.PLAYING;
+        });
+
+        retryBtn.addEventListener("click", () => {
+            if (isTeacherReviewMode) return;
+            gameoverScreen.classList.add("hidden");
+            initNewGame();
+            gameState = GAME_STATES.PLAYING;
+        });
+
+        /* =========================================================================
+           11. ІНІЦІАЛІЗАЦІЯ АВТОРИЗАЦІЇ, ПЕРЕВІРКИ ДЗ АБО РЕЖИМУ ВЧИТЕЛЯ
+           ========================================================================= */
+        async function proceedAfterStudentAuthenticated() {
+            hudUserName.textContent = currentStudentName;
+            authOverlay.classList.add("hidden");
+
+            // Перевіряємо, чи дитина вже здавала ДЗ сьогодні
+            const alreadyDone = await checkIfHomeworkAlreadySubmitted(currentStudentName);
+
+            if (alreadyDone) {
+                // Якщо вже здано — більше питань не даємо і в журнал повторно нічого не шлемо, одразу відкриваємо гру
+                openUnlimitedGameAccess();
+            } else {
+                // Якщо ще не здано — спочатку навчальні завдання
+                gameState = GAME_STATES.HOMEWORK;
+                homeworkScreen.classList.remove("hidden");
+                renderHomeworkQuestions();
+            }
+        }
+
+        function initializeApp() {
+            initNewGame();
+            requestAnimationFrame(gameLoop);
+
+            // 1. Якщо відкрито вчителем з журналу (?reportUser=...&reportDate=...)
+            if (isTeacherReviewMode) {
+                initTeacherReviewMode();
+                return;
+            }
+
+            // 2. Перевіряємо ім'я учня в URL (?user=) або у sessionStorage
+            const urlUser = urlParams.get("user");
+            const storedUser = sessionStorage.getItem("studentName") || sessionStorage.getItem("user");
+
+            if (urlUser && urlUser.trim() !== "") {
+                currentStudentName = decodeURIComponent(urlUser.trim());
+                sessionStorage.setItem("studentName", currentStudentName);
+                proceedAfterStudentAuthenticated();
+            } else if (storedUser && storedUser.trim() !== "") {
+                currentStudentName = storedUser.trim();
+                proceedAfterStudentAuthenticated();
+            } else {
+                // Якщо імені ніде немає — перекриваємо гру модальним вікном авторизації
+                authOverlay.classList.remove("hidden");
+                studentNameInput.focus();
+            }
+        }
+
+        function confirmStudentAuth() {
+            const entered = studentNameInput.value.trim();
+            if (!entered) {
+                studentNameInput.style.borderColor = "#e74c3c";
+                studentNameInput.focus();
+                return;
+            }
+            currentStudentName = entered;
+            sessionStorage.setItem("studentName", currentStudentName);
+            soundEngine.init();
+            proceedAfterStudentAuthenticated();
+        }
+
+        authStartBtn.addEventListener("click", confirmStudentAuth);
+        studentNameInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                confirmStudentAuth();
+            }
+        });
+
+        // Запуск програми
+        initializeApp();
+    </script>
+</body>
+</html>
