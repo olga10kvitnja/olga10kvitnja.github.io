@@ -3138,8 +3138,7 @@
     // --- ПОБУДОВА РЯДКІВ ТАБЛИЦІ ТА МАТРИЦІ ---
     function buildRow(date, gameId, studentName, report, month, isExtra=false, isGuest=false) {
         let scoreHtml = buildScoreBar(report.score);
-        // ВАЖЛИВО: без reportDate, щоб гра показувала ВСІ роботи цього учня, а не лише за конкретну дату
-        const gameUrl = `${encodeURI(gameId)}.html?reportUser=${encodeURIComponent(studentName)}`;
+        const gameUrl = `${encodeURI(gameId)}.html?reportUser=${encodeURIComponent(studentName)}&reportDate=${encodeURIComponent(date)}`;
         const gameNote = getGameNote(gameId);
         
         let tags = [];
@@ -3212,7 +3211,6 @@
         
         // ВАЖЛИВО: якщо є текстовий пошук (ім'я учня або назва гри) —
         // ігноруємо фільтр дат, щоб показати ВСІ роботи за всі дати.
-        // Дати в UI залишаються, але на пошук не впливають.
         const hasTextSearch = !!studentQ || !!gameQ;
         
         document.getElementById('chart-section').style.display = 'none';
@@ -3486,8 +3484,7 @@
                     }
                     const bg = pct !== null ? getColorForPct(pct) : '#10b981';
                     const displayTxt = pct !== null ? `${pct}%` : escapeHtml(bestSub.report.score || '+');
-                    // ВАЖЛИВО: без reportDate — гра покаже всі роботи цього учня
-                    const gameUrl = `${encodeURI(gId)}.html?reportUser=${encodeURIComponent(st.name)}`;
+                    const gameUrl = `${encodeURI(gId)}.html?reportUser=${encodeURIComponent(st.name)}&reportDate=${encodeURIComponent(bestSub.date)}`;
                     cellsHtml += `<td><a href="${gameUrl}" target="_blank" class="matrix-cell-score" style="background:${bg};" title="${escapeHtml(bestSub.date)}: ${escapeHtml(bestSub.report.score)}">${displayTxt}</a></td>`;
                     csvRow.push(pct !== null ? `${pct}%` : (bestSub.report.score || 'Виконано'));
                 } else if (isAssigned) {
