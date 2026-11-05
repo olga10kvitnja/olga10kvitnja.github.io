@@ -3138,7 +3138,8 @@
     // --- ПОБУДОВА РЯДКІВ ТАБЛИЦІ ТА МАТРИЦІ ---
     function buildRow(date, gameId, studentName, report, month, isExtra=false, isGuest=false) {
         let scoreHtml = buildScoreBar(report.score);
-        const gameUrl = `${encodeURI(gameId)}.html?reportUser=${encodeURIComponent(studentName)}&reportDate=${encodeURIComponent(date)}`;
+        // ВАЖЛИВО: без reportDate, щоб гра показувала ВСІ роботи цього учня, а не лише за конкретну дату
+        const gameUrl = `${encodeURI(gameId)}.html?reportUser=${encodeURIComponent(studentName)}`;
         const gameNote = getGameNote(gameId);
         
         let tags = [];
@@ -3209,6 +3210,11 @@
         const statusFilter = document.getElementById('filter-status').value;
         const output = document.getElementById('reports-output');
         
+        // ВАЖЛИВО: якщо є текстовий пошук (ім'я учня або назва гри) —
+        // ігноруємо фільтр дат, щоб показати ВСІ роботи за всі дати.
+        // Дати в UI залишаються, але на пошук не впливають.
+        const hasTextSearch = !!studentQ || !!gameQ;
+        
         document.getElementById('chart-section').style.display = 'none';
         output.innerHTML = "<p style='text-align:center; color: #38bdf8;'>Завантаження даних...</p>";
 
@@ -3223,7 +3229,7 @@
             let gameDates = {}; 
             for (const month in allData) {
                 for (const date in allData[month]) {
-                    if (!isDateInRange(date)) continue;
+                    if (!hasTextSearch && !isDateInRange(date)) continue;
                     for (const gameId in allData[month][date]) {
                         for (const studentName in allData[month][date][gameId]) {
                             submissions.push({ month, date, gameId, studentName, report: allData[month][date][gameId][studentName] });
@@ -3480,7 +3486,8 @@
                     }
                     const bg = pct !== null ? getColorForPct(pct) : '#10b981';
                     const displayTxt = pct !== null ? `${pct}%` : escapeHtml(bestSub.report.score || '+');
-                    const gameUrl = `${encodeURI(gId)}.html?reportUser=${encodeURIComponent(st.name)}&reportDate=${encodeURIComponent(bestSub.date)}`;
+                    // ВАЖЛИВО: без reportDate — гра покаже всі роботи цього учня
+                    const gameUrl = `${encodeURI(gId)}.html?reportUser=${encodeURIComponent(st.name)}`;
                     cellsHtml += `<td><a href="${gameUrl}" target="_blank" class="matrix-cell-score" style="background:${bg};" title="${escapeHtml(bestSub.date)}: ${escapeHtml(bestSub.report.score)}">${displayTxt}</a></td>`;
                     csvRow.push(pct !== null ? `${pct}%` : (bestSub.report.score || 'Виконано'));
                 } else if (isAssigned) {
@@ -3559,10 +3566,13 @@
         const searchStudentInput = (forcedStudentName || document.getElementById('search-student').value || '').trim();
         const filterCatId = document.getElementById('report-category').value;
 
+        // ВАЖЛИВО: якщо є пошук за учнем — ігноруємо фільтр дат, щоб звіт містив усі роботи
+        const hasTextSearch = !!searchStudentInput;
+
         let periodSubs = [];
         for (const month in cachedReportsData) {
             for (const date in cachedReportsData[month]) {
-                if (!isDateInRange(date)) continue;
+                if (!hasTextSearch && !isDateInRange(date)) continue;
                 for (const gameId in cachedReportsData[month][date]) {
                     for (const sName in cachedReportsData[month][date][gameId]) {
                         periodSubs.push({
@@ -3999,6 +4009,7 @@
                         }
                     }
                 }
+                // Додатково перейменовуємо у списку учнів
                 for (const cat in studentsData) {
                     if (studentsData[cat] && typeof studentsData[cat] === 'object') {
                         for (const sid in studentsData[cat]) {
@@ -4008,6 +4019,7 @@
                         }
                     }
                 }
+                // І у відвідуваності
                 for (const attM in attendanceData) {
                     if (!attendanceData[attM]) continue;
                     for (const attD in attendanceData[attM]) {
