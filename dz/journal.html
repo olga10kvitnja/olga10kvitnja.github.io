@@ -1258,7 +1258,7 @@
     </div>
 </div>
 
-<!-- Модальне вікно Повного Редагування (доступне в режимі 1982) -->
+<!-- Модальне вікно Повного Редагування -->
 <div id="edit-report-modal" class="modal-overlay">
     <div class="modal-box small-modal">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
@@ -1279,7 +1279,7 @@
         <div class="form-row" id="edit-rename-all-row" style="flex-direction: row; align-items: center; gap: 8px; margin-bottom: 16px;">
             <input type="checkbox" id="edit-rename-all-checkbox" style="width: auto;">
             <label for="edit-rename-all-checkbox" style="color: #f59e0b; cursor: pointer; font-weight: normal;">
-                Перейменувати це ім'я у <b>всіх</b> інших роботах цього учня/гостя
+                Перейменувати це ім'я у <b>всіх</b> інших роботах, у списку учнів та у відвідуваності
             </label>
         </div>
 
@@ -2354,7 +2354,7 @@
                 individualHtml += `<div class="student-item">
                     <span>${escapeHtml(studentName)}</span>
                     <div class="btn-group">
-                        <button class="btn-edit" onclick="editStudent('individual', '${studentId}', '${escapeJsStr(studentName)}')">✏️</button>
+                        <button class="btn-edit" title="Змінити ім'я учня (оновляться всі роботи та відвідуваність)" onclick="editStudent('individual', '${studentId}', '${escapeJsStr(studentName)}')">✏️</button>
                         <button class="btn-delete" onclick="deleteStudent('individual', '${studentId}')">🗑️</button>
                     </div>
                 </div>`;
@@ -2372,7 +2372,7 @@
                     classHtml += `<div class="student-item">
                         <span>${escapeHtml(studentName)}</span>
                         <div class="btn-group">
-                            <button class="btn-edit" onclick="editStudent('${classId}', '${studentId}', '${escapeJsStr(studentName)}')">✏️</button>
+                            <button class="btn-edit" title="Змінити ім'я учня (оновляться всі роботи та відвідуваність)" onclick="editStudent('${classId}', '${studentId}', '${escapeJsStr(studentName)}')">✏️</button>
                             <button class="btn-delete" onclick="deleteStudent('${classId}', '${studentId}')">🗑️</button>
                         </div>
                     </div>`;
@@ -3148,9 +3148,7 @@
         const checked = isReportChecked(date, gameId, studentName);
         const checkBtnHtml = `<button class="check-status-btn ${checked ? 'is-checked' : 'is-new'}" onclick="toggleReportChecked('${escapeJsStr(date)}', '${escapeJsStr(gameId)}', '${escapeJsStr(studentName)}', this)" title="${checked ? 'Перевірено' : 'Нова робота (натисніть, щоб позначити перевіреною)'}">${checked ? '✅' : '🆕'}</button>`;
 
-        let editBtnHtml = isSecretMode
-            ? `<button class="btn-edit" title="Редагувати ім'я, дату або оцінку" onclick="openEditModal({month:'${escapeJsStr(month)}', date:'${escapeJsStr(date)}', gameId:'${escapeJsStr(gameId)}', studentName:'${escapeJsStr(studentName)}'})">✏️</button>`
-            : '';
+        let editBtnHtml = `<button class="btn-edit" title="Редагувати ім'я, дату або оцінку" onclick="openEditModal({month:'${escapeJsStr(month)}', date:'${escapeJsStr(date)}', gameId:'${escapeJsStr(gameId)}', studentName:'${escapeJsStr(studentName)}'})">✏️</button>`;
 
         return `<tr>
             <td>${escapeHtml(date)} <br><small style="color:#94a3b8">${escapeHtml(report.timestamp || '')}</small></td>
@@ -3172,9 +3170,7 @@
 
     function buildMissingRow(gameId, studentName) {
         const gameNote = getGameNote(gameId);
-        let quickAddBtn = isSecretMode
-            ? `<button class="btn-edit" style="padding:4px 8px; font-size:12px; margin-left:8px;" onclick="openEditModal({month:'', date:'', gameId:'${escapeJsStr(gameId)}', studentName:'${escapeJsStr(studentName)}', isNew:true})" title="Виставити оцінку вручну">➕</button>`
-            : '';
+        let quickAddBtn = `<button class="btn-edit" style="padding:4px 8px; font-size:12px; margin-left:8px;" onclick="openEditModal({month:'', date:'', gameId:'${escapeJsStr(gameId)}', studentName:'${escapeJsStr(studentName)}', isNew:true})" title="Виставити оцінку вручну">➕</button>`;
         return `<tr style="opacity: 0.65; background-color: rgba(15, 23, 42, 0.5);">
             <td style="color:#64748b;">—</td>
             <td style="color:#94a3b8;">🎮 ${escapeHtml(gameId)} ${gameNote ? `<br><small style="color:#64748b;">${escapeHtml(gameNote)}</small>` : ''}</td>
@@ -3893,9 +3889,8 @@
         document.getElementById('summary-report-modal').style.display = 'none';
     }
 
-    // --- ПОВНЕ РЕДАГУВАННЯ ЗАПИСУ (ТАЄМНИЙ РЕЖИМ 1982) ---
+    // --- ПОВНЕ РЕДАГУВАННЯ ЗАПИСУ ---
     function openEditModal(params) {
-        if (!isSecretMode) return;
         const modal = document.getElementById('edit-report-modal');
         const renameAllRow = document.getElementById('edit-rename-all-row');
         document.getElementById('edit-rename-all-checkbox').checked = false;
@@ -3932,7 +3927,7 @@
 
             document.getElementById('edit-student-name').value = studentName;
             document.getElementById('edit-game-id').value = gameId;
-            document.getElementById('edit-date').value = date;
+            document.getElementById('edit-date').value = date || todayStr;
             document.getElementById('edit-timestamp').value = reportData.timestamp || '';
             document.getElementById('edit-score').value = reportData.score || '';
             renameAllRow.style.display = 'flex';
@@ -3945,7 +3940,6 @@
     }
 
     function saveEditedReport() {
-        if (!isSecretMode) return;
         const origMonth = document.getElementById('edit-orig-month').value;
         const origDate = document.getElementById('edit-orig-date').value;
         const origGame = document.getElementById('edit-orig-game').value;
@@ -4001,6 +3995,27 @@
                                     updates[pNew] = cachedReportsData[m][d][g][origStudent];
                                     updates[pOld] = null;
                                 }
+                            }
+                        }
+                    }
+                }
+                for (const cat in studentsData) {
+                    if (studentsData[cat] && typeof studentsData[cat] === 'object') {
+                        for (const sid in studentsData[cat]) {
+                            if (studentsData[cat][sid] === origStudent) {
+                                updates[`journal_students/${cat}/${sid}`] = newStudent;
+                            }
+                        }
+                    }
+                }
+                for (const attM in attendanceData) {
+                    if (!attendanceData[attM]) continue;
+                    for (const attD in attendanceData[attM]) {
+                        if (!attendanceData[attM][attD]) continue;
+                        for (const attCat in attendanceData[attM][attD]) {
+                            if (attendanceData[attM][attD][attCat] && attendanceData[attM][attD][attCat][origStudent]) {
+                                updates[`journal_attendance/${attM}/${attD}/${attCat}/${newStudent}`] = attendanceData[attM][attD][attCat][origStudent];
+                                updates[`journal_attendance/${attM}/${attD}/${attCat}/${origStudent}`] = null;
                             }
                         }
                     }
