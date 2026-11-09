@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Домашнє завдання</title>
+    <style>
+        /* Базові налаштування та шрифт Arial для всієї гри */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(180deg, #1a1c4b 0%, #3b2d71 50%, #6e4594 100%);
+            color: #2d1b4e;
+        }
+
+        /* Головний контейнер для масштабування (Лупа) */
+        #zoom-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-origin: center center;
+            transition: transform 0.2s ease-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Плашка режиму перевірки вчителя */
+        #teacher-banner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
+            color: #ffffff;
+            text-align: center;
+            padding: 12px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 9000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        /* ==================== ЕКРАН ДОМАШНЬОГО ЗАВДАННЯ (ПОКРАЩЕНИЙ ДИЗАЙН) ==================== */
+        #homework-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Анімований яскравий фон */
+            background: linear-gradient(-45deg, #a18cd1, #fbc2eb, #84fab0, #8fd3f4);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            z-index: 500;
+            overflow-y: auto;
+            padding: 30px 16px 90px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .hw-container {
+            width: 100%;
+            max-width: 680px;
+            /* Ефект матового скла */
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 4px solid #ffffff;
+            border-radius: 30px;
+            padding: 28px 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            margin-top: 10px;
+        }
+
+        .hw-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .hw-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4834d4;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+
+        .hw-subtitle {
+            font-size: 16px;
+            color: #34495e;
+            line-height: 1.4;
+            font-weight: bold;
+        }
+
+        .question-card {
+            background: #ffffff;
+            border: none;
+            border-left: 8px solid #a29bfe;
+            border-radius: 20px;
+            padding: 20px 18px;
+            margin-bottom: 22px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .question-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .question-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 16px;
+            line-height: 1.5;
+            white-space: pre-wrap; /* Дозволяє використовувати \n для переносу рядків у тексті питання */
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 16px;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #34495e;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            white-space: normal;
+            height: auto;
+        }
+
+        .option-btn:hover {
+            background: #eef2ff;
+            border-color: #a29bfe;
+            color: #4834d4;
+            transform: translateY(-1px);
+        }
+
+        /* Вибір учня під час проходження ДЗ */
+        .option-btn.selected {
+            background: linear-gradient(135deg, #6c5ce7 0%, #4834d4 100%);
+            border-color: #4834d4;
+            color: #ffffff;
+            box-shadow: 0 6px 16px rgba(72, 52, 212, 0.3);
+        }
+
+        /* Текстові інпути для відповідей */
+        .hw-text-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid #e9ecef;
+            border-radius: 16px;
+            outline: none;
+            background: #f8f9fa;
+            color: #34495e;
+            transition: all 0.2s ease;
+            user-select: auto;
+            -webkit-user-select: auto;
+        }
+
+        .hw-text-input:focus {
+            border-color: #a29bfe;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+        }
+
+        /* Блокування кліків у режимі перевірки вчителя або після відправки */
+        .teacher-locked .options-grid,
+        .teacher-locked .hw-text-input {
+            pointer-events: none;
+        }
+
+        /* Правильна відповідь, яку обрав учень — зелена */
+        .option-btn.review-correct-selected,
+        .hw-text-input.review-correct {
+            background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
+            border: 2px solid #1e8449 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+        }
+
+        /* Помилка учня — червона */
+        .option-btn.review-wrong-selected,
+        .hw-text-input.review-wrong {
+            background: linear-gradient(135deg, #ff7675, #d63031) !important;
+            border: 2px solid #c0392b !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(214, 48, 49, 0.3);
+        }
+
+        /* Правильна відповідь, яку учень НЕ обрав — зелена рамка */
+        .option-btn.review-correct-missed {
+            background: #eafaf1 !important;
+            border: 3px solid #2ecc71 !important;
+            color: #196f3d !important;
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.35);
+        }
+
+        /* Блок із правильною відповіддю (якщо учень ввів неправильний текст) */
+        .correct-text-answer {
+            margin-top: 12px;
+            padding: 12px;
+            background: #eafaf1;
+            border: 2px dashed #2ecc71;
+            border-radius: 12px;
+            color: #196f3d;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        #hw-warning-msg {
+            display: none;
+            color: #c0392b;
+            background: #ffeaa7;
+            border: 2px solid #fdcb6e;
+            padding: 12px;
+            border-radius: 14px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 14px;
+            font-size: 15px;
+        }
+
+        #hw-submitted-box {
+            display: none;
+            text-align: center;
+            padding: 20px 10px 10px 10px;
+        }
+
+        .submitted-banner-text {
+            background: linear-gradient(135deg, #e8f8f0, #d1f2e1);
+            border: 2px solid #2ecc71;
+            color: #196f3d;
+            padding: 18px;
+            border-radius: 18px;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 18px;
+            box-shadow: 0 6px 16px rgba(46, 204, 113, 0.2);
+        }
+
+        /* ==================== ІГРОВИЙ ІНТЕРФЕЙС ТА КАНВАС ==================== */
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        /* Верхня панель керування (HUD) */
+        #hud-bar {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 94%;
+            max-width: 740px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(8px);
+            border: 2px solid #a29bfe;
+            border-radius: 22px;
+            box-shadow: 0 8px 24px rgba(30, 20, 70, 0.3);
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .hud-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .hud-badge {
+            background: linear-gradient(135deg, #f3f0ff, #e5dbff);
+            border: 1px solid #9775fa;
+            padding: 6px 14px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #3b2869;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #lives-display {
+            font-size: 20px;
+            letter-spacing: 3px;
+        }
+
+        .hud-btn {
+            background: linear-gradient(135deg, #6c5ce7, #4834d4);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 10px 18px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(72, 52, 212, 0.35);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .hud-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(72, 52, 212, 0.45);
+        }
+
+        .hud-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Модальні вікна (Авторизація, Меню, Пауза, Завершення) */
+        .overlay-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(24, 18, 54, 0.58);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        #auth-overlay {
+            position: fixed;
+            z-index: 9500;
+            background: rgba(20, 14, 48, 0.78);
+        }
+
+        .modal-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%);
+            border: 4px solid #a29bfe;
+            border-radius: 30px;
+            padding: 32px 28px;
+            width: 100%;
+            max-width: 470px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(15, 10, 45, 0.45);
+            position: relative;
+            animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.85);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-title {
+            font-size: 27px;
+            font-weight: bold;
+            color: #4834d4;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 0 #e5dbff;
+        }
+
+        .modal-subtitle {
+            font-size: 16px;
+            color: #4a4063;
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .icon-banner {
+            font-size: 52px;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 6px 8px rgba(72, 52, 212, 0.22));
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 15px 18px;
+            font-size: 18px;
+            border: 2px solid #a29bfe;
+            border-radius: 16px;
+            outline: none;
+            margin-bottom: 18px;
+            text-align: center;
+            background: #fff;
+            color: #2d1b4e;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            user-select: auto;
+            -webkit-user-select: auto;
+        }
+
+        .text-input:focus {
+            border-color: #4834d4;
+            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.2);
+        }
+
+        .primary-btn {
+            display: inline-block;
+            width: 100%;
+            padding: 16px 24px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+            background: linear-gradient(135deg, #6c5ce7 0%, #4834d4 100%);
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(72, 52, 212, 0.38);
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-bottom: 10px;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(72, 52, 212, 0.48);
+        }
+
+        .primary-btn:active {
+            transform: translateY(1px);
+        }
+
+        .secondary-btn {
+            display: inline-block;
+            width: 100%;
+            padding: 14px 22px;
+            font-size: 17px;
+            font-weight: bold;
+            color: #4834d4;
+            background: #ece8ff;
+            border: 2px solid #b197fc;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.15s;
+            margin-top: 6px;
+        }
+
+        .secondary-btn:hover {
+            background: #ddd6fe;
+            transform: translateY(-1px);
+        }
+
+        .info-pill {
+            background: #f3f0ff;
+            border: 1px dashed #845ef7;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 16px;
+            color: #3b2869;
+            font-weight: bold;
+        }
+
+        /* Універсальний інструмент масштабування (Лупа) */
+        #zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 9999;
+        }
+
+        #zoom-in-btn, #zoom-out-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #845ef7;
+            background: #ffffff;
+            color: #4834d4;
+            font-size: 22px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(45, 27, 78, 0.32);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, background 0.15s;
+        }
+
+        #zoom-in-btn:hover, #zoom-out-btn:hover {
+            background: #f3f0ff;
+            transform: scale(1.08);
+        }
+
+        #zoom-in-btn:active, #zoom-out-btn:active {
+            transform: scale(0.95);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Адаптивність для мобільних пристроїв та планшетів */
+        @media (max-width: 768px) {
+            #homework-screen {
+                padding: 18px 10px 85px 10px;
+            }
+
+            .hw-container {
+                padding: 18px 14px;
+                border-radius: 20px;
+            }
+
+            .hw-title {
+                font-size: 21px;
+            }
+
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .question-title {
+                font-size: 16px;
+            }
+
+            .option-btn {
+                font-size: 15px;
+                padding: 11px 12px;
+            }
+
+            .hw-text-input {
+                font-size: 15px;
+                padding: 12px 14px;
+            }
+
+            #hud-bar {
+                top: 10px;
+                width: 96%;
+                padding: 8px 12px;
+                border-radius: 16px;
+                gap: 6px;
+            }
+
+            .hud-badge {
+                font-size: 13px;
+                padding: 5px 10px;
+            }
+
+            #lives-display {
+                font-size: 16px;
+                letter-spacing: 1px;
+            }
+
+            .hud-btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            .modal-card {
+                padding: 22px 18px;
+                border-radius: 22px;
+                max-width: 94%;
+            }
+
+            .modal-title {
+                font-size: 22px;
+            }
+
+            .modal-subtitle {
+                font-size: 14px;
+            }
+
+            .primary-btn {
+                font-size: 18px;
+                padding: 14px 18px;
+            }
+
+            #zoom-controls {
+                bottom: 14px;
+                right: 14px;
+            }
+
+            #zoom-in-btn, #zoom-out-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Плашка вчительського режиму перевірки -->
+    <div id="teacher-banner"></div>
+
+    <!-- Модальне вікно обов'язкової авторизації -->
+    <div id="auth-overlay" class="overlay-screen hidden">
+        <div class="modal-card">
+            <div class="icon-banner">🐱🌟☁️</div>
+            <div class="modal-title">👋 Привіт! Як тебе звати?</div>
+            <p class="modal-subtitle">Введи своє ім'я, щоб розпочати виконання домашнього завдання</p>
+            <input type="text" id="student-name-input" class="text-input" placeholder="Введи своє ім'я..." autocomplete="off">
+            <button id="auth-start-btn" class="primary-btn">Почати гру</button>
+        </div>
+    </div>
+
+    <!-- Головний контейнер з підтримкою масштабування (Лупа) -->
+    <div id="zoom-container">
+
+        <!-- ==================== ЕТАП 1: БЛОК ДОМАШНЬОГО ЗАВДАННЯ ==================== -->
+        <div id="homework-screen" class="hidden">
+            <div class="hw-container" id="hw-card-container">
+                <div class="hw-header">
+                    <div class="hw-title" id="hw-main-title">📚 Домашнє завдання</div>
+                    <p class="hw-subtitle" id="hw-main-subtitle">
+                        Дай відповіді на всі запитання і відправ роботу в журнал, щоб відкрити безлімітний доступ до гри «Чарівний Котик: Небесний Зорепад»!
+                    </p>
+                </div>
+
+                <!-- Контейнер для питань -->
+                <div id="questions-list"></div>
+
+                <!-- Попередження, якщо дитина обрала не всі відповіді -->
+                <div id="hw-warning-msg">Будь ласка, дай відповідь на кожне запитання!</div>
+
+                <!-- Кнопка відправки ДЗ в журнал -->
+                <button id="submit-hw-btn" class="primary-btn">📤 Відправити роботу</button>
+
+                <!-- Повідомлення після відправки (без показу балів та без підсвічування відповідей) -->
+                <div id="hw-submitted-box">
+                    <div class="submitted-banner-text">Твоя робота відправлена на перевірку</div>
+                    <button id="unlock-game-btn" class="primary-btn">🎮 Перейти до гри «Чарівний Котик»</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ЕТАП 2: НАГОРОДА — ГРА «ЧАРІВНИЙ КОТИК: НЕБЕСНИЙ ЗОРЕПАД» ==================== -->
+        <!-- Верхня ігрова панель -->
+        <div id="hud-bar" class="hidden">
+            <div class="hud-group">
+                <div class="hud-badge">👤 <span id="hud-user-name">Учень</span></div>
+                <div class="hud-badge">⭐ Зірки: <span id="hud-score">0</span></div>
+                <div class="hud-badge">🏆 Рекорд: <span id="hud-best">0</span></div>
+            </div>
+            <div class="hud-group">
+                <div id="lives-display" title="Життя">❤️❤️❤️</div>
+                <button id="pause-btn" class="hud-btn">⏸ Пауза</button>
+            </div>
+        </div>
+
+        <!-- Основне полотно гри -->
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Екран МЕНЮ (STATE: MENU) -->
+        <div id="menu-screen" class="overlay-screen hidden">
+            <div class="modal-card">
+                <div class="icon-banner">🐱🛸✨</div>
+                <div class="modal-title">Чарівний Котик: Зорепад</div>
+                <p class="modal-subtitle">
+                    Домашнє завдання виконано! Керуй пухнастим котиком на хмаринці (мишкою, пальцем або стрілками), лови зірочки, кексики, магніти 🧲 та райдужні щити 🛡️ і оминай грозові хмари ⛈️!
+                </p>
+                <div class="info-pill">🏆 Твій рекорд: <span id="menu-best-score">0</span> ⭐</div>
+                <button id="play-btn" class="primary-btn">Грати</button>
+            </div>
+        </div>
+
+        <!-- Екран ПАУЗИ (STATE: PAUSED) -->
+        <div id="pause-screen" class="overlay-screen hidden">
+            <div class="modal-card">
+                <div class="icon-banner">⏸️🐱</div>
+                <div class="modal-title">Пауза</div>
+                <p class="modal-subtitle">Котик перепочиває на м'якій хмаринці!</p>
+                <button id="resume-btn" class="primary-btn">Продовжити</button>
+                <button id="restart-pause-btn" class="secondary-btn">Почати спочатку</button>
+            </div>
+        </div>
+
+        <!-- Екран ЗАВЕРШЕННЯ ГРИ (STATE: GAMEOVER) -->
+        <div id="gameover-screen" class="overlay-screen hidden">
+            <div class="modal-card">
+                <div class="icon-banner">🌟🐱🎉</div>
+                <div class="modal-title">Політ завершено!</div>
+                <p class="modal-subtitle">Чудова небесна пригода! Можеш грати скільки завгодно разів.</p>
+                <div class="info-pill">⭐ Зібрано очок: <span id="final-score-val">0</span></div>
+                <div class="info-pill">🏆 Рекорд: <span id="gameover-best-val">0</span></div>
+                <button id="retry-btn" class="primary-btn">Грати ще раз</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Універсальний інструмент масштабування (Лупа) -->
+    <div id="zoom-controls">
+        <button id="zoom-out-btn" title="Віддалити">➖</button>
+        <button id="zoom-in-btn" title="Наблизити">➕</button>
+    </div>
+
+    <script>
+        /* =========================================================================
+           1. КОНФІГУРАЦІЯ LMS, БАЗА ПИТАНЬ ТА FIREBASE
+           ========================================================================= */
+        const FIREBASE_DB_URL = "https://lesson-13c44-default-rtdb.firebaseio.com";
+        const FIREBASE_PROJECT_ID = "lesson-13c44";
+
+        // Автоматичне отримання та розкодування gameId з назви HTML-файлу
+        function getDecodedGameId() {
+            try {
+                const path = window.location.pathname || "";
+                let fileName = path.substring(path.lastIndexOf("/") + 1);
+                fileName = decodeURIComponent(fileName);
+                let cleanId = fileName.replace(/\.html?$/i, "").trim();
+                if (!cleanId) {
+                    cleanId = "magic_sky_cat";
+                }
+                return cleanId.replace(/[.$#[\]\/]/g, "_");
+            } catch (e) {
+                return "magic_sky_cat";
+            }
+        }
+
+        const GAME_ID = getDecodedGameId();
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportUserParam = urlParams.get("reportUser");
+        const reportDateParam = urlParams.get("reportDate");
+        const isTeacherReviewMode = Boolean(reportUserParam && reportDateParam);
+
+        // Пул навчальних питань для домашнього завдання (Оновлений згідно з вимогами)
+        const QUESTION_POOL = [
+            {
+                id: "q1",
+                type: "text",
+                question: "1. Утвори прикметники від слів солома, каміння, заєць.\n(Впиши слова через кому)",
+                correctText: "солом'яний, кам'яний, заячий"
+            },
+            {
+                id: "q2",
+                type: "choice",
+                question: "2. Підкресли підмет і присудок у реченнях:\nа) Я дуже люблю грати у роблокс.\nб) Коли вже настануть канікули?",
+                options: [
+                    "а) Я - люблю; б) канікули - вже",
+                    "а) Я - люблю грати; б) канікули - настануть",
+                    "а) Я - грати; б) настануть - коли",
+                    "а) роблокс - люблю; б) канікули - настануть"
+                ],
+                correctIndex: 1
+            },
+            {
+                id: "q3",
+                type: "text",
+                question: "3. До яких частин мови належать наступні слова: верба, шелестіти, осінній.",
+                correctText: "іменник, дієслово, прикметник"
+            },
+            {
+                id: "q4",
+                type: "choice",
+                question: "4. Зменшуване 12, різниця 7. Чому дорівнює від'ємник?",
+                options: ["19", "5", "4", "6"],
+                correctIndex: 1
+            },
+            {
+                id: "q5",
+                type: "text",
+                question: "5. Запиши приклад: від 19 відняти суму доданків 6 і 7.\nЗапиши приклад і відповідь.",
+                correctText: "19-(6+7)=6"
+            }
+        ];
+
+        let currentStudentName = "";
+        let selectedHomeworkQuestions = []; 
+        let studentChoices = {};            // { index: selectedOptionIndex або text string }
+
+        // DOM-елементи
+        const authOverlay = document.getElementById("auth-overlay");
+        const studentNameInput = document.getElementById("student-name-input");
+        const authStartBtn = document.getElementById("auth-start-btn");
+
+        const homeworkScreen = document.getElementById("homework-screen");
+        const hwCardContainer = document.getElementById("hw-card-container");
+        const hwMainTitle = document.getElementById("hw-main-title");
+        const hwMainSubtitle = document.getElementById("hw-main-subtitle");
+        const questionsListEl = document.getElementById("questions-list");
+        const hwWarningMsg = document.getElementById("hw-warning-msg");
+        const submitHwBtn = document.getElementById("submit-hw-btn");
+        const hwSubmittedBox = document.getElementById("hw-submitted-box");
+        const unlockGameBtn = document.getElementById("unlock-game-btn");
+
+        const hudBar = document.getElementById("hud-bar");
+        const hudUserName = document.getElementById("hud-user-name");
+        const hudScore = document.getElementById("hud-score");
+        const hudBest = document.getElementById("hud-best");
+        const menuBestScore = document.getElementById("menu-best-score");
+        const finalScoreVal = document.getElementById("final-score-val");
+        const gameoverBestVal = document.getElementById("gameover-best-val");
+        const livesDisplay = document.getElementById("lives-display");
+
+        const menuScreen = document.getElementById("menu-screen");
+        const pauseScreen = document.getElementById("pause-screen");
+        const gameoverScreen = document.getElementById("gameover-screen");
+
+        const playBtn = document.getElementById("play-btn");
+        const pauseBtn = document.getElementById("pause-btn");
+        const resumeBtn = document.getElementById("resume-btn");
+        const restartPauseBtn = document.getElementById("restart-pause-btn");
+        const retryBtn = document.getElementById("retry-btn");
+        const teacherBanner = document.getElementById("teacher-banner");
+
+        /* =========================================================================
+           2. УНІВЕРСАЛЬНИЙ ІНСТРУМЕНТ МАСШТАБУВАННЯ (ЛУПА)
+           ========================================================================= */
+        let currentZoom = 1;
+        const zoomContainer = document.getElementById("zoom-container");
+        const zoomInBtn = document.getElementById("zoom-in-btn");
+        const zoomOutBtn = document.getElementById("zoom-out-btn");
+
+        function applyZoom() {
+            zoomContainer.style.transform = `scale(${currentZoom})`;
+        }
+
+        zoomInBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            currentZoom = Math.min(1.5, +(currentZoom + 0.1).toFixed(2));
+            applyZoom();
+        });
+
+        zoomOutBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            currentZoom = Math.max(0.6, +(currentZoom - 0.1).toFixed(2));
+            applyZoom();
+        });
+
+        /* =========================================================================
+           3. ДОПОМІЖНІ ФУНКЦІЇ ДАТИ ТА ПЕРЕВІРКИ СТАТУСУ ДЗ У ЖУРНАЛІ
+           ========================================================================= */
+        function getFormattedDateParts() {
+            const now = new Date();
+            const dd = String(now.getDate()).padStart(2, "0");
+            const mm = String(now.getMonth() + 1).padStart(2, "0");
+            const yyyy = now.getFullYear();
+            return {
+                monthYear: `${mm}-${yyyy}`,
+                fullDate: `${dd}-${mm}-${yyyy}`
+            };
+        }
+
+        function getSanitizedStudentKey(name) {
+            return (name || "Учень").trim().replace(/[.$#[\]\/]/g, "_");
+        }
+
+        function getLocalHwStorageKey(studentName) {
+            const { fullDate } = getFormattedDateParts();
+            return `hw_completed_${GAME_ID}_${getSanitizedStudentKey(studentName)}_${fullDate}`;
+        }
+
+        // Перевіряємо, чи дитина вже відправляла ДЗ сьогодні
+        async function checkIfHomeworkAlreadySubmitted(studentName) {
+            const localKey = getLocalHwStorageKey(studentName);
+            if (localStorage.getItem(localKey) === "true") {
+                return true;
+            }
+
+            const { monthYear, fullDate } = getFormattedDateParts();
+            const safeStudent = getSanitizedStudentKey(studentName);
+            const checkUrl = `${FIREBASE_DB_URL}/homework_reports/${encodeURIComponent(monthYear)}/${encodeURIComponent(fullDate)}/${encodeURIComponent(GAME_ID)}/${encodeURIComponent(safeStudent)}.json`;
+
+            try {
+                const res = await fetch(checkUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.score) {
+                        localStorage.setItem(localKey, "true");
+                        return true;
+                    }
+                }
+            } catch (err) {
+                // Якщо мережа тимчасово недоступна, покладаємося на localStorage
+            }
+            return false;
+        }
+
+        // Функція для нормалізації тексту під час перевірки вчителем (видаляє зайві пробіли та символи)
+        function normalizeTextForCheck(txt) {
+            if (!txt) return "";
+            return txt.toLowerCase().replace(/\s+/g, '').replace(/[^а-яієїґa-z0-9\-\+\=\(\)]/g, '');
+        }
+
+        /* =========================================================================
+           4. ГЕНЕРАЦІЯ ПИТАНЬ ТА ВІДПРАВКА В FIREBASE
+           ========================================================================= */
+        function renderHomeworkQuestions() {
+            selectedHomeworkQuestions = [...QUESTION_POOL]; // Беремо всі запитання по порядку
+            studentChoices = {};
+            questionsListEl.innerHTML = "";
+            hwWarningMsg.style.display = "none";
+
+            selectedHomeworkQuestions.forEach((qObj, qIdx) => {
+                const card = document.createElement("div");
+                card.className = "question-card";
+
+                const title = document.createElement("div");
+                title.className = "question-title";
+                title.textContent = qObj.question;
+                card.appendChild(title);
+
+                if (qObj.type === "choice") {
+                    const grid = document.createElement("div");
+                    grid.className = "options-grid";
+
+                    qObj.options.forEach((optText, optIdx) => {
+                        const btn = document.createElement("button");
+                        btn.type = "button";
+                        btn.className = "option-btn";
+                        btn.textContent = optText;
+
+                        btn.addEventListener("click", () => {
+                            if (isTeacherReviewMode) return;
+                            studentChoices[qIdx] = optIdx;
+                            hwWarningMsg.style.display = "none";
+
+                            Array.from(grid.children).forEach(child => child.classList.remove("selected"));
+                            btn.classList.add("selected");
+                        });
+
+                        grid.appendChild(btn);
+                    });
+                    card.appendChild(grid);
+                } else if (qObj.type === "text") {
+                    const inputField = document.createElement("input");
+                    inputField.type = "text";
+                    inputField.className = "hw-text-input";
+                    inputField.placeholder = "Впиши свою відповідь тут...";
+                    inputField.autocomplete = "off";
+                    
+                    inputField.addEventListener("input", (e) => {
+                        studentChoices[qIdx] = e.target.value;
+                        hwWarningMsg.style.display = "none";
+                    });
+
+                    card.appendChild(inputField);
+                }
+
+                questionsListEl.appendChild(card);
+            });
+        }
+
+        async function submitHomeworkToJournal() {
+            if (isTeacherReviewMode) return;
+
+            // Перевіряємо, чи всі відповіді дані
+            let allAnswered = true;
+            for (let i = 0; i < selectedHomeworkQuestions.length; i++) {
+                if (studentChoices[i] === undefined || (typeof studentChoices[i] === "string" && studentChoices[i].trim() === "")) {
+                    allAnswered = false;
+                    break;
+                }
+            }
+
+            if (!allAnswered) {
+                hwWarningMsg.style.display = "block";
+                return;
+            }
+
+            submitHwBtn.disabled = true;
+            submitHwBtn.textContent = "⏳ Відправка...";
+
+            let correctCount = 0;
+            const rawAnswers = selectedHomeworkQuestions.map((qObj, qIdx) => {
+                const answer = studentChoices[qIdx];
+                let isCorrect = false;
+
+                if (qObj.type === "choice") {
+                    isCorrect = answer === qObj.correctIndex;
+                    if (isCorrect) correctCount++;
+                    return {
+                        questionId: qObj.id,
+                        type: "choice",
+                        questionText: qObj.question,
+                        options: qObj.options,
+                        selectedIndex: answer,
+                        selectedText: qObj.options[answer],
+                        correctIndex: qObj.correctIndex,
+                        correctText: qObj.options[qObj.correctIndex],
+                        isCorrect: isCorrect
+                    };
+                } else if (qObj.type === "text") {
+                    const normAnswer = normalizeTextForCheck(answer);
+                    const normCorrect = normalizeTextForCheck(qObj.correctText);
+                    isCorrect = normAnswer === normCorrect;
+                    if (isCorrect) correctCount++;
+                    return {
+                        questionId: qObj.id,
+                        type: "text",
+                        questionText: qObj.question,
+                        selectedText: answer.trim(),
+                        correctText: qObj.correctText,
+                        isCorrect: isCorrect
+                    };
+                }
+            });
+
+            const totalQuestions = selectedHomeworkQuestions.length;
+            const formattedScore = `Вірно ${correctCount} із ${totalQuestions}`;
+            const { monthYear, fullDate } = getFormattedDateParts();
+            const safeStudent = getSanitizedStudentKey(currentStudentName);
+
+            const reportPayload = {
+                studentName: currentStudentName,
+                gameId: GAME_ID,
+                score: formattedScore,
+                timestamp: new Date().toISOString(),
+                date: fullDate,
+                rawAnswers: rawAnswers
+            };
+
+            const firebasePath = `${FIREBASE_DB_URL}/homework_reports/${encodeURIComponent(monthYear)}/${encodeURIComponent(fullDate)}/${encodeURIComponent(GAME_ID)}/${encodeURIComponent(safeStudent)}.json`;
+
+            try {
+                await fetch(firebasePath, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(reportPayload)
+                });
+            } catch (err) {
+                // Зберігаємо локально при помилці мережі
+            }
+
+            localStorage.setItem(getLocalHwStorageKey(currentStudentName), "true");
+
+            hwCardContainer.classList.add("teacher-locked");
+            submitHwBtn.classList.add("hidden");
+            hwWarningMsg.style.display = "none";
+            hwSubmittedBox.style.display = "block";
+        }
+
+        submitHwBtn.addEventListener("click", submitHomeworkToJournal);
+
+        unlockGameBtn.addEventListener("click", () => {
+            openUnlimitedGameAccess();
+        });
+
+        function openUnlimitedGameAccess() {
+            homeworkScreen.classList.add("hidden");
+            hudBar.classList.remove("hidden");
+            menuScreen.classList.remove("hidden");
+            initNewGame();
+            gameState = GAME_STATES.MENU;
+        }
+
+        /* =========================================================================
+           5. РЕЖИМ ПЕРЕВІРКИ ВЧИТЕЛЯ (?reportUser=...&reportDate=...)
+           ========================================================================= */
+        async function initTeacherReviewMode() {
+            const cleanUser = decodeURIComponent(reportUserParam);
+            const cleanDate = decodeURIComponent(reportDateParam);
+
+            const dateParts = cleanDate.split("-");
+            const monthYear = dateParts.length === 3 ? `${dateParts[1]}-${dateParts[2]}` : getFormattedDateParts().monthYear;
+
+            authOverlay.classList.add("hidden");
+            hudBar.classList.add("hidden");
+            menuScreen.classList.add("hidden");
+            pauseScreen.classList.add("hidden");
+            gameoverScreen.classList.add("hidden");
+
+            teacherBanner.style.display = "block";
+            teacherBanner.textContent = `👀 Режим перевірки: Робота учня ${cleanUser}`;
+
+            homeworkScreen.classList.remove("hidden");
+            homeworkScreen.style.paddingTop = "65px";
+            hwCardContainer.classList.add("teacher-locked");
+            submitHwBtn.classList.add("hidden");
+            hwSubmittedBox.style.display = "none";
+
+            hwMainTitle.textContent = `📋 Перевірка ДЗ: ${cleanUser}`;
+            hwMainSubtitle.textContent = "Завантаження відповідей учня з бази даних...";
+            questionsListEl.innerHTML = "";
+
+            try {
+                const directUrl = `${FIREBASE_DB_URL}/homework_reports/${encodeURIComponent(monthYear)}/${encodeURIComponent(cleanDate)}/${encodeURIComponent(GAME_ID)}/${encodeURIComponent(cleanUser)}.json`;
+                let res = await fetch(directUrl);
+                let reportData = await res.json();
+
+                if (!reportData) {
+                    const dayUrl = `${FIREBASE_DB_URL}/homework_reports/${encodeURIComponent(monthYear)}/${encodeURIComponent(cleanDate)}.json`;
+                    const dayRes = await fetch(dayUrl);
+                    const dayObj = await dayRes.json();
+                    if (dayObj) {
+                        for (const gKey of Object.keys(dayObj)) {
+                            if (dayObj[gKey] && dayObj[gKey][cleanUser]) {
+                                reportData = dayObj[gKey][cleanUser];
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (reportData && reportData.rawAnswers) {
+                    renderTeacherHighlightedQuiz(reportData);
+                } else {
+                    hwMainSubtitle.textContent = "Звіт учня за вказану дату не знайдено у базі даних.";
+                }
+            } catch (e) {
+                hwMainSubtitle.textContent = "Помилка завантаження даних із Firebase.";
+            }
+        }
+
+        function renderTeacherHighlightedQuiz(reportData) {
+            const answers = Array.isArray(reportData.rawAnswers)
+                ? reportData.rawAnswers
+                : Object.values(reportData.rawAnswers || {});
+
+            hwMainSubtitle.textContent = `Результат: ${reportData.score || ""} | Дата: ${reportData.date || reportDateParam}`;
+            questionsListEl.innerHTML = "";
+
+            answers.forEach((ans, idx) => {
+                const card = document.createElement("div");
+                card.className = "question-card";
+
+                const title = document.createElement("div");
+                title.className = "question-title";
+                title.textContent = ans.questionText || `Запитання ${idx + 1}`;
+                card.appendChild(title);
+
+                if (ans.type === "choice" || !ans.type) {
+                    const grid = document.createElement("div");
+                    grid.className = "options-grid";
+                    const optionsArr = Array.isArray(ans.options) ? ans.options : [];
+                    optionsArr.forEach((optText, optIdx) => {
+                        const btn = document.createElement("button");
+                        btn.type = "button";
+                        btn.className = "option-btn";
+                        btn.textContent = optText;
+
+                        if (optIdx === ans.correctIndex && optIdx === ans.selectedIndex) {
+                            btn.classList.add("review-correct-selected");
+                        } else if (optIdx === ans.selectedIndex && optIdx !== ans.correctIndex) {
+                            btn.classList.add("review-wrong-selected");
+                        } else if (optIdx === ans.correctIndex && optIdx !== ans.selectedIndex) {
+                            btn.classList.add("review-correct-missed");
+                        }
+                        grid.appendChild(btn);
+                    });
+                    card.appendChild(grid);
+                } else if (ans.type === "text") {
+                    const inputField = document.createElement("input");
+                    inputField.type = "text";
+                    inputField.className = "hw-text-input";
+                    inputField.readOnly = true;
+                    inputField.value = ans.selectedText || "";
+
+                    if (ans.isCorrect) {
+                        inputField.classList.add("review-correct");
+                    } else {
+                        inputField.classList.add("review-wrong");
+                        const correctBox = document.createElement("div");
+                        correctBox.className = "correct-text-answer";
+                        correctBox.textContent = `Очікувана правильна відповідь: ${ans.correctText}`;
+                        card.appendChild(inputField);
+                        card.appendChild(correctBox);
+                        questionsListEl.appendChild(card);
+                        return; // Запобігаємо подвійному додаванню inputField
+                    }
+                    card.appendChild(inputField);
+                }
+
+                questionsListEl.appendChild(card);
+            });
+        }
+
+        /* =========================================================================
+           6. СИНТЕЗАТОР ЗВУКІВ WEB AUDIO API (БЕЗ ЗОВНІШНІХ ФАЙЛІВ)
+           ========================================================================= */
+        class MagicSoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.pentatonic = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5];
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) {
+                        this.ctx = new AudioCtx();
+                    }
+                }
+                if (this.ctx && this.ctx.state === "suspended") {
+                    this.ctx.resume();
+                }
+            }
+
+            playStarCatch(comboCount = 1) {
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const freq = this.pentatonic[comboCount % this.pentatonic.length];
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(freq, now);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.25, now + 0.18);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.exponentialRampToValueAtTime(0.24, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.26);
+            }
+
+            playPowerup() {
+                this.init();
+                if (!this.ctx) return;
+
+                const notes = [440, 554.37, 659.25, 880];
+                notes.forEach((f, i) => {
+                    const now = this.ctx.currentTime + i * 0.06;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(f, now);
+
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.exponentialRampToValueAtTime(0.22, now + 0.015);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.24);
+                });
+            }
+
+            playThunderHit() {
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.exponentialRampToValueAtTime(55, now + 0.35);
+
+                gain.gain.setValueAtTime(0.22, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+        }
+
+        const soundEngine = new MagicSoundEngine();
+
+        /* =========================================================================
+           7. МЕХАНІКА ГРИ «ЧАРІВНИЙ КОТИК: НЕБЕСНИЙ ЗОРЕПАД»
+           ========================================================================= */
+        const GAME_STATES = {
+            HOMEWORK: "HOMEWORK",
+            MENU: "MENU",
+            PLAYING: "PLAYING",
+            PAUSED: "PAUSED",
+            GAMEOVER: "GAMEOVER",
+            REVIEW: "REVIEW"
+        };
+
+        let gameState = GAME_STATES.HOMEWORK;
+        const canvas = document.getElementById("game-canvas");
+        const ctx = canvas.getContext("2d");
+
+        let viewportWidth = window.innerWidth;
+        let viewportHeight = window.innerHeight;
+        let dpr = window.devicePixelRatio || 1;
+
+        const MAX_LIVES = 3;
+        let score = 0;
+        let lives = MAX_LIVES;
+        let combo = 0;
+        let bestCatScore = parseInt(localStorage.getItem("bestSkyCatScore") || "0", 10);
+
+        const player = {
+            x: 0,
+            y: 0,
+            targetX: 0,
+            width: 96,
+            height: 76,
+            speed: 520,
+            hasShield: false,
+            magnetTimer: 0,
+            blinkTimer: 0,
+            earWave: 0
+        };
+
+        const keysPressed = {
+            left: false,
+            right: false
+        };
+
+        let fallingItems = [];     
+        let bgStars = [];          
+        let sparkles = [];         
+        let floatingTexts = [];    
+        let spawnTimer = 0;
+        let gameTime = 0;
+        let lastFrameTime = performance.now();
+
+        function initBgStars() {
+            bgStars = [];
+            for (let i = 0; i < 55; i++) {
+                bgStars.push({
+                    x: Math.random() * viewportWidth,
+                    y: Math.random() * viewportHeight,
+                    r: 1 + Math.random() * 2.2,
+                    twinkleSpeed: 1.5 + Math.random() * 3,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function resizeCanvas() {
+            viewportWidth = window.innerWidth;
+            viewportHeight = window.innerHeight;
+            dpr = window.devicePixelRatio || 1;
+
+            canvas.width = Math.floor(viewportWidth * dpr);
+            canvas.height = Math.floor(viewportHeight * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            player.y = viewportHeight - 115;
+            if (player.x === 0) {
+                player.x = viewportWidth / 2;
+                player.targetX = viewportWidth / 2;
+            } else {
+                player.x = Math.min(viewportWidth - 60, Math.max(60, player.x));
+                player.targetX = player.x;
+            }
+
+            if (bgStars.length === 0) {
+                initBgStars();
+            }
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        function initNewGame() {
+            score = 0;
+            lives = MAX_LIVES;
+            combo = 0;
+            gameTime = 0;
+            spawnTimer = 0;
+            fallingItems = [];
+            sparkles = [];
+            floatingTexts = [];
+
+            player.x = viewportWidth / 2;
+            player.targetX = viewportWidth / 2;
+            player.y = viewportHeight - 115;
+            player.hasShield = false;
+            player.magnetTimer = 0;
+
+            updateHudUI();
+        }
+
+        function updateHudUI() {
+            hudScore.textContent = score;
+            hudBest.textContent = bestCatScore;
+            menuBestScore.textContent = bestCatScore;
+            livesDisplay.textContent = "❤️".repeat(Math.max(0, lives)) + "🤍".repeat(Math.max(0, MAX_LIVES - lives));
+        }
+
+        function spawnSkyItem() {
+            const margin = 45;
+            const x = margin + Math.random() * (viewportWidth - margin * 2);
+            const difficultyMultiplier = 1 + Math.min(1.3, gameTime / 90);
+            const baseSpeed = (165 + Math.random() * 95) * difficultyMultiplier;
+
+            const roll = Math.random();
+            let type = "star";
+            let radius = 22;
+
+            if (roll < 0.52) {
+                type = "star";       
+            } else if (roll < 0.70) {
+                type = "cupcake";    
+            } else if (roll < 0.92) {
+                type = "storm";      
+                radius = 28;
+            } else if (roll < 0.96) {
+                type = "magnet";     
+            } else if (roll < 0.99) {
+                type = "shield";     
+            } else {
+                type = "heart";      
+            }
+
+            fallingItems.push({
+                x: x,
+                y: -40,
+                vy: baseSpeed,
+                vx: (Math.random() - 0.5) * 35,
+                radius: radius,
+                type: type,
+                angle: 0,
+                spin: (Math.random() - 0.5) * 2.5
+            });
+        }
+
+        function addSparkleBurst(x, y, color) {
+            for (let i = 0; i < 18; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 50 + Math.random() * 160;
+                sparkles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    r: 3 + Math.random() * 4,
+                    color: color,
+                    alpha: 1
+                });
+            }
+        }
+
+        function addFloatingText(text, x, y, color = "#ffd43b") {
+            floatingTexts.push({
+                text: text,
+                x: x,
+                y: y,
+                vy: -55,
+                alpha: 1,
+                color: color
+            });
+        }
+
+        /* =========================================================================
+           8. ОНОВЛЕННЯ ФІЗИКИ ТА МАЛЮВАННЯ СЦЕНИ НА CANVAS
+           ========================================================================= */
+        function updateGame(dt) {
+            gameTime += dt;
+            player.earWave += dt * 5;
+            player.blinkTimer += dt;
+            if (player.blinkTimer > 3.8) {
+                player.blinkTimer = 0;
+            }
+
+            if (gameState !== GAME_STATES.PLAYING) return;
+
+            if (player.magnetTimer > 0) {
+                player.magnetTimer = Math.max(0, player.magnetTimer - dt);
+            }
+
+            if (keysPressed.left) {
+                player.targetX -= player.speed * dt;
+            }
+            if (keysPressed.right) {
+                player.targetX += player.speed * dt;
+            }
+
+            const halfW = player.width / 2;
+            player.targetX = Math.max(halfW + 10, Math.min(viewportWidth - halfW - 10, player.targetX));
+            player.x += (player.targetX - player.x) * Math.min(1, dt * 14);
+
+            spawnTimer -= dt;
+            if (spawnTimer <= 0) {
+                spawnSkyItem();
+                spawnTimer = Math.max(0.32, 0.72 - Math.min(0.35, gameTime / 140));
+            }
+
+            for (let i = fallingItems.length - 1; i >= 0; i--) {
+                const item = fallingItems[i];
+                item.y += item.vy * dt;
+                item.x += item.vx * dt;
+                item.angle += item.spin * dt;
+
+                if (item.x < 28 || item.x > viewportWidth - 28) {
+                    item.vx *= -1;
+                }
+
+                if (player.magnetTimer > 0 && (item.type === "star" || item.type === "cupcake")) {
+                    const dx = player.x - item.x;
+                    const dy = player.y - item.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < 280 && dist > 1) {
+                        item.x += (dx / dist) * 360 * dt;
+                        item.y += (dy / dist) * 360 * dt;
+                    }
+                }
+
+                const distToPlayer = Math.hypot(item.x - player.x, item.y - player.y);
+                const hitDistance = item.radius + 36;
+
+                if (distToPlayer < hitDistance) {
+                    handleItemCatch(item);
+                    fallingItems.splice(i, 1);
+                    continue;
+                }
+
+                if (item.y > viewportHeight + 60) {
+                    if (item.type === "star") {
+                        combo = 0; 
+                    }
+                    fallingItems.splice(i, 1);
+                }
+            }
+
+            for (let i = sparkles.length - 1; i >= 0; i--) {
+                const sp = sparkles[i];
+                sp.x += sp.vx * dt;
+                sp.y += sp.vy * dt;
+                sp.alpha -= 1.4 * dt;
+                if (sp.alpha <= 0) {
+                    sparkles.splice(i, 1);
+                }
+            }
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y += ft.vy * dt;
+                ft.alpha -= 0.95 * dt;
+                if (ft.alpha <= 0) {
+                    floatingTexts.splice(i, 1);
+                }
+            }
+        }
+
+        function handleItemCatch(item) {
+            if (item.type === "star") {
+                combo++;
+                const bonus = combo >= 5 ? 20 : 10;
+                score += bonus;
+                soundEngine.playStarCatch(combo);
+                addSparkleBurst(item.x, item.y, "#ffd43b");
+                addFloatingText(combo >= 5 ? `🔥 Комбо +${bonus}!` : `+${bonus} ⭐`, item.x, item.y - 10, "#ffd43b");
+            } else if (item.type === "cupcake") {
+                combo++;
+                score += 25;
+                soundEngine.playStarCatch(combo + 2);
+                addSparkleBurst(item.x, item.y, "#ff85b3");
+                addFloatingText("+25 🧁 Смакота!", item.x, item.y - 10, "#ff85b3");
+            } else if (item.type === "magnet") {
+                player.magnetTimer = 7.0;
+                soundEngine.playPowerup();
+                addSparkleBurst(item.x, item.y, "#4dabf7");
+                addFloatingText("🧲 Магніт зірок!", item.x, item.y - 10, "#74c0fc");
+            } else if (item.type === "shield") {
+                player.hasShield = true;
+                soundEngine.playPowerup();
+                addSparkleBurst(item.x, item.y, "#63e6be");
+                addFloatingText("🛡️ Райдужний щит!", item.x, item.y - 10, "#63e6be");
+            } else if (item.type === "heart") {
+                if (lives < MAX_LIVES) {
+                    lives++;
+                    addFloatingText("+1 ❤️ Життя!", item.x, item.y - 10, "#ff6b6b");
+                } else {
+                    score += 30;
+                    addFloatingText("+30 ❤️ Бонус!", item.x, item.y - 10, "#ff6b6b");
+                }
+                soundEngine.playPowerup();
+                addSparkleBurst(item.x, item.y, "#ff6b6b");
+            } else if (item.type === "storm") {
+                if (player.hasShield) {
+                    player.hasShield = false;
+                    soundEngine.playPowerup();
+                    addSparkleBurst(item.x, item.y, "#a5d8ff");
+                    addFloatingText("🛡️ Щит захистив!", item.x, item.y - 10, "#a5d8ff");
+                } else {
+                    lives--;
+                    combo = 0;
+                    soundEngine.playThunderHit();
+                    addSparkleBurst(item.x, item.y, "#ff6b6b");
+                    addFloatingText("⛈️ Бабах! -1 ❤️", item.x, item.y - 10, "#ff6b6b");
+
+                    if (lives <= 0) {
+                        checkBestScore();
+                        updateHudUI();
+                        triggerGameOver();
+                        return;
+                    }
+                }
+            }
+
+            checkBestScore();
+            updateHudUI();
+        }
+
+        function checkBestScore() {
+            if (score > bestCatScore) {
+                bestCatScore = score;
+                localStorage.setItem("bestSkyCatScore", String(bestCatScore));
+            }
+        }
+
+        function triggerGameOver() {
+            gameState = GAME_STATES.GAMEOVER;
+            finalScoreVal.textContent = score;
+            gameoverBestVal.textContent = bestCatScore;
+            gameoverScreen.classList.remove("hidden");
+        }
+
+        function drawStarShape(ctx, cx, cy, spikes, outerR, innerR, color) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            const step = Math.PI / spikes;
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerR);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerR;
+                y = cy + Math.sin(rot) * outerR;
+                ctx.lineTo(x, y);
+                rot += step;
+
+                x = cx + Math.cos(rot) * innerR;
+                y = cy + Math.sin(rot) * innerR;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerR);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function drawMagicCatPlayer() {
+            const cx = player.x;
+            const cy = player.y;
+
+            ctx.save();
+
+            if (player.hasShield) {
+                ctx.beginPath();
+                ctx.arc(cx, cy - 8, 56, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(102, 217, 232, 0.22)";
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#63e6be";
+                ctx.stroke();
+            }
+
+            if (player.magnetTimer > 0) {
+                const pulseRadius = 45 + (Math.sin(gameTime * 8) + 1) * 14;
+                ctx.beginPath();
+                ctx.arc(cx, cy - 8, pulseRadius, 0, Math.PI * 2);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "rgba(116, 192, 252, 0.65)";
+                ctx.stroke();
+            }
+
+            ctx.save();
+            ctx.translate(cx + 30, cy - 8);
+            ctx.rotate(Math.sin(player.earWave) * 0.25);
+            ctx.beginPath();
+            ctx.roundRect(0, -8, 26, 12, 6);
+            ctx.fillStyle = "#ffa94d";
+            ctx.fill();
+            ctx.restore();
+
+            ctx.fillStyle = "#fff4e6";
+            ctx.beginPath();
+            ctx.arc(cx, cy - 18, 25, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#ffa94d";
+            ctx.beginPath();
+            ctx.moveTo(cx - 22, cy - 28);
+            ctx.lineTo(cx - 16, cy - 48);
+            ctx.lineTo(cx - 4, cy - 36);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(cx + 22, cy - 28);
+            ctx.lineTo(cx + 16, cy - 48);
+            ctx.lineTo(cx + 4, cy - 36);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#faa2c1";
+            ctx.beginPath();
+            ctx.moveTo(cx - 18, cy - 30);
+            ctx.lineTo(cx - 15, cy - 43);
+            ctx.lineTo(cx - 8, cy - 35);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(cx + 18, cy - 30);
+            ctx.lineTo(cx + 15, cy - 43);
+            ctx.lineTo(cx + 8, cy - 35);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#2b2d42";
+            if (player.blinkTimer > 3.65) {
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "#2b2d42";
+                ctx.beginPath();
+                ctx.moveTo(cx - 13, cy - 20);
+                ctx.lineTo(cx - 5, cy - 20);
+                ctx.moveTo(cx + 5, cy - 20);
+                ctx.lineTo(cx + 13, cy - 20);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.arc(cx - 9, cy - 20, 4, 0, Math.PI * 2);
+                ctx.arc(cx + 9, cy - 20, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(cx - 10, cy - 21.5, 1.4, 0, Math.PI * 2);
+                ctx.arc(cx + 8, cy - 21.5, 1.4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = "#ff8787";
+            ctx.beginPath();
+            ctx.arc(cx, cy - 14, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "rgba(255, 135, 135, 0.45)";
+            ctx.beginPath();
+            ctx.arc(cx - 15, cy - 14, 4.5, 0, Math.PI * 2);
+            ctx.arc(cx + 15, cy - 14, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowColor = "rgba(20, 10, 50, 0.3)";
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetY = 5;
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(cx - 26, cy + 8, 18, 0, Math.PI * 2);
+            ctx.arc(cx, cy + 4, 23, 0, Math.PI * 2);
+            ctx.arc(cx + 26, cy + 8, 18, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawFallingItem(item) {
+            ctx.save();
+            ctx.translate(item.x, item.y);
+            ctx.rotate(item.angle);
+
+            if (item.type === "star") {
+                ctx.shadowColor = "#ffd43b";
+                ctx.shadowBlur = 12;
+                drawStarShape(ctx, 0, 0, 5, 20, 9, "#ffd43b");
+            } else if (item.type === "cupcake") {
+                ctx.font = "34px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("🧁", 0, 0);
+            } else if (item.type === "magnet") {
+                ctx.font = "34px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("🧲", 0, 0);
+            } else if (item.type === "shield") {
+                ctx.font = "34px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("🛡️", 0, 0);
+            } else if (item.type === "heart") {
+                ctx.font = "32px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("💖", 0, 0);
+            } else if (item.type === "storm") {
+                ctx.fillStyle = "#495057";
+                ctx.beginPath();
+                ctx.arc(-14, 0, 15, 0, Math.PI * 2);
+                ctx.arc(0, -6, 19, 0, Math.PI * 2);
+                ctx.arc(15, 0, 15, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#ffd43b";
+                ctx.beginPath();
+                ctx.moveTo(-2, 6);
+                ctx.lineTo(6, 6);
+                ctx.lineTo(0, 18);
+                ctx.lineTo(8, 18);
+                ctx.lineTo(-4, 30);
+                ctx.lineTo(0, 19);
+                ctx.lineTo(-6, 19);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function renderGame() {
+            ctx.clearRect(0, 0, viewportWidth, viewportHeight);
+
+            bgStars.forEach(st => {
+                const alpha = 0.35 + 0.65 * Math.abs(Math.sin(gameTime * st.twinkleSpeed + st.phase));
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
+                ctx.beginPath();
+                ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            fallingItems.forEach(item => {
+                drawFallingItem(item);
+            });
+
+            drawMagicCatPlayer();
+
+            sparkles.forEach(sp => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, sp.alpha);
+                ctx.fillStyle = sp.color;
+                ctx.beginPath();
+                ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            floatingTexts.forEach(ft => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, ft.alpha);
+                ctx.font = "bold 22px Arial";
+                ctx.textAlign = "center";
+                ctx.strokeStyle = "#1a1c4b";
+                ctx.lineWidth = 4;
+                ctx.strokeText(ft.text, ft.x, ft.y);
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
+            });
+        }
+
+        function gameLoop(now) {
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+
+            updateGame(dt);
+            renderGame();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        /* =========================================================================
+           9. ОБРОБНИКИ ПОДІЙ ІГРИ (МИША, ТАЧСКРІН, КЛАВІАТУРА ТА КНОПКИ)
+           ========================================================================= */
+        function handlePointerMove(clientX) {
+            if (gameState !== GAME_STATES.PLAYING || isTeacherReviewMode) return;
+            player.targetX = clientX;
+        }
+
+        canvas.addEventListener("pointermove", (e) => {
+            handlePointerMove(e.clientX);
+        });
+
+        canvas.addEventListener("pointerdown", (e) => {
+            handlePointerMove(e.clientX);
+        });
+
+        window.addEventListener("keydown", (e) => {
+            // Щоб кнопки управління не перебивали ввід тексту, ігноруємо, якщо фокус на інпуті
+            if (document.activeElement && document.activeElement.tagName === "INPUT") return;
+            
+            if (e.code === "ArrowLeft" || e.code === "KeyA") {
+                keysPressed.left = true;
+            } else if (e.code === "ArrowRight" || e.code === "KeyD") {
+                keysPressed.right = true;
+            }
+        });
+
+        window.addEventListener("keyup", (e) => {
+            if (e.code === "ArrowLeft" || e.code === "KeyA") {
+                keysPressed.left = false;
+            } else if (e.code === "ArrowRight" || e.code === "KeyD") {
+                keysPressed.right = false;
+            }
+        });
+
+        playBtn.addEventListener("click", () => {
+            if (isTeacherReviewMode) return;
+            soundEngine.init();
+            menuScreen.classList.add("hidden");
+            initNewGame();
+            gameState = GAME_STATES.PLAYING;
+        });
+
+        pauseBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (isTeacherReviewMode) return;
+            if (gameState === GAME_STATES.PLAYING) {
+                gameState = GAME_STATES.PAUSED;
+                pauseScreen.classList.remove("hidden");
+            } else if (gameState === GAME_STATES.PAUSED) {
+                gameState = GAME_STATES.PLAYING;
+                pauseScreen.classList.add("hidden");
+            }
+        });
+
+        resumeBtn.addEventListener("click", () => {
+            if (isTeacherReviewMode) return;
+            pauseScreen.classList.add("hidden");
+            gameState = GAME_STATES.PLAYING;
+        });
+
+        restartPauseBtn.addEventListener("click", () => {
+            if (isTeacherReviewMode) return;
+            pauseScreen.classList.add("hidden");
+            initNewGame();
+            gameState = GAME_STATES.PLAYING;
+        });
+
+        retryBtn.addEventListener("click", () => {
+            if (isTeacherReviewMode) return;
+            gameoverScreen.classList.add("hidden");
+            initNewGame();
+            gameState = GAME_STATES.PLAYING;
+        });
+
+        /* =========================================================================
+           10. ІНІЦІАЛІЗАЦІЯ АВТОРИЗАЦІЇ, ПЕРЕВІРКИ ДЗ АБО РЕЖИМУ ВЧИТЕЛЯ
+           ========================================================================= */
+        async function proceedAfterStudentAuthenticated() {
+            hudUserName.textContent = currentStudentName;
+            authOverlay.classList.add("hidden");
+
+            const alreadyDone = await checkIfHomeworkAlreadySubmitted(currentStudentName);
+
+            if (alreadyDone) {
+                openUnlimitedGameAccess();
+            } else {
+                gameState = GAME_STATES.HOMEWORK;
+                homeworkScreen.classList.remove("hidden");
+                renderHomeworkQuestions();
+            }
+        }
+
+        function initializeApp() {
+            initNewGame();
+            requestAnimationFrame(gameLoop);
+
+            if (isTeacherReviewMode) {
+                initTeacherReviewMode();
+                return;
+            }
+
+            const urlUser = urlParams.get("user");
+            const storedUser = sessionStorage.getItem("studentName") || sessionStorage.getItem("user");
+
+            if (urlUser && urlUser.trim() !== "") {
+                currentStudentName = decodeURIComponent(urlUser.trim());
+                sessionStorage.setItem("studentName", currentStudentName);
+                proceedAfterStudentAuthenticated();
+            } else if (storedUser && storedUser.trim() !== "") {
+                currentStudentName = storedUser.trim();
+                proceedAfterStudentAuthenticated();
+            } else {
+                authOverlay.classList.remove("hidden");
+                studentNameInput.focus();
+            }
+        }
+
+        function confirmStudentAuth() {
+            const entered = studentNameInput.value.trim();
+            if (!entered) {
+                studentNameInput.style.borderColor = "#e74c3c";
+                studentNameInput.focus();
+                return;
+            }
+            currentStudentName = entered;
+            sessionStorage.setItem("studentName", currentStudentName);
+            soundEngine.init();
+            proceedAfterStudentAuthenticated();
+        }
+
+        authStartBtn.addEventListener("click", confirmStudentAuth);
+        studentNameInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                confirmStudentAuth();
+            }
+        });
+
+        initializeApp();
+    </script>
+</body>
+</html>
