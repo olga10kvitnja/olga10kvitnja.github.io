@@ -29,7 +29,40 @@
     let editingKtpId = null;
     let currentCardId = null;
 
-    const SUBJECTS = ['Українська мова', 'Математика'];
+    const COMBINED_SUBJECT = 'Українська мова + Математика';
+    const SUBJECTS = [COMBINED_SUBJECT, 'Українська мова', 'Математика'];
+
+    function getLessonSubjectBreakdown(lesson) {
+        const dur = Number(lesson && lesson.durationMin) || 60;
+        const subj = (lesson && lesson.subject) || COMBINED_SUBJECT;
+        if (subj === 'Українська мова') {
+            return { uaMin: dur, mathMin: 0, uaHrs: dur / 60, mathHrs: 0, totalHrs: dur / 60, isCombined: false };
+        }
+        if (subj === 'Математика') {
+            return { uaMin: 0, mathMin: dur, uaHrs: 0, mathHrs: dur / 60, totalHrs: dur / 60, isCombined: false };
+        }
+        const hasCustom = lesson && (lesson.uaMin !== undefined || lesson.mathMin !== undefined);
+        const uaMin = hasCustom ? (Number(lesson.uaMin) || 0) : Math.round(dur / 2);
+        const mathMin = hasCustom ? (Number(lesson.mathMin) || 0) : (dur - uaMin);
+        const totMin = (uaMin + mathMin) || dur;
+        return { uaMin, mathMin, uaHrs: uaMin / 60, mathHrs: mathMin / 60, totalHrs: totMin / 60, isCombined: true };
+    }
+
+    function formatLessonTopicDisplay(lesson) {
+        if (!lesson) return '—';
+        if (lesson.subject === COMBINED_SUBJECT) {
+            const parts = [];
+            if (lesson.topicUa) parts.push(`Мова: ${lesson.topicUa}`);
+            if (lesson.topicMath) parts.push(`Мат.: ${lesson.topicMath}`);
+            if (parts.length > 0) return parts.join(' | ');
+        }
+        return lesson.topic || '—';
+    }
+
+    function formatHrsClean(val) {
+        const rounded = Math.round((Number(val) || 0) * 100) / 100;
+        return String(rounded).replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '');
+    }
     const DEFAULT_GROUPS = ['Група 1 (1–2 класи)', 'Група 2 (3–4 класи)'];
     const UA_COMPETENCIES = [
         { key: 'reading', label: 'Читання та розуміння прочитаного' },
@@ -47,57 +80,48 @@
     // Вбудований розклад (з урахуванням зміни з 16.11.2026 для молодшої групи)
     const SCHEDULE_CHANGE_DATE = '2026-11-16';
     const WEEKDAY_SHORT_UK = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-    const LOCAL_SCHED_SUBJ_KEY = 'edu_reporting_sched_subjects_v1';
+    const LOCAL_SCHED_SUBJ_KEY = 'edu_reporting_sched_format_v2';
 
     // JS getDay(): 0=Нд, 1=Пн, 2=Вт, 3=Ср, 4=Чт, 5=Пт, 6=Сб
     const BUILT_IN_SCHEDULE = {
         group1: {
             beforeChange: {
-                2: { start: '13:45', end: '14:45', slotKey: 'g1_d2' },
-                3: { start: '17:45', end: '18:45', slotKey: 'g1_d3' },
-                4: { start: '14:45', end: '15:45', slotKey: 'g1_d4' },
-                5: { start: '14:00', end: '15:00', slotKey: 'g1_d56' }
+                2: { start: '13:45', end: '14:45' },
+                3: { start: '17:45', end: '18:45' },
+                4: { start: '14:45', end: '15:45' },
+                5: { start: '14:00', end: '15:00' }
             },
             fromChange: {
-                2: { start: '13:45', end: '14:45', slotKey: 'g1_d2' },
-                3: { start: '17:45', end: '18:45', slotKey: 'g1_d3' },
-                4: { start: '14:45', end: '15:45', slotKey: 'g1_d4' },
-                6: { start: '11:15', end: '12:15', slotKey: 'g1_d56' }
+                2: { start: '13:45', end: '14:45' },
+                3: { start: '17:45', end: '18:45' },
+                4: { start: '14:45', end: '15:45' },
+                6: { start: '11:15', end: '12:15' }
             }
         },
         group2: {
             all: {
-                1: { start: '14:45', end: '15:45', slotKey: 'g2_d1' },
-                2: { start: '15:00', end: '16:00', slotKey: 'g2_d2' },
-                3: { start: '19:00', end: '20:00', slotKey: 'g2_d3' },
-                4: { start: '18:30', end: '19:30', slotKey: 'g2_d4' }
+                1: { start: '14:45', end: '15:45' },
+                2: { start: '15:00', end: '16:00' },
+                3: { start: '19:00', end: '20:00' },
+                4: { start: '18:30', end: '19:30' }
             }
         }
     };
 
-    function getScheduleSubjectsMap() {
-        const defaults = {
-            g1_d2: 'Українська мова',
-            g1_d3: 'Математика',
-            g1_d4: 'Українська мова',
-            g1_d56: 'Математика',
-            g2_d1: 'Українська мова',
-            g2_d2: 'Математика',
-            g2_d3: 'Українська мова',
-            g2_d4: 'Математика'
-        };
+    function getDefaultLessonFormat() {
+        const defaults = { subject: COMBINED_SUBJECT, uaMin: 30, mathMin: 30 };
         try {
             const saved = JSON.parse(localStorage.getItem(LOCAL_SCHED_SUBJ_KEY) || '{}');
-            return Object.assign({}, defaults, (repData && repData.scheduleSubjects) || {}, saved);
+            return Object.assign({}, defaults, (repData && repData.defaultLessonFormat) || {}, saved);
         } catch (e) {
             return defaults;
         }
     }
 
-    function saveScheduleSubjectsMap(mapObj) {
-        localStorage.setItem(LOCAL_SCHED_SUBJ_KEY, JSON.stringify(mapObj));
+    function saveDefaultLessonFormat(fmt) {
+        localStorage.setItem(LOCAL_SCHED_SUBJ_KEY, JSON.stringify(fmt));
         if (typeof db !== 'undefined') {
-            db.ref(`${REPORTING_DB_ROOT}/scheduleSubjects`).set(mapObj);
+            db.ref(`${REPORTING_DB_ROOT}/defaultLessonFormat`).set(fmt);
         }
     }
 
@@ -130,12 +154,13 @@
             phaseLabel = 'сталий розклад';
         }
         if (!slot) return null;
-        const subjMap = getScheduleSubjectsMap();
+        const fmt = getDefaultLessonFormat();
         return {
             start: slot.start,
             end: slot.end,
-            slotKey: slot.slotKey,
-            subject: subjMap[slot.slotKey] || 'Українська мова',
+            subject: fmt.subject || COMBINED_SUBJECT,
+            uaMin: Number(fmt.uaMin) || 30,
+            mathMin: Number(fmt.mathMin) || 30,
             weekdayShort: WEEKDAY_SHORT_UK[wd],
             phaseLabel
         };
@@ -163,30 +188,30 @@
         return {
             period: 'листопад — грудень 2026 р.',
             platform: 'Онлайн (Google Meet / Zoom)',
-            datesText: `Група 1 (1–2 кл., ${datesG1.length} зан.): ${datesG1.join(', ')} | Група 2 (3–4 кл., ${datesG2.length} зан.): ${datesG2.join(', ')}`,
+            datesText: `Група 1 (1–2 кл., ${datesG1.length} год. = ${formatHrsClean(datesG1.length/2)} год. мова + ${formatHrsClean(datesG1.length/2)} год. мат.): ${datesG1.join(', ')} | Група 2 (3–4 кл., ${datesG2.length} год. = ${formatHrsClean(datesG2.length/2)} год. мова + ${formatHrsClean(datesG2.length/2)} год. мат.): ${datesG2.join(', ')}`,
             rows: [
                 {
                     group: 'Група 1 (1–2 класи)',
                     category: '1–2 класи (до 15.11.2026)',
-                    subject: 'Укр. мова / Математика',
+                    subject: 'Укр. мова + Математика (30+30 хв)',
                     time: 'Вт 13:45–14:45; Ср 17:45–18:45; Чт 14:45–15:45; Пт 14:00–15:00',
-                    perWeek: '4',
+                    perWeek: '4 (2+2)',
                     totalHrs: String(g1Before)
                 },
                 {
                     group: 'Група 1 (1–2 класи)',
                     category: '1–2 класи (з 16.11.2026)',
-                    subject: 'Укр. мова / Математика',
+                    subject: 'Укр. мова + Математика (30+30 хв)',
                     time: 'Вт 13:45–14:45; Ср 17:45–18:45; Чт 14:45–15:45; Сб 11:15–12:15',
-                    perWeek: '4',
+                    perWeek: '4 (2+2)',
                     totalHrs: String(g1From)
                 },
                 {
                     group: 'Група 2 (3–4 класи)',
                     category: '3–4 класи (весь період)',
-                    subject: 'Укр. мова / Математика',
+                    subject: 'Укр. мова + Математика (30+30 хв)',
                     time: 'Пн 14:45–15:45; Вт 15:00–16:00; Ср 19:00–20:00; Чт 18:30–19:30',
-                    perWeek: '4',
+                    perWeek: '4 (2+2)',
                     totalHrs: String(datesG2.length)
                 }
             ]
@@ -475,10 +500,11 @@
                             <input type="number" id="rep-l-dur" value="60" min="0" step="5">
                         </div>
                         <div class="rep-field">
-                            <label>Предмет</label>
+                            <label>Предмет / формат заняття</label>
                             <select id="rep-l-subject">
-                                <option value="Українська мова">Українська мова</option>
-                                <option value="Математика">Математика</option>
+                                <option value="Українська мова + Математика" selected>Українська мова + Математика (в одному занятті)</option>
+                                <option value="Українська мова">Тільки Українська мова</option>
+                                <option value="Математика">Тільки Математика</option>
                             </select>
                         </div>
                         <div class="rep-field">
@@ -515,12 +541,31 @@
                         </div>
                     </div>
 
-                    <div class="rep-form-grid" style="grid-template-columns: 2fr 1fr;">
+                    <div id="rep-l-split-box" class="rep-form-grid" style="background:#1e293b; padding:10px; border-radius:8px; border:1px solid #334155;">
+                        <div class="rep-field" style="max-width:170px;">
+                            <label style="color:#38bdf8;">Укр. мова (хв)</label>
+                            <input type="number" id="rep-l-uamin" value="30" min="0" step="5">
+                        </div>
+                        <div class="rep-field" style="max-width:170px;">
+                            <label style="color:#a78bfa;">Математика (хв)</label>
+                            <input type="number" id="rep-l-mathmin" value="30" min="0" step="5">
+                        </div>
                         <div class="rep-field">
+                            <label style="color:#38bdf8;">Тема: Українська мова</label>
+                            <input type="text" id="rep-l-topic-ua" placeholder="Напр.: Склади, читання тексту, списування...">
+                        </div>
+                        <div class="rep-field">
+                            <label style="color:#a78bfa;">Тема: Математика</label>
+                            <input type="text" id="rep-l-topic-math" placeholder="Напр.: Додавання з переходом через десяток, задача...">
+                        </div>
+                    </div>
+
+                    <div class="rep-form-grid" style="grid-template-columns: 2fr 1fr;">
+                        <div class="rep-field" id="rep-l-single-topic-wrap" style="display:none;">
                             <label>Тема та короткий опис опрацьованого матеріалу</label>
                             <input type="text" id="rep-l-topic" placeholder="Напр.: Повторення таблиці множення, розв’язування текстових задач...">
                         </div>
-                        <div class="rep-field">
+                        <div class="rep-field" style="grid-column: span 1;">
                             <label>Примітки (перенесення, скасування, деталі)</label>
                             <input type="text" id="rep-l-notes" placeholder="Необов’язково">
                         </div>
@@ -537,31 +582,18 @@
                         <div class="rep-note-banner" style="margin-bottom:12px;">
                             <b>Молодші (1–2 кл.):</b> Вт 13:45–14:45, Ср 17:45–18:45, Чт 14:45–15:45, <b>Пт 14:00–15:00</b> (до 15.11) → <b>Сб 11:15–12:15</b> (з 16.11).<br>
                             <b>Старші (3–4 кл.):</b> Пн 14:45–15:45, Вт 15:00–16:00, Ср 19:00–20:00, Чт 18:30–19:30.<br>
-                            Оберіть нижче предмети по днях тижня — вони будуть автоматично підставлятися і в ручну форму, і при автозаповненні. Вже додані заняття не перезаписуються.
+                            Усі заняття за замовчуванням комбіновані (<b>Українська мова + Математика</b> в межах однієї 60-хв години), тож 4 заняття на тиждень автоматично складають <b>2 год. мови + 2 год. математики</b> у звітах і рахунку. Вже додані записи не перезаписуються.
                         </div>
 
-                        <div class="rep-form-grid" style="grid-template-columns: 1fr 1fr;">
-                            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px;">
-                                <div style="font-weight:bold; color:#38bdf8; margin-bottom:8px;">Група 1 (1–2 класи) — предмети по днях:</div>
-                                <div class="rep-form-grid" style="grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:0;">
-                                    <div class="rep-field"><label>Вт (13:45–14:45)</label><select id="rep-ss-g1_d2"><option>Українська мова</option><option>Математика</option></select></div>
-                                    <div class="rep-field"><label>Ср (17:45–18:45)</label><select id="rep-ss-g1_d3"><option>Українська мова</option><option>Математика</option></select></div>
-                                    <div class="rep-field"><label>Чт (14:45–15:45)</label><select id="rep-ss-g1_d4"><option>Українська мова</option><option>Математика</option></select></div>
-                                    <div class="rep-field"><label>Пт (до 15.11) / Сб (з 16.11)</label><select id="rep-ss-g1_d56"><option>Українська мова</option><option>Математика</option></select></div>
-                                </div>
+                        <div class="rep-form-grid">
+                            <div class="rep-field">
+                                <label>Розподіл часу в 1 занятті: Укр. мова (хв)</label>
+                                <input type="number" id="rep-gen-uamin" value="30" min="0" max="60" step="5">
                             </div>
-                            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px;">
-                                <div style="font-weight:bold; color:#a78bfa; margin-bottom:8px;">Група 2 (3–4 класи) — предмети по днях:</div>
-                                <div class="rep-form-grid" style="grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:0;">
-                                    <div class="rep-field"><label>Пн (14:45–15:45)</label><select id="rep-ss-g2_d1"><option>Українська мова</option><option>Математика</option></select></div>
-                                    <div class="rep-field"><label>Вт (15:00–16:00)</label><select id="rep-ss-g2_d2"><option>Українська мова</option><option>Математика</option></select></div>
-                                    <div class="rep-field"><label>Ср (19:00–20:00)</label><select id="rep-ss-g2_d3"><option>Українська мова</option><option>Математика</option></select></div>
-                                    <div class="rep-field"><label>Чт (18:30–19:30)</label><select id="rep-ss-g2_d4"><option>Українська мова</option><option>Математика</option></select></div>
-                                </div>
+                            <div class="rep-field">
+                                <label>Математика (хв)</label>
+                                <input type="number" id="rep-gen-mathmin" value="30" min="0" max="60" step="5">
                             </div>
-                        </div>
-
-                        <div class="rep-form-grid" style="margin-top:10px;">
                             <div class="rep-field">
                                 <label>Згенерувати за період: ВІД</label>
                                 <input type="date" id="rep-gen-from" value="2026-11-02">
@@ -580,7 +612,7 @@
                             </div>
                         </div>
                         <div class="rep-btn-row">
-                            <button type="button" id="rep-ss-save-btn" class="btn-slate" style="padding:8px 13px; font-size:12px;">💾 Зберегти предмети по днях</button>
+                            <button type="button" id="rep-ss-save-btn" class="btn-slate" style="padding:8px 13px; font-size:12px;">💾 Зберегти розподіл хвилин</button>
                             <button type="button" id="rep-gen-run-btn" class="btn-blue" style="padding:8px 14px; font-size:13px;">⚡ Додати заняття за розкладом у журнал</button>
                         </div>
                     </div>
@@ -594,11 +626,16 @@
                             <select id="rep-l-filter-group"><option value="all">Усі групи</option></select>
                             <select id="rep-l-filter-subject">
                                 <option value="all">Усі предмети</option>
-                                <option value="Українська мова">Українська мова</option>
-                                <option value="Математика">Математика</option>
+                                <option value="Українська мова + Математика">Комбіновані (Мова + Математика)</option>
+                                <option value="Українська мова">Містять Українську мову</option>
+                                <option value="Математика">Містять Математику</option>
                             </select>
                         </div>
                         <div class="rep-btn-row">
+                            <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#cbd5e1; cursor:pointer; background:#1e293b; padding:7px 10px; border-radius:6px; border:1px solid #475569;" title="Якщо увімкнути, кожне комбіноване заняття (30+30 хв) у друкованому Журналі буде показано двома окремими рядками — окремо мова та окремо математика">
+                                <input type="checkbox" id="rep-l-print-split" style="width:auto; padding:0;">
+                                Друк окремо по предметах
+                            </label>
                             <button type="button" id="rep-l-print-btn" class="btn-purple" style="padding:8px 13px; font-size:13px;">🖨️ Друк Журналу (А4 / PDF)</button>
                             <button type="button" id="rep-l-csv-btn" style="padding:8px 13px; font-size:13px;">📗 Excel (CSV)</button>
                         </div>
@@ -1165,7 +1202,12 @@
                 if (monthVal && !(l.date || '').startsWith(monthVal)) return false;
                 if (monthOverride === undefined) {
                     if (grpVal && grpVal !== 'all' && l.group !== grpVal) return false;
-                    if (subjVal && subjVal !== 'all' && l.subject !== subjVal) return false;
+                    if (subjVal && subjVal !== 'all') {
+                        const br = getLessonSubjectBreakdown(l);
+                        if (subjVal === COMBINED_SUBJECT && !br.isCombined) return false;
+                        if (subjVal === 'Українська мова' && br.uaMin <= 0) return false;
+                        if (subjVal === 'Математика' && br.mathMin <= 0) return false;
+                    }
                 }
                 return true;
             })
@@ -1189,7 +1231,7 @@
         if (groups.includes(curG)) grpSelect.value = curG;
         if (curFG === 'all' || groups.includes(curFG)) grpFilter.value = curFG;
         if (groups.includes(curKG)) ktpGrp.value = curKG;
-        if (!editingLessonId && !document.getElementById('rep-l-topic').value) {
+        if (!editingLessonId && !document.getElementById('rep-l-topic').value && !document.getElementById('rep-l-topic-ua').value && !document.getElementById('rep-l-topic-math').value) {
             applyScheduleToLessonForm();
         }
 
@@ -1200,11 +1242,11 @@
         let pausesCount = 0;
 
         list.forEach(l => {
-            const hrs = (Number(l.durationMin) || 60) / 60;
+            const br = getLessonSubjectBreakdown(l);
             if (isBillableStatus(l.status)) {
-                totalBillableHours += hrs;
-                if (l.subject === 'Українська мова') uaHours += hrs;
-                if (l.subject === 'Математика') mathHours += hrs;
+                totalBillableHours += br.totalHrs;
+                uaHours += br.uaHrs;
+                mathHours += br.mathHrs;
             }
             if (l.status === 'paused') pausesCount++;
         });
@@ -1214,9 +1256,9 @@
         const sumEst = Math.round(totalBillableHours * rate * 100) / 100;
 
         document.getElementById('rep-lessons-kpi').innerHTML = `
-            <div class="rep-kpi"><div class="k-lbl">Зарахованих год. (фільтр)</div><div class="k-val" style="color:#10b981;">${totalBillableHours.toFixed(1)} год.</div></div>
-            <div class="rep-kpi"><div class="k-lbl">Українська мова</div><div class="k-val" style="color:#38bdf8;">${uaHours.toFixed(1)} год.</div></div>
-            <div class="rep-kpi"><div class="k-lbl">Математика</div><div class="k-val" style="color:#a78bfa;">${mathHours.toFixed(1)} год.</div></div>
+            <div class="rep-kpi"><div class="k-lbl">Зарахованих год. (фільтр)</div><div class="k-val" style="color:#10b981;">${formatHrsClean(totalBillableHours)} год.</div></div>
+            <div class="rep-kpi"><div class="k-lbl">Українська мова</div><div class="k-val" style="color:#38bdf8;">${formatHrsClean(uaHours)} год.</div></div>
+            <div class="rep-kpi"><div class="k-lbl">Математика</div><div class="k-val" style="color:#a78bfa;">${formatHrsClean(mathHours)} год.</div></div>
             <div class="rep-kpi"><div class="k-lbl">Орієнтовна сума (${rate} грн/год)</div><div class="k-val" style="color:#fbbf24;">${sumEst.toLocaleString('uk-UA')} грн</div></div>
         `;
 
@@ -1231,16 +1273,19 @@
         </tr></thead><tbody>`;
 
         list.forEach((l, idx) => {
-            const hrs = ((Number(l.durationMin) || 60) / 60).toFixed(1).replace('.0', '');
+            const br = getLessonSubjectBreakdown(l);
+            const hrs = formatHrsClean(br.totalHrs);
+            const splitBadge = br.isCombined
+                ? `<br><small style="color:#94a3b8;">(${br.uaMin} хв мова + ${br.mathMin} хв мат.)</small>` : '';
             const pauseTxt = (l.status === 'paused' && (l.pauseStart || l.pauseEnd))
                 ? `<br><small style="color:#fbbf24;">Пауза: ${esc(l.pauseStart || '?')}–${esc(l.pauseEnd || '?')}</small>` : '';
             html += `<tr>
                 <td>${idx + 1}</td>
                 <td style="white-space:nowrap;"><b>${esc(formatDMY(l.date))}</b><br><small style="color:#94a3b8;">${esc(l.startTime || '')}–${esc(l.endTime || '')}</small></td>
                 <td>${esc(l.durationMin || 60)} хв<br><small style="color:#94a3b8;">(${hrs} год.)</small></td>
-                <td>${esc(l.subject)}</td>
+                <td>${esc(l.subject)}${splitBadge}</td>
                 <td>${esc(l.group)}</td>
-                <td>${esc(l.topic || '—')}</td>
+                <td>${esc(formatLessonTopicDisplay(l))}</td>
                 <td style="text-align:center; font-weight:bold;">${esc(l.attendees ?? 0)}</td>
                 <td>${getStatusBadge(l.status)}${pauseTxt}${l.notes ? `<br><small style="color:#94a3b8;">${esc(l.notes)}</small>` : ''}</td>
                 <td>
@@ -1255,18 +1300,33 @@
         wrap.innerHTML = html;
     }
 
+    function updateLessonSubjectUI() {
+        const subj = document.getElementById('rep-l-subject').value;
+        const isComb = subj === COMBINED_SUBJECT;
+        document.getElementById('rep-l-split-box').style.display = isComb ? 'grid' : 'none';
+        document.getElementById('rep-l-single-topic-wrap').style.display = isComb ? 'none' : 'flex';
+    }
+
     function saveLesson() {
         const date = document.getElementById('rep-l-date').value;
         const startTime = document.getElementById('rep-l-start').value;
         const endTime = document.getElementById('rep-l-end').value;
-        const durationMin = Number(document.getElementById('rep-l-dur').value) || 60;
         const subject = document.getElementById('rep-l-subject').value;
+        const isComb = subject === COMBINED_SUBJECT;
+        const uaMin = isComb ? (Number(document.getElementById('rep-l-uamin').value) || 0) : (subject === 'Українська мова' ? (Number(document.getElementById('rep-l-dur').value) || 60) : 0);
+        const mathMin = isComb ? (Number(document.getElementById('rep-l-mathmin').value) || 0) : (subject === 'Математика' ? (Number(document.getElementById('rep-l-dur').value) || 60) : 0);
+        const durationMin = isComb ? ((uaMin + mathMin) || Number(document.getElementById('rep-l-dur').value) || 60) : (Number(document.getElementById('rep-l-dur').value) || 60);
         const group = document.getElementById('rep-l-group').value;
         const attendees = Number(document.getElementById('rep-l-att').value) || 0;
         const status = document.getElementById('rep-l-status').value;
         const pauseStart = document.getElementById('rep-l-pstart').value;
         const pauseEnd = document.getElementById('rep-l-pend').value;
-        const topic = document.getElementById('rep-l-topic').value.trim();
+        const topicUa = isComb ? document.getElementById('rep-l-topic-ua').value.trim() : '';
+        const topicMath = isComb ? document.getElementById('rep-l-topic-math').value.trim() : '';
+        const singleTopic = document.getElementById('rep-l-topic').value.trim();
+        const topic = isComb
+            ? [topicUa ? `Мова: ${topicUa}` : '', topicMath ? `Мат.: ${topicMath}` : ''].filter(Boolean).join(' | ')
+            : singleTopic;
         const notes = document.getElementById('rep-l-notes').value.trim();
 
         if (!date) return alert('Вкажіть дату заняття!');
@@ -1275,8 +1335,9 @@
         }
 
         const payload = {
-            date, startTime, endTime, durationMin, subject, group, attendees,
-            status, pauseStart, pauseEnd, topic, notes,
+            date, startTime, endTime, durationMin, subject, uaMin, mathMin,
+            group, attendees, status, pauseStart, pauseEnd,
+            topic, topicUa, topicMath, notes,
             addedAt: new Date().toISOString()
         };
 
@@ -1294,32 +1355,45 @@
         document.getElementById('rep-lesson-form-title').innerText = '➕ Записати проведене заняття';
         document.getElementById('rep-lesson-cancel-edit').style.display = 'none';
         document.getElementById('rep-l-topic').value = '';
+        document.getElementById('rep-l-topic-ua').value = '';
+        document.getElementById('rep-l-topic-math').value = '';
         document.getElementById('rep-l-notes').value = '';
         document.getElementById('rep-l-pstart').value = '';
         document.getElementById('rep-l-pend').value = '';
         document.getElementById('rep-l-status').value = 'conducted';
         document.getElementById('rep-l-pause-box').style.display = 'none';
+        const fmt = getDefaultLessonFormat();
+        document.getElementById('rep-l-subject').value = fmt.subject || COMBINED_SUBJECT;
+        document.getElementById('rep-l-uamin').value = fmt.uaMin ?? 30;
+        document.getElementById('rep-l-mathmin').value = fmt.mathMin ?? 30;
+        updateLessonSubjectUI();
     }
 
     window.__repEditLesson = function(id) {
         const l = (repData.lessons || {})[id];
         if (!l) return;
         editingLessonId = id;
+        const br = getLessonSubjectBreakdown(l);
         document.getElementById('rep-lesson-form-title').innerText = '✏️ Редагування запису заняття';
         document.getElementById('rep-lesson-cancel-edit').style.display = 'inline-block';
         document.getElementById('rep-l-date').value = l.date || '';
         document.getElementById('rep-l-start').value = l.startTime || '15:00';
         document.getElementById('rep-l-end').value = l.endTime || '16:00';
         document.getElementById('rep-l-dur').value = l.durationMin || 60;
-        document.getElementById('rep-l-subject').value = l.subject || 'Українська мова';
+        document.getElementById('rep-l-subject').value = l.subject || COMBINED_SUBJECT;
+        document.getElementById('rep-l-uamin').value = br.uaMin;
+        document.getElementById('rep-l-mathmin').value = br.mathMin;
         document.getElementById('rep-l-group').value = l.group || DEFAULT_GROUPS[0];
         document.getElementById('rep-l-att').value = l.attendees ?? 0;
         document.getElementById('rep-l-status').value = l.status || 'conducted';
         document.getElementById('rep-l-pstart').value = l.pauseStart || '';
         document.getElementById('rep-l-pend').value = l.pauseEnd || '';
         document.getElementById('rep-l-topic').value = l.topic || '';
+        document.getElementById('rep-l-topic-ua').value = l.topicUa || (br.isCombined ? (l.topic || '') : '');
+        document.getElementById('rep-l-topic-math').value = l.topicMath || '';
         document.getElementById('rep-l-notes').value = l.notes || '';
         document.getElementById('rep-l-pause-box').style.display = l.status === 'paused' ? 'grid' : 'none';
+        updateLessonSubjectUI();
         document.getElementById('rep-l-date').scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
@@ -1338,34 +1412,28 @@
         if (slot) {
             document.getElementById('rep-l-start').value = slot.start;
             document.getElementById('rep-l-end').value = slot.end;
-            document.getElementById('rep-l-dur').value = 60;
+            document.getElementById('rep-l-dur').value = (slot.uaMin + slot.mathMin) || 60;
             document.getElementById('rep-l-subject').value = slot.subject;
+            document.getElementById('rep-l-uamin').value = slot.uaMin;
+            document.getElementById('rep-l-mathmin').value = slot.mathMin;
+            updateLessonSubjectUI();
             if (hintEl) {
-                hintEl.innerHTML = `<span style="color:#34d399;">🕒 Підставлено за розкладом (${esc(slot.phaseLabel)}): <b>${esc(slot.weekdayShort)} ${esc(slot.start)}–${esc(slot.end)}</b>, предмет: <b>${esc(slot.subject)}</b></span>`;
+                hintEl.innerHTML = `<span style="color:#34d399;">🕒 Підставлено за розкладом (${esc(slot.phaseLabel)}): <b>${esc(slot.weekdayShort)} ${esc(slot.start)}–${esc(slot.end)}</b> — комбіноване (${slot.uaMin} хв мова + ${slot.mathMin} хв мат.)</span>`;
             }
         } else if (hintEl) {
             const kind = detectGroupKind(grpVal);
             hintEl.innerHTML = kind
-                ? `<span style="color:#fbbf24;">ℹ️ У цей день тижня за розкладом заняття для цієї групи немає — час і предмет можна обрати вручну.</span>`
+                ? `<span style="color:#fbbf24;">ℹ️ У цей день тижня за розкладом заняття для цієї групи немає — час і формат можна обрати вручну.</span>`
                 : '';
         }
     }
 
-    function populateScheduleSubjectsSelectors() {
-        const map = getScheduleSubjectsMap();
-        ['g1_d2', 'g1_d3', 'g1_d4', 'g1_d56', 'g2_d1', 'g2_d2', 'g2_d3', 'g2_d4'].forEach(k => {
-            const el = document.getElementById(`rep-ss-${k}`);
-            if (el && map[k]) el.value = map[k];
-        });
-    }
-
-    function collectScheduleSubjectsFromUI() {
-        const out = {};
-        ['g1_d2', 'g1_d3', 'g1_d4', 'g1_d56', 'g2_d1', 'g2_d2', 'g2_d3', 'g2_d4'].forEach(k => {
-            const el = document.getElementById(`rep-ss-${k}`);
-            if (el) out[k] = el.value;
-        });
-        return out;
+    function populateScheduleFormatSelectors() {
+        const fmt = getDefaultLessonFormat();
+        const uaEl = document.getElementById('rep-gen-uamin');
+        const mEl = document.getElementById('rep-gen-mathmin');
+        if (uaEl) uaEl.value = fmt.uaMin ?? 30;
+        if (mEl) mEl.value = fmt.mathMin ?? 30;
     }
 
     function resolveGroupDisplayName(kind) {
@@ -1399,12 +1467,15 @@
         const fromVal = document.getElementById('rep-gen-from').value;
         const toVal = document.getElementById('rep-gen-to').value;
         const scope = document.getElementById('rep-gen-scope').value;
+        const uaMin = Number(document.getElementById('rep-gen-uamin').value) || 30;
+        const mathMin = Number(document.getElementById('rep-gen-mathmin').value) || 30;
+        const durMin = (uaMin + mathMin) || 60;
+
         if (!fromVal || !toVal || fromVal > toVal) {
             return alert('Вкажіть коректний період (дата ВІД не може бути пізнішою за дату ДО).');
         }
 
-        const subjMap = collectScheduleSubjectsFromUI();
-        saveScheduleSubjectsMap(subjMap);
+        saveDefaultLessonFormat({ subject: COMBINED_SUBJECT, uaMin, mathMin });
 
         const kinds = scope === 'both' ? ['group1', 'group2'] : [scope];
         const existingKeys = new Set(
@@ -1436,14 +1507,18 @@
                     date: ds,
                     startTime: slot.start,
                     endTime: slot.end,
-                    durationMin: 60,
-                    subject: subjMap[slot.slotKey] || slot.subject,
+                    durationMin: durMin,
+                    subject: COMBINED_SUBJECT,
+                    uaMin,
+                    mathMin,
                     group: grpName,
                     attendees: countPresentForDateAndGroup(ds, grpName),
                     status: 'conducted',
                     pauseStart: '',
                     pauseEnd: '',
                     topic: '',
+                    topicUa: '',
+                    topicMath: '',
                     notes: '',
                     addedAt: new Date().toISOString()
                 };
@@ -1457,7 +1532,7 @@
             return alert(`Нових занять не додано (усі ${skippedCount} занять за цей період уже є в журналі).`);
         }
 
-        if (!confirm(`Буде додано ${addedCount} занять за розкладом (пропущено вже наявних: ${skippedCount}).
+        if (!confirm(`Буде додано ${addedCount} комбінованих занять (${uaMin} хв мова + ${mathMin} хв мат. кожне; пропущено вже наявних: ${skippedCount}).
 
 Продовжити?`)) {
             return;
@@ -1500,30 +1575,76 @@
         const list = getFilteredLessons();
         const settings = getLocalSettings();
         const monthVal = document.getElementById('rep-l-filter-month').value;
+        const splitMode = document.getElementById('rep-l-print-split') && document.getElementById('rep-l-print-split').checked;
         const periodStr = monthVal ? `за ${monthVal}` : (settings.periodLabel || 'за весь період');
 
         let totals = {};
         let grandHrs = 0;
-        const rowsHtml = list.map((l, idx) => {
-            const hrs = (Number(l.durationMin) || 60) / 60;
-            if (isBillableStatus(l.status)) {
-                grandHrs += hrs;
-                const key = `${l.subject} — ${l.group}`;
-                totals[key] = (totals[key] || 0) + hrs;
-            }
-            return `<tr>
-                <td style="text-align:center;">${idx + 1}</td>
-                <td>${esc(formatDMY(l.date))}<br>${esc(l.startTime || '')}–${esc(l.endTime || '')}</td>
-                <td style="text-align:center;">${esc(l.durationMin || 60)} хв (${hrs.toFixed(1).replace('.0', '')} год.)</td>
-                <td>${esc(l.subject)}</td>
-                <td>${esc(l.group)}</td>
-                <td>${esc(l.topic || '—')}</td>
-                <td style="text-align:center;">${esc(l.attendees ?? 0)}</td>
-                <td>${esc(getStatusPlainText(l))}</td>
-            </tr>`;
-        }).join('');
+        let rowNum = 0;
+        const rowsArr = [];
 
-        const summaryLines = Object.entries(totals).map(([k, v]) => `<li><b>${esc(k)}:</b> ${v.toFixed(1).replace('.0', '')} навч. год.</li>`).join('');
+        list.forEach(l => {
+            const br = getLessonSubjectBreakdown(l);
+            if (isBillableStatus(l.status)) {
+                grandHrs += br.totalHrs;
+                if (br.uaHrs > 0) {
+                    const kUa = `Українська мова — ${l.group}`;
+                    totals[kUa] = (totals[kUa] || 0) + br.uaHrs;
+                }
+                if (br.mathHrs > 0) {
+                    const kM = `Математика — ${l.group}`;
+                    totals[kM] = (totals[kM] || 0) + br.mathHrs;
+                }
+            }
+
+            if (splitMode && br.isCombined) {
+                if (br.uaMin > 0) {
+                    rowNum++;
+                    rowsArr.push(`<tr>
+                        <td style="text-align:center;">${rowNum}</td>
+                        <td>${esc(formatDMY(l.date))}<br>${esc(l.startTime || '')}–${esc(l.endTime || '')}</td>
+                        <td style="text-align:center;">${br.uaMin} хв (${formatHrsClean(br.uaHrs)} год.)</td>
+                        <td>Українська мова</td>
+                        <td>${esc(l.group)}</td>
+                        <td>${esc(l.topicUa || l.topic || '—')}</td>
+                        <td style="text-align:center;">${esc(l.attendees ?? 0)}</td>
+                        <td>${esc(getStatusPlainText(l))}</td>
+                    </tr>`);
+                }
+                if (br.mathMin > 0) {
+                    rowNum++;
+                    rowsArr.push(`<tr>
+                        <td style="text-align:center;">${rowNum}</td>
+                        <td>${esc(formatDMY(l.date))}<br>${esc(l.startTime || '')}–${esc(l.endTime || '')}</td>
+                        <td style="text-align:center;">${br.mathMin} хв (${formatHrsClean(br.mathHrs)} год.)</td>
+                        <td>Математика</td>
+                        <td>${esc(l.group)}</td>
+                        <td>${esc(l.topicMath || l.topic || '—')}</td>
+                        <td style="text-align:center;">${esc(l.attendees ?? 0)}</td>
+                        <td>${esc(getStatusPlainText(l))}</td>
+                    </tr>`);
+                }
+            } else {
+                rowNum++;
+                const subjDisplay = br.isCombined
+                    ? `Українська мова (${br.uaMin} хв) + Математика (${br.mathMin} хв)`
+                    : l.subject;
+                rowsArr.push(`<tr>
+                    <td style="text-align:center;">${rowNum}</td>
+                    <td>${esc(formatDMY(l.date))}<br>${esc(l.startTime || '')}–${esc(l.endTime || '')}</td>
+                    <td style="text-align:center;">${esc(l.durationMin || 60)} хв (${formatHrsClean(br.totalHrs)} год.)</td>
+                    <td>${esc(subjDisplay)}</td>
+                    <td>${esc(l.group)}</td>
+                    <td>${esc(formatLessonTopicDisplay(l))}</td>
+                    <td style="text-align:center;">${esc(l.attendees ?? 0)}</td>
+                    <td>${esc(getStatusPlainText(l))}</td>
+                </tr>`);
+            }
+        });
+
+        const summaryLines = Object.entries(totals)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([k, v]) => `<li><b>${esc(k)}:</b> ${formatHrsClean(v)} навч. год.</li>`).join('');
 
         const html = `
             <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:10px; margin-bottom:14px;">
@@ -1539,12 +1660,12 @@
                 <thead><tr>
                     <th>№</th><th>Дата і час</th><th>Тривалість</th><th>Предмет</th><th>Група</th><th>Тема та короткий опис матеріалу</th><th>Учнів</th><th>Примітки / Паузи / Перенесення</th>
                 </tr></thead>
-                <tbody>${rowsHtml || '<tr><td colspan="8" style="text-align:center;">Записів немає</td></tr>'}</tbody>
+                <tbody>${rowsArr.join('') || '<tr><td colspan="8" style="text-align:center;">Записів немає</td></tr>'}</tbody>
             </table>
             <div style="margin-top:14px;">
-                <b>Підсумок зарахованих навчальних годин:</b>
+                <b>Підсумок зарахованих навчальних годин (за предметами та групами):</b>
                 <ul style="margin:6px 0 8px 18px;">${summaryLines || '<li>0 год.</li>'}</ul>
-                <div><b>Всього зараховано:</b> ${grandHrs.toFixed(1).replace('.0', '')} навч. год.</div>
+                <div><b>Всього зараховано:</b> ${formatHrsClean(grandHrs)} навч. год.</div>
             </div>
             <div style="margin-top:26px; display:flex; justify-content:space-between;">
                 <div>Виконавець: _______________________ ${esc(settings.executorSigner || '')}</div>
@@ -1556,12 +1677,13 @@
 
     function exportLessonsCSV() {
         const list = getFilteredLessons();
-        const rows = [['№', 'Дата', 'Початок', 'Кінець', 'Тривалість (хв)', 'Годин', 'Предмет', 'Група', 'Тема та опис', 'Присутніх', 'Статус та примітки']];
+        const rows = [['№', 'Дата', 'Початок', 'Кінець', 'Тривалість (хв)', 'Укр. мова (год)', 'Математика (год)', 'Всього (год)', 'Предмет', 'Група', 'Тема та опис', 'Присутніх', 'Статус та примітки']];
         list.forEach((l, i) => {
+            const br = getLessonSubjectBreakdown(l);
             rows.push([
                 i + 1, l.date, l.startTime || '', l.endTime || '', l.durationMin || 60,
-                ((Number(l.durationMin) || 60) / 60).toFixed(1),
-                l.subject, l.group, l.topic || '', l.attendees ?? 0, getStatusPlainText(l)
+                formatHrsClean(br.uaHrs), formatHrsClean(br.mathHrs), formatHrsClean(br.totalHrs),
+                l.subject, l.group, formatLessonTopicDisplay(l), l.attendees ?? 0, getStatusPlainText(l)
             ]);
         });
         downloadCSV(`zhurnal_zanyat_${todayYYYYMMDD()}.csv`, rows);
@@ -2386,10 +2508,10 @@
         let totalHrs = 0, uaHrs = 0, mathHrs = 0;
         allLessons.forEach(l => {
             if (!isBillableStatus(l.status)) return;
-            const h = (Number(l.durationMin) || 60) / 60;
-            totalHrs += h;
-            if (l.subject === 'Українська мова') uaHrs += h;
-            if (l.subject === 'Математика') mathHrs += h;
+            const br = getLessonSubjectBreakdown(l);
+            totalHrs += br.totalHrs;
+            uaHrs += br.uaHrs;
+            mathHrs += br.mathHrs;
         });
 
         const totalSum = Math.round(totalHrs * rate * 100) / 100;
@@ -2397,8 +2519,8 @@
         const remain = limit > 0 ? Math.max(0, limit - totalSum) : null;
 
         document.getElementById('rep-budget-kpi').innerHTML = `
-            <div class="rep-kpi"><div class="k-lbl">Усього зараховано годин</div><div class="k-val" style="color:#10b981;">${totalHrs.toFixed(1)} год.</div></div>
-            <div class="rep-kpi"><div class="k-lbl">Мова / Математика</div><div class="k-val" style="font-size:17px; color:#38bdf8;">${uaHrs.toFixed(1)} / ${mathHrs.toFixed(1)} год.</div></div>
+            <div class="rep-kpi"><div class="k-lbl">Усього зараховано годин</div><div class="k-val" style="color:#10b981;">${formatHrsClean(totalHrs)} год.</div></div>
+            <div class="rep-kpi"><div class="k-lbl">Мова / Математика</div><div class="k-val" style="font-size:17px; color:#38bdf8;">${formatHrsClean(uaHrs)} / ${formatHrsClean(mathHrs)} год.</div></div>
             <div class="rep-kpi"><div class="k-lbl">Нараховано всього</div><div class="k-val" style="color:#fbbf24;">${totalSum.toLocaleString('uk-UA')} грн</div></div>
             ${limit > 0 ? `<div class="rep-kpi">
                 <div class="k-lbl">Залишок від ліміту (${pctUsed}% використано)</div>
@@ -2430,14 +2552,14 @@
         let uaH = 0, mathH = 0;
         list.forEach(l => {
             if (!isBillableStatus(l.status)) return;
-            const h = (Number(l.durationMin) || 60) / 60;
-            if (l.subject === 'Українська мова') uaH += h;
-            if (l.subject === 'Математика') mathH += h;
+            const br = getLessonSubjectBreakdown(l);
+            uaH += br.uaHrs;
+            mathH += br.mathHrs;
         });
         const totH = uaH + mathH;
         const totSum = Math.round(totH * rate * 100) / 100;
         document.getElementById('rep-inv-preview-line').innerHTML =
-            `За <b>${esc(monthVal || 'увесь період')}</b>: Українська мова — <b>${uaH.toFixed(1).replace('.0', '')} год.</b>, Математика — <b>${mathH.toFixed(1).replace('.0', '')} год.</b> | Разом: <b>${totH.toFixed(1).replace('.0', '')} год. × ${rate} грн = ${totSum.toLocaleString('uk-UA', { minimumFractionDigits: 2 })} грн</b>`;
+            `За <b>${esc(monthVal || 'увесь період')}</b>: Українська мова — <b>${formatHrsClean(uaH)} год.</b>, Математика — <b>${formatHrsClean(mathH)} год.</b> | Разом: <b>${formatHrsClean(totH)} год. × ${rate} грн = ${totSum.toLocaleString('uk-UA', { minimumFractionDigits: 2 })} грн</b>`;
     }
 
     function aggregateCardsStats() {
@@ -2552,18 +2674,26 @@
             if (l.status === 'rescheduled') reschedCnt++;
             if (l.status === 'noshow_paid') noshowCnt++;
             if (!isBillableStatus(l.status)) return;
-            const h = (Number(l.durationMin) || 60) / 60;
-            const k = `${l.group}|||${l.subject}`;
-            if (!grpSubjMap[k]) grpSubjMap[k] = { group: l.group, subject: l.subject, cnt: 0, hrs: 0 };
-            grpSubjMap[k].cnt++;
-            grpSubjMap[k].hrs += h;
+            const br = getLessonSubjectBreakdown(l);
+            if (br.uaHrs > 0) {
+                const kUa = `${l.group}|||Українська мова`;
+                if (!grpSubjMap[kUa]) grpSubjMap[kUa] = { group: l.group, subject: 'Українська мова', cnt: 0, hrs: 0 };
+                grpSubjMap[kUa].cnt++;
+                grpSubjMap[kUa].hrs += br.uaHrs;
+            }
+            if (br.mathHrs > 0) {
+                const kM = `${l.group}|||Математика`;
+                if (!grpSubjMap[kM]) grpSubjMap[kM] = { group: l.group, subject: 'Математика', cnt: 0, hrs: 0 };
+                grpSubjMap[kM].cnt++;
+                grpSubjMap[kM].hrs += br.mathHrs;
+            }
             totalLessonsCnt++;
-            totalHrs += h;
+            totalHrs += br.totalHrs;
         });
 
         const hoursRows = Object.values(grpSubjMap).sort((a, b) => a.group.localeCompare(b.group) || a.subject.localeCompare(b.subject)).map(r => {
             const sum = Math.round(r.hrs * rate * 100) / 100;
-            return `<tr><td>${esc(r.group)}</td><td>${esc(r.subject)}</td><td style="text-align:center;">${r.cnt}</td><td style="text-align:center;">${r.hrs.toFixed(1).replace('.0', '')}</td><td style="text-align:right;">${rate.toFixed(2)}</td><td style="text-align:right;">${sum.toFixed(2)}</td></tr>`;
+            return `<tr><td>${esc(r.group)}</td><td>${esc(r.subject)}</td><td style="text-align:center;">${r.cnt}</td><td style="text-align:center;">${formatHrsClean(r.hrs)}</td><td style="text-align:right;">${rate.toFixed(2)}</td><td style="text-align:right;">${sum.toFixed(2)}</td></tr>`;
         }).join('');
 
         const totalSum = Math.round(totalHrs * rate * 100) / 100;
@@ -2648,9 +2778,9 @@
         let uaH = 0, mathH = 0;
         list.forEach(l => {
             if (!isBillableStatus(l.status)) return;
-            const h = (Number(l.durationMin) || 60) / 60;
-            if (l.subject === 'Українська мова') uaH += h;
-            if (l.subject === 'Математика') mathH += h;
+            const br = getLessonSubjectBreakdown(l);
+            uaH += br.uaHrs;
+            mathH += br.mathHrs;
         });
 
         const rows = [];
@@ -2751,13 +2881,27 @@
 
         // Журнал занять та авторозклад
         document.getElementById('rep-gen-to').value = today;
-        populateScheduleSubjectsSelectors();
+        populateScheduleFormatSelectors();
+        updateLessonSubjectUI();
+        document.getElementById('rep-l-subject').addEventListener('change', updateLessonSubjectUI);
+        document.getElementById('rep-l-uamin').addEventListener('input', () => {
+            const u = Number(document.getElementById('rep-l-uamin').value) || 0;
+            const m = Number(document.getElementById('rep-l-mathmin').value) || 0;
+            document.getElementById('rep-l-dur').value = u + m;
+        });
+        document.getElementById('rep-l-mathmin').addEventListener('input', () => {
+            const u = Number(document.getElementById('rep-l-uamin').value) || 0;
+            const m = Number(document.getElementById('rep-l-mathmin').value) || 0;
+            document.getElementById('rep-l-dur').value = u + m;
+        });
         document.getElementById('rep-l-date').addEventListener('change', applyScheduleToLessonForm);
         document.getElementById('rep-l-group').addEventListener('change', applyScheduleToLessonForm);
         document.getElementById('rep-ss-save-btn').addEventListener('click', () => {
-            saveScheduleSubjectsMap(collectScheduleSubjectsFromUI());
+            const uaMin = Number(document.getElementById('rep-gen-uamin').value) || 30;
+            const mathMin = Number(document.getElementById('rep-gen-mathmin').value) || 30;
+            saveDefaultLessonFormat({ subject: COMBINED_SUBJECT, uaMin, mathMin });
             applyScheduleToLessonForm();
-            alert('Предмети по днях тижня збережено!');
+            alert(`Розподіл часу збережено: ${uaMin} хв українська мова + ${mathMin} хв математика!`);
         });
         document.getElementById('rep-gen-run-btn').addEventListener('click', generateLessonsBySchedule);
 
@@ -2961,9 +3105,9 @@
                 studentMeta: val.studentMeta || {},
                 progressCards: val.progressCards || {},
                 reportDrafts: val.reportDrafts || {},
-                scheduleSubjects: val.scheduleSubjects || {}
+                defaultLessonFormat: val.defaultLessonFormat || {}
             };
-            populateScheduleSubjectsSelectors();
+            populateScheduleFormatSelectors();
             refreshAllReportingUI();
             applyScheduleToLessonForm();
         });
