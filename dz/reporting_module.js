@@ -44,6 +44,155 @@
         { key: 'logic', label: 'Логічне мислення та розуміння інструкцій' }
     ];
 
+    // Вбудований розклад (з урахуванням зміни з 16.11.2026 для молодшої групи)
+    const SCHEDULE_CHANGE_DATE = '2026-11-16';
+    const WEEKDAY_SHORT_UK = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    const LOCAL_SCHED_SUBJ_KEY = 'edu_reporting_sched_subjects_v1';
+
+    // JS getDay(): 0=Нд, 1=Пн, 2=Вт, 3=Ср, 4=Чт, 5=Пт, 6=Сб
+    const BUILT_IN_SCHEDULE = {
+        group1: {
+            beforeChange: {
+                2: { start: '13:45', end: '14:45', slotKey: 'g1_d2' },
+                3: { start: '17:45', end: '18:45', slotKey: 'g1_d3' },
+                4: { start: '14:45', end: '15:45', slotKey: 'g1_d4' },
+                5: { start: '14:00', end: '15:00', slotKey: 'g1_d56' }
+            },
+            fromChange: {
+                2: { start: '13:45', end: '14:45', slotKey: 'g1_d2' },
+                3: { start: '17:45', end: '18:45', slotKey: 'g1_d3' },
+                4: { start: '14:45', end: '15:45', slotKey: 'g1_d4' },
+                6: { start: '11:15', end: '12:15', slotKey: 'g1_d56' }
+            }
+        },
+        group2: {
+            all: {
+                1: { start: '14:45', end: '15:45', slotKey: 'g2_d1' },
+                2: { start: '15:00', end: '16:00', slotKey: 'g2_d2' },
+                3: { start: '19:00', end: '20:00', slotKey: 'g2_d3' },
+                4: { start: '18:30', end: '19:30', slotKey: 'g2_d4' }
+            }
+        }
+    };
+
+    function getScheduleSubjectsMap() {
+        const defaults = {
+            g1_d2: 'Українська мова',
+            g1_d3: 'Математика',
+            g1_d4: 'Українська мова',
+            g1_d56: 'Математика',
+            g2_d1: 'Українська мова',
+            g2_d2: 'Математика',
+            g2_d3: 'Українська мова',
+            g2_d4: 'Математика'
+        };
+        try {
+            const saved = JSON.parse(localStorage.getItem(LOCAL_SCHED_SUBJ_KEY) || '{}');
+            return Object.assign({}, defaults, (repData && repData.scheduleSubjects) || {}, saved);
+        } catch (e) {
+            return defaults;
+        }
+    }
+
+    function saveScheduleSubjectsMap(mapObj) {
+        localStorage.setItem(LOCAL_SCHED_SUBJ_KEY, JSON.stringify(mapObj));
+        if (typeof db !== 'undefined') {
+            db.ref(`${REPORTING_DB_ROOT}/scheduleSubjects`).set(mapObj);
+        }
+    }
+
+    function detectGroupKind(groupLabel) {
+        const s = String(groupLabel || '').toLowerCase();
+        if (s.includes('1–2') || s.includes('1-2') || s.includes('група 1') || s.includes('молод') || s.includes('младш')) return 'group1';
+        if (s.includes('3–4') || s.includes('3-4') || s.includes('група 2') || s.includes('старш')) return 'group2';
+        return null;
+    }
+
+    function getScheduledSlot(dateStr, groupLabel) {
+        if (!dateStr || dateStr.length < 10) return null;
+        const kind = detectGroupKind(groupLabel);
+        if (!kind) return null;
+        const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number);
+        const dt = new Date(y, m - 1, d);
+        const wd = dt.getDay();
+        let slot = null;
+        let phaseLabel = '';
+        if (kind === 'group1') {
+            if (dateStr < SCHEDULE_CHANGE_DATE) {
+                slot = BUILT_IN_SCHEDULE.group1.beforeChange[wd] || null;
+                phaseLabel = 'розклад до 15.11';
+            } else {
+                slot = BUILT_IN_SCHEDULE.group1.fromChange[wd] || null;
+                phaseLabel = 'розклад з 16.11';
+            }
+        } else if (kind === 'group2') {
+            slot = BUILT_IN_SCHEDULE.group2.all[wd] || null;
+            phaseLabel = 'сталий розклад';
+        }
+        if (!slot) return null;
+        const subjMap = getScheduleSubjectsMap();
+        return {
+            start: slot.start,
+            end: slot.end,
+            slotKey: slot.slotKey,
+            subject: subjMap[slot.slotKey] || 'Українська мова',
+            weekdayShort: WEEKDAY_SHORT_UK[wd],
+            phaseLabel
+        };
+    }
+
+    function buildDefaultSchedulePayload() {
+        const datesG1 = [];
+        const datesG2 = [];
+        const cur = new Date(2026, 10, 2); // 02.11.2026
+        const end = new Date(2026, 11, 31); // 31.12.2026
+        while (cur <= end) {
+            const ds = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+            const s1 = getScheduledSlot(ds, 'Група 1 (1–2 класи)');
+            const s2 = getScheduledSlot(ds, 'Група 2 (3–4 класи)');
+            if (s1) datesG1.push(`${ds.slice(8, 10)}.${ds.slice(5, 7)} (${s1.weekdayShort})`);
+            if (s2) datesG2.push(`${ds.slice(8, 10)}.${ds.slice(5, 7)} (${s2.weekdayShort})`);
+            cur.setDate(cur.getDate() + 1);
+        }
+        const g1Before = datesG1.filter(x => {
+            const [dd, mm] = x.slice(0, 5).split('.');
+            return `2026-${mm}-${dd}` < SCHEDULE_CHANGE_DATE;
+        }).length;
+        const g1From = datesG1.length - g1Before;
+
+        return {
+            period: 'листопад — грудень 2026 р.',
+            platform: 'Онлайн (Google Meet / Zoom)',
+            datesText: `Група 1 (1–2 кл., ${datesG1.length} зан.): ${datesG1.join(', ')} | Група 2 (3–4 кл., ${datesG2.length} зан.): ${datesG2.join(', ')}`,
+            rows: [
+                {
+                    group: 'Група 1 (1–2 класи)',
+                    category: '1–2 класи (до 15.11.2026)',
+                    subject: 'Укр. мова / Математика',
+                    time: 'Вт 13:45–14:45; Ср 17:45–18:45; Чт 14:45–15:45; Пт 14:00–15:00',
+                    perWeek: '4',
+                    totalHrs: String(g1Before)
+                },
+                {
+                    group: 'Група 1 (1–2 класи)',
+                    category: '1–2 класи (з 16.11.2026)',
+                    subject: 'Укр. мова / Математика',
+                    time: 'Вт 13:45–14:45; Ср 17:45–18:45; Чт 14:45–15:45; Сб 11:15–12:15',
+                    perWeek: '4',
+                    totalHrs: String(g1From)
+                },
+                {
+                    group: 'Група 2 (3–4 класи)',
+                    category: '3–4 класи (весь період)',
+                    subject: 'Укр. мова / Математика',
+                    time: 'Пн 14:45–15:45; Вт 15:00–16:00; Ср 19:00–20:00; Чт 18:30–19:30',
+                    perWeek: '4',
+                    totalHrs: String(datesG2.length)
+                }
+            ]
+        };
+    }
+
     function getLocalSettings() {
         const defaults = {
             docBasis: '',
@@ -376,10 +525,66 @@
                             <input type="text" id="rep-l-notes" placeholder="Необов’язково">
                         </div>
                     </div>
+                    <div id="rep-l-sched-hint" style="font-size:12px; color:#94a3b8; margin-bottom:10px;"></div>
                     <div class="rep-btn-row">
                         <button type="button" id="rep-l-save-btn" class="btn-blue">💾 Зберегти заняття</button>
                     </div>
                 </div>
+
+                <details class="rep-card" style="padding:14px 18px;">
+                    <summary style="cursor:pointer; color:#38bdf8; font-weight:bold; font-size:15px;">⚡ Мій розклад та автозаповнення занять за період (враховано зміну з 16.11)</summary>
+                    <div style="margin-top:12px;">
+                        <div class="rep-note-banner" style="margin-bottom:12px;">
+                            <b>Молодші (1–2 кл.):</b> Вт 13:45–14:45, Ср 17:45–18:45, Чт 14:45–15:45, <b>Пт 14:00–15:00</b> (до 15.11) → <b>Сб 11:15–12:15</b> (з 16.11).<br>
+                            <b>Старші (3–4 кл.):</b> Пн 14:45–15:45, Вт 15:00–16:00, Ср 19:00–20:00, Чт 18:30–19:30.<br>
+                            Оберіть нижче предмети по днях тижня — вони будуть автоматично підставлятися і в ручну форму, і при автозаповненні. Вже додані заняття не перезаписуються.
+                        </div>
+
+                        <div class="rep-form-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px;">
+                                <div style="font-weight:bold; color:#38bdf8; margin-bottom:8px;">Група 1 (1–2 класи) — предмети по днях:</div>
+                                <div class="rep-form-grid" style="grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:0;">
+                                    <div class="rep-field"><label>Вт (13:45–14:45)</label><select id="rep-ss-g1_d2"><option>Українська мова</option><option>Математика</option></select></div>
+                                    <div class="rep-field"><label>Ср (17:45–18:45)</label><select id="rep-ss-g1_d3"><option>Українська мова</option><option>Математика</option></select></div>
+                                    <div class="rep-field"><label>Чт (14:45–15:45)</label><select id="rep-ss-g1_d4"><option>Українська мова</option><option>Математика</option></select></div>
+                                    <div class="rep-field"><label>Пт (до 15.11) / Сб (з 16.11)</label><select id="rep-ss-g1_d56"><option>Українська мова</option><option>Математика</option></select></div>
+                                </div>
+                            </div>
+                            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px;">
+                                <div style="font-weight:bold; color:#a78bfa; margin-bottom:8px;">Група 2 (3–4 класи) — предмети по днях:</div>
+                                <div class="rep-form-grid" style="grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:0;">
+                                    <div class="rep-field"><label>Пн (14:45–15:45)</label><select id="rep-ss-g2_d1"><option>Українська мова</option><option>Математика</option></select></div>
+                                    <div class="rep-field"><label>Вт (15:00–16:00)</label><select id="rep-ss-g2_d2"><option>Українська мова</option><option>Математика</option></select></div>
+                                    <div class="rep-field"><label>Ср (19:00–20:00)</label><select id="rep-ss-g2_d3"><option>Українська мова</option><option>Математика</option></select></div>
+                                    <div class="rep-field"><label>Чт (18:30–19:30)</label><select id="rep-ss-g2_d4"><option>Українська мова</option><option>Математика</option></select></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rep-form-grid" style="margin-top:10px;">
+                            <div class="rep-field">
+                                <label>Згенерувати за період: ВІД</label>
+                                <input type="date" id="rep-gen-from" value="2026-11-02">
+                            </div>
+                            <div class="rep-field">
+                                <label>ДО</label>
+                                <input type="date" id="rep-gen-to">
+                            </div>
+                            <div class="rep-field">
+                                <label>Для яких груп</label>
+                                <select id="rep-gen-scope">
+                                    <option value="both">Обидві групи (1–2 та 3–4 класи)</option>
+                                    <option value="group1">Тільки Група 1 (1–2 класи)</option>
+                                    <option value="group2">Тільки Група 2 (3–4 класи)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="rep-btn-row">
+                            <button type="button" id="rep-ss-save-btn" class="btn-slate" style="padding:8px 13px; font-size:12px;">💾 Зберегти предмети по днях</button>
+                            <button type="button" id="rep-gen-run-btn" class="btn-blue" style="padding:8px 14px; font-size:13px;">⚡ Додати заняття за розкладом у журнал</button>
+                        </div>
+                    </div>
+                </details>
 
                 <div class="rep-card">
                     <div class="rep-actions-bar">
@@ -463,6 +668,7 @@
                     <div class="rep-actions-bar">
                         <h3 style="margin:0;">🗓️ Погодження графіка та планового обсягу годин</h3>
                         <div class="rep-btn-row">
+                            <button type="button" id="rep-sch-load-default" class="btn-slate" style="padding:8px 12px; font-size:12px;">📋 Підставити мій розклад</button>
                             <button type="button" id="rep-sch-save" class="btn-blue" style="padding:8px 13px; font-size:13px;">💾 Зберегти графік</button>
                             <button type="button" id="rep-sch-print" class="btn-purple" style="padding:8px 13px; font-size:13px;">🖨️ Друк графіка (А4 / PDF)</button>
                         </div>
@@ -983,6 +1189,9 @@
         if (groups.includes(curG)) grpSelect.value = curG;
         if (curFG === 'all' || groups.includes(curFG)) grpFilter.value = curFG;
         if (groups.includes(curKG)) ktpGrp.value = curKG;
+        if (!editingLessonId && !document.getElementById('rep-l-topic').value) {
+            applyScheduleToLessonForm();
+        }
 
         const list = getFilteredLessons();
         let totalBillableHours = 0;
@@ -1119,6 +1328,145 @@
             db.ref(`${REPORTING_DB_ROOT}/lessons/${id}`).remove();
         }
     };
+
+    function applyScheduleToLessonForm() {
+        if (editingLessonId) return;
+        const dateVal = document.getElementById('rep-l-date').value;
+        const grpVal = document.getElementById('rep-l-group').value;
+        const hintEl = document.getElementById('rep-l-sched-hint');
+        const slot = getScheduledSlot(dateVal, grpVal);
+        if (slot) {
+            document.getElementById('rep-l-start').value = slot.start;
+            document.getElementById('rep-l-end').value = slot.end;
+            document.getElementById('rep-l-dur').value = 60;
+            document.getElementById('rep-l-subject').value = slot.subject;
+            if (hintEl) {
+                hintEl.innerHTML = `<span style="color:#34d399;">🕒 Підставлено за розкладом (${esc(slot.phaseLabel)}): <b>${esc(slot.weekdayShort)} ${esc(slot.start)}–${esc(slot.end)}</b>, предмет: <b>${esc(slot.subject)}</b></span>`;
+            }
+        } else if (hintEl) {
+            const kind = detectGroupKind(grpVal);
+            hintEl.innerHTML = kind
+                ? `<span style="color:#fbbf24;">ℹ️ У цей день тижня за розкладом заняття для цієї групи немає — час і предмет можна обрати вручну.</span>`
+                : '';
+        }
+    }
+
+    function populateScheduleSubjectsSelectors() {
+        const map = getScheduleSubjectsMap();
+        ['g1_d2', 'g1_d3', 'g1_d4', 'g1_d56', 'g2_d1', 'g2_d2', 'g2_d3', 'g2_d4'].forEach(k => {
+            const el = document.getElementById(`rep-ss-${k}`);
+            if (el && map[k]) el.value = map[k];
+        });
+    }
+
+    function collectScheduleSubjectsFromUI() {
+        const out = {};
+        ['g1_d2', 'g1_d3', 'g1_d4', 'g1_d56', 'g2_d1', 'g2_d2', 'g2_d3', 'g2_d4'].forEach(k => {
+            const el = document.getElementById(`rep-ss-${k}`);
+            if (el) out[k] = el.value;
+        });
+        return out;
+    }
+
+    function resolveGroupDisplayName(kind) {
+        const groups = getAvailableGroupOptions();
+        const found = groups.find(g => detectGroupKind(g) === kind);
+        if (found) return found;
+        return kind === 'group1' ? DEFAULT_GROUPS[0] : DEFAULT_GROUPS[1];
+    }
+
+    function countPresentForDateAndGroup(dateStr, grpLabel) {
+        const month = dateStr.slice(0, 7);
+        const dayObj = (typeof attendanceData !== 'undefined' && attendanceData[month] && attendanceData[month][dateStr]) ? attendanceData[month][dateStr] : null;
+        if (!dayObj) return 0;
+        let matchedCatId = null;
+        if (typeof classesData !== 'undefined') {
+            for (const cid in classesData) {
+                if (classesData[cid].name === grpLabel || detectGroupKind(classesData[cid].name) === detectGroupKind(grpLabel)) {
+                    matchedCatId = cid;
+                    break;
+                }
+            }
+        }
+        let cnt = 0;
+        if (matchedCatId && dayObj[matchedCatId]) {
+            Object.values(dayObj[matchedCatId]).forEach(st => { if (st === 'present') cnt++; });
+        }
+        return cnt;
+    }
+
+    function generateLessonsBySchedule() {
+        const fromVal = document.getElementById('rep-gen-from').value;
+        const toVal = document.getElementById('rep-gen-to').value;
+        const scope = document.getElementById('rep-gen-scope').value;
+        if (!fromVal || !toVal || fromVal > toVal) {
+            return alert('Вкажіть коректний період (дата ВІД не може бути пізнішою за дату ДО).');
+        }
+
+        const subjMap = collectScheduleSubjectsFromUI();
+        saveScheduleSubjectsMap(subjMap);
+
+        const kinds = scope === 'both' ? ['group1', 'group2'] : [scope];
+        const existingKeys = new Set(
+            Object.values(repData.lessons || {}).map(l => `${l.date}|${detectGroupKind(l.group) || l.group}|${l.startTime}`)
+        );
+
+        const [fy, fm, fd] = fromVal.split('-').map(Number);
+        const [ty, tm, td] = toVal.split('-').map(Number);
+        const cur = new Date(fy, fm - 1, fd);
+        const end = new Date(ty, tm - 1, td);
+
+        const updates = {};
+        let addedCount = 0;
+        let skippedCount = 0;
+
+        while (cur <= end) {
+            const ds = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+            kinds.forEach(kind => {
+                const grpName = resolveGroupDisplayName(kind);
+                const slot = getScheduledSlot(ds, grpName);
+                if (!slot) return;
+                const dedupKey = `${ds}|${kind}|${slot.start}`;
+                if (existingKeys.has(dedupKey)) {
+                    skippedCount++;
+                    return;
+                }
+                const newKey = db.ref(`${REPORTING_DB_ROOT}/lessons`).push().key;
+                updates[`${REPORTING_DB_ROOT}/lessons/${newKey}`] = {
+                    date: ds,
+                    startTime: slot.start,
+                    endTime: slot.end,
+                    durationMin: 60,
+                    subject: subjMap[slot.slotKey] || slot.subject,
+                    group: grpName,
+                    attendees: countPresentForDateAndGroup(ds, grpName),
+                    status: 'conducted',
+                    pauseStart: '',
+                    pauseEnd: '',
+                    topic: '',
+                    notes: '',
+                    addedAt: new Date().toISOString()
+                };
+                existingKeys.add(dedupKey);
+                addedCount++;
+            });
+            cur.setDate(cur.getDate() + 1);
+        }
+
+        if (addedCount === 0) {
+            return alert(`Нових занять не додано (усі ${skippedCount} занять за цей період уже є в журналі).`);
+        }
+
+        if (!confirm(`Буде додано ${addedCount} занять за розкладом (пропущено вже наявних: ${skippedCount}).
+
+Продовжити?`)) {
+            return;
+        }
+
+        db.ref().update(updates).then(() => {
+            alert(`Готово! Додано занять: ${addedCount}. Тепер можна дописати теми або за потреби змінити статус окремих уроків.`);
+        });
+    }
 
     function syncAttendeesFromTab() {
         const dateVal = document.getElementById('rep-l-date').value;
@@ -1823,18 +2171,17 @@
     }
 
     // --- 4. ГРАФІК ТА КТП ---
-    function renderScheduleAndKtpSection() {
-        const sch = repData.schedule || {};
-        document.getElementById('rep-sch-period').value = sch.period || getLocalSettings().periodLabel || '';
-        document.getElementById('rep-sch-platform').value = sch.platform || 'Онлайн (Google Meet / Zoom)';
-        document.getElementById('rep-sch-dates').value = sch.datesText || '';
+    function renderScheduleAndKtpSection(forceDefault) {
+        const defSch = buildDefaultSchedulePayload();
+        const sch = (!forceDefault && repData.schedule && Array.isArray(repData.schedule.rows) && repData.schedule.rows.length > 0)
+            ? repData.schedule
+            : defSch;
 
-        const rows = Array.isArray(sch.rows) && sch.rows.length > 0 ? sch.rows : [
-            { group: 'Група 1 (1–2 класи)', category: '1–2 класи (до 6 учнів)', subject: 'Українська мова', time: 'Пн, Ср 15:00–16:00', perWeek: '2', totalHrs: '' },
-            { group: 'Група 1 (1–2 класи)', category: '1–2 класи (до 6 учнів)', subject: 'Математика', time: 'Вт, Чт 15:00–16:00', perWeek: '2', totalHrs: '' },
-            { group: 'Група 2 (3–4 класи)', category: '3–4 класи (до 6 учнів)', subject: 'Українська мова', time: 'Пн, Ср 16:30–17:30', perWeek: '2', totalHrs: '' },
-            { group: 'Група 2 (3–4 класи)', category: '3–4 класи (до 6 учнів)', subject: 'Математика', time: 'Вт, Чт 16:30–17:30', perWeek: '2', totalHrs: '' }
-        ];
+        document.getElementById('rep-sch-period').value = sch.period || getLocalSettings().periodLabel || defSch.period;
+        document.getElementById('rep-sch-platform').value = sch.platform || defSch.platform;
+        document.getElementById('rep-sch-dates').value = sch.datesText || defSch.datesText;
+
+        const rows = sch.rows;
 
         const wrap = document.getElementById('rep-sch-rows-wrap');
         wrap.innerHTML = `<div class="rep-table-scroll"><table><thead><tr>
@@ -2402,7 +2749,18 @@
         document.getElementById('rep-inv-month').value = curMonth;
         document.getElementById('rep-inv-date').value = today;
 
-        // Журнал занять
+        // Журнал занять та авторозклад
+        document.getElementById('rep-gen-to').value = today;
+        populateScheduleSubjectsSelectors();
+        document.getElementById('rep-l-date').addEventListener('change', applyScheduleToLessonForm);
+        document.getElementById('rep-l-group').addEventListener('change', applyScheduleToLessonForm);
+        document.getElementById('rep-ss-save-btn').addEventListener('click', () => {
+            saveScheduleSubjectsMap(collectScheduleSubjectsFromUI());
+            applyScheduleToLessonForm();
+            alert('Предмети по днях тижня збережено!');
+        });
+        document.getElementById('rep-gen-run-btn').addEventListener('click', generateLessonsBySchedule);
+
         document.getElementById('rep-l-status').addEventListener('change', e => {
             document.getElementById('rep-l-pause-box').style.display = e.target.value === 'paused' ? 'grid' : 'none';
         });
@@ -2447,6 +2805,10 @@
         // Графік і КТП
         document.getElementById('rep-sch-add-row').addEventListener('click', () => {
             document.getElementById('rep-sch-tbody').insertAdjacentHTML('beforeend', buildSchRowHtml({}, 0));
+        });
+        document.getElementById('rep-sch-load-default').addEventListener('click', () => {
+            renderScheduleAndKtpSection(true);
+            alert('Підставлено ваш розклад (до 15.11 та з 16.11). Натисніть «💾 Зберегти графік», щоб зафіксувати його в базі.');
         });
         document.getElementById('rep-sch-save').addEventListener('click', () => {
             db.ref(`${REPORTING_DB_ROOT}/schedule`).set(collectScheduleFromDOM()).then(() => alert('Графік збережено!'));
@@ -2598,9 +2960,12 @@
                 schedule: val.schedule || {},
                 studentMeta: val.studentMeta || {},
                 progressCards: val.progressCards || {},
-                reportDrafts: val.reportDrafts || {}
+                reportDrafts: val.reportDrafts || {},
+                scheduleSubjects: val.scheduleSubjects || {}
             };
+            populateScheduleSubjectsSelectors();
             refreshAllReportingUI();
+            applyScheduleToLessonForm();
         });
     }
 
