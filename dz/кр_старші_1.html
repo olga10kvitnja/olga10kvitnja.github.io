@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Контрольна робота</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f8;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+        #zoom-container {
+            transform-origin: top center;
+            transition: transform 0.2s ease;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 15px 100px 15px;
+        }
+        .header-bar {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            margin-bottom: 24px;
+            text-align: center;
+            border-top: 6px solid #2563eb;
+        }
+        .header-bar h1 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+            color: #1e3a8a;
+        }
+        .student-badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        #teacher-banner {
+            display: none;
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            color: #92400e;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .task-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 22px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .task-title {
+            font-size: 19px;
+            font-weight: bold;
+            color: #0f172a;
+            margin-top: 0;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .task-num {
+            background: #2563eb;
+            color: #fff;
+            min-width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+        .item-box {
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .word-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 16px;
+            border: 2px solid #94a3b8;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #0f172a;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        .sentence-block {
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .sentence-hint {
+            font-size: 14px;
+            color: #475569;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .clickable-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .word-chip {
+            padding: 8px 14px;
+            background: #ffffff;
+            border: 2px solid #94a3b8;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s;
+        }
+        .word-chip:hover {
+            border-color: #2563eb;
+        }
+        .word-chip.selected {
+            background: #dbeafe;
+            border-color: #2563eb;
+            color: #1e3a8a;
+            font-weight: bold;
+        }
+        /* Task 5 underline styles */
+        .word-chip.sub-selected {
+            background: #e0f2fe;
+            border-color: #0284c7;
+            text-decoration: underline;
+            text-decoration-thickness: 3px;
+            text-underline-offset: 4px;
+            font-weight: bold;
+        }
+        .word-chip.pred-selected {
+            background: #fef3c7;
+            border-color: #d97706;
+            text-decoration: underline double;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+            font-weight: bold;
+        }
+        .legend-box {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+            font-size: 14px;
+            background: #f1f5f9;
+            padding: 10px 14px;
+            border-radius: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .unstr-word {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .letter-input {
+            width: 44px !important;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            padding: 6px !important;
+            text-transform: lowercase;
+        }
+        .inline-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+        }
+        .inline-row input {
+            width: 120px;
+        }
+        .math-expr {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .comp-card {
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+        .comp-eq {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+        }
+        .comp-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .comp-inputs label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #334155;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .submit-area {
+            text-align: center;
+            margin-top: 30px;
+        }
+        #submit-btn {
+            background: #16a34a;
+            color: #ffffff;
+            border: none;
+            padding: 16px 36px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+        }
+        #submit-btn:hover {
+            background: #15803d;
+        }
+        #submit-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        #completion-screen {
+            display: none;
+            background: #ffffff;
+            padding: 40px 20px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            margin-top: 20px;
+        }
+        #completion-screen h2 {
+            color: #16a34a;
+            font-size: 26px;
+            margin: 0;
+        }
+        /* Auth Modal */
+        #auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 15px;
+        }
+        .auth-modal {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .auth-modal h2 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #0f172a;
+        }
+        .auth-modal input {
+            margin: 15px 0;
+            font-size: 18px;
+        }
+        .auth-modal button {
+            width: 100%;
+            padding: 14px;
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        /* Zoom controls */
+        .zoom-controls {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            display: flex;
+            gap: 8px;
+            z-index: 9000;
+        }
+        .zoom-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            background: #ffffff;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zoom-btn:hover {
+            background: #f1f5f9;
+        }
+
+        /* Review Mode Styles */
+        .review-correct {
+            background-color: #dcfce7 !important;
+            border-color: #16a34a !important;
+            color: #14532d !important;
+        }
+        .review-wrong {
+            background-color: #fee2e2 !important;
+            border-color: #dc2626 !important;
+            color: #7f1d1d !important;
+        }
+        .review-missed {
+            border: 3px dashed #16a34a !important;
+        }
+        .teacher-note {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            color: #15803d;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 650px) {
+            .grid-2, .grid-3, .comp-inputs {
+                grid-template-columns: 1fr;
+            }
+            .inline-row input {
+                width: 100%;
+            }
+            .header-bar h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="auth-overlay" style="display: none;">
+    <div class="auth-modal">
+        <h2>👋 Привіт! Як тебе звати?</h2>
+        <input type="text" id="student-name-input" placeholder="Введи своє ім'я та прізвище">
+        <button id="start-game-btn">Почати гру</button>
+    </div>
+</div>
+
+<div class="zoom-controls">
+    <button id="zoom-out-btn" class="zoom-btn" title="Зменшити">➖</button>
+    <button id="zoom-in-btn" class="zoom-btn" title="Збільшити">➕</button>
+</div>
+
+<div id="zoom-container">
+    <div id="teacher-banner"></div>
+
+    <div class="header-bar">
+        <h1>Контрольна робота</h1>
+        <div class="student-badge" id="display-student-name">Учень: ...</div>
+    </div>
+
+    <div id="tasks-wrapper">
+        <!-- Завдання 1 -->
+        <div class="task-card" id="task-1">
+            <h2 class="task-title"><span class="task-num">1</span>Визнач частину мови для кожного слова (іменник, прикметник чи дієслово):</h2>
+            <div class="grid-3" id="t1-container"></div>
+        </div>
+
+        <!-- Завдання 2 -->
+        <div class="task-card" id="task-2">
+            <h2 class="task-title"><span class="task-num">2</span>Натисни пальцем на потрібне слово у кожному реченні:</h2>
+            <div id="t2-container"></div>
+        </div>
+
+        <!-- Завдання 3 -->
+        <div class="task-card" id="task-3">
+            <h2 class="task-title"><span class="task-num">3</span>Однина і множина — одним словом це називається... (впиши відповідь):</h2>
+            <div class="item-box">
+                <input type="text" id="t3-input" placeholder="Впиши одне слово...">
+                <div id="t3-note"></div>
+            </div>
+        </div>
+
+        <!-- Завдання 4 -->
+        <div class="task-card" id="task-4">
+            <h2 class="task-title"><span class="task-num">4</span>Визнач рід кожного іменника (чоловічий, жіночий чи середній):</h2>
+            <div class="grid-3" id="t4-container"></div>
+        </div>
+
+        <!-- Завдання 5 -->
+        <div class="task-card" id="task-5">
+            <h2 class="task-title"><span class="task-num">5</span>Підкресли пальцем підмет і присудок у кожному реченні:</h2>
+            <div class="legend-box">
+                <div class="legend-item">👆 <b>1 натискання:</b> <u>Підмет</u> (хто? що?)</div>
+                <div class="legend-item">👆👆 <b>2 натискання:</b> <u style="text-decoration-style: double;">Присудок</u> (що робить?)</div>
+                <div class="legend-item">👆👆👆 <b>3 натискання:</b> зняти виділення</div>
+            </div>
+            <div id="t5-container"></div>
+        </div>
+
+        <!-- Завдання 6 -->
+        <div class="task-card" id="task-6">
+            <h2 class="task-title"><span class="task-num">6</span>Впиши пропущену літеру (е або и) та запиши перевірочне слово:</h2>
+            <div class="grid-2" id="t6-container"></div>
+        </div>
+
+        <!-- Завдання 7 -->
+        <div class="task-card" id="task-7">
+            <h2 class="task-title"><span class="task-num">7</span>Березень, квітень, травень — впиши наступний місяць:</h2>
+            <div class="item-box">
+                <input type="text" id="t7-input" placeholder="Впиши назву місяця...">
+                <div id="t7-note"></div>
+            </div>
+        </div>
+
+        <!-- Завдання 8 -->
+        <div class="task-card" id="task-8">
+            <h2 class="task-title"><span class="task-num">8</span>Округли кожне число до десятків і до сотень:</h2>
+            <div id="t8-container"></div>
+        </div>
+
+        <!-- Завдання 9 -->
+        <div class="task-card" id="task-9">
+            <h2 class="task-title"><span class="task-num">9</span>Переведи одиниці вимірювання (см і дм) та розв'яжи приклади:</h2>
+            <div id="t9-container"></div>
+        </div>
+
+        <!-- Завдання 10 -->
+        <div class="task-card" id="task-10">
+            <h2 class="task-title"><span class="task-num">10</span>Порахуй периметр квадрата, периметр прямокутника та невідому сторону прямокутника:</h2>
+            <div id="t10-container"></div>
+        </div>
+
+        <!-- Завдання 11 -->
+        <div class="task-card" id="task-11">
+            <h2 class="task-title"><span class="task-num">11</span>Порахуй площу квадрата та площу прямокутника:</h2>
+            <div id="t11-container"></div>
+        </div>
+
+        <!-- Завдання 12 -->
+        <div class="task-card" id="task-12">
+            <h2 class="task-title"><span class="task-num">12</span>Підпиши назви компонентів у прикладах:</h2>
+            <div id="t12-container"></div>
+        </div>
+
+        <div class="submit-area">
+            <button id="submit-btn">Відправити роботу</button>
+        </div>
+    </div>
+
+    <div id="completion-screen">
+        <h2>Твоя робота відправлена на перевірку</h2>
+    </div>
+</div>
+
+<script>
+    const DB_URL = "https://lesson-13c44-default-rtdb.firebaseio.com";
+
+    // Автоматичний ID гри з назви HTML-файлу
+    function getGameId() {
+        const path = window.location.pathname;
+        let file = path.substring(path.lastIndexOf('/') + 1);
+        if (!file || !file.includes('.')) {
+            file = "kontrolna_robota";
+        } else {
+            file = file.replace(/\.html$/i, '');
+        }
+        return decodeURIComponent(file);
+    }
+
+    const gameId = getGameId();
+    const urlParams = new URLSearchParams(window.location.search);
+    const reportUser = urlParams.get('reportUser');
+    const reportDate = urlParams.get('reportDate');
+    const isReviewMode = Boolean(reportUser && reportDate);
+
+    let studentName = "";
+
+    // Масштабування (Лупа)
+    let currentZoom = 1.0;
+    const zoomContainer = document.getElementById('zoom-container');
+    document.getElementById('zoom-in-btn').addEventListener('click', () => {
+        if (currentZoom < 1.5) {
+            currentZoom = Math.round((currentZoom + 0.1) * 10) / 10;
+            zoomContainer.style.transform = `scale(${currentZoom})`;
+        }
+    });
+    document.getElementById('zoom-out-btn').addEventListener('click', () => {
+        if (currentZoom > 0.7) {
+            currentZoom = Math.round((currentZoom - 0.1) * 10) / 10;
+            zoomContainer.style.transform = `scale(${currentZoom})`;
+        }
+    });
+
+    // Дані завдань
+    const t1Data = [
+        { word: "біжить", ans: "дієслово" },
+        { word: "сонце", ans: "іменник" },
+        { word: "веселий", ans: "прикметник" },
+        { word: "книжка", ans: "іменник" },
+        { word: "малює", ans: "дієслово" },
+        { word: "теплий", ans: "прикметник" }
+    ];
+
+    const t2Data = [
+        { hint: "У першому реченні знайди ІМЕННИК:", words: ["Маленький", "котик", "солодко", "спить."], ansIndex: 1 },
+        { hint: "У другому реченні знайди ПРИКМЕТНИК:", words: ["На", "небі", "сяє", "яскраве", "сонечко."], ansIndex: 3 },
+        { hint: "У третьому реченні знайди ДІЄСЛОВО:", words: ["Діти", "весело", "граються", "в", "парку."], ansIndex: 2 }
+    ];
+
+    const t4Data = [
+        { word: "дуб", ans: "чоловічий" },
+        { word: "квітка", ans: "жіночий" },
+        { word: "вікно", ans: "середній" },
+        { word: "річка", ans: "жіночий" },
+        { word: "олівець", ans: "чоловічий" },
+        { word: "поле", ans: "середній" },
+        { word: "море", ans: "середній" },
+        { word: "книга", ans: "жіночий" },
+        { word: "стіл", ans: "чоловічий" }
+    ];
+
+    const t5Data = [
+        { words: ["Птахи", "повернулися", "з", "теплих", "країв."], sub: 0, pred: 1 },
+        { words: ["Весняний", "вітер", "гойдає", "гілки", "дерев."], sub: 1, pred: 2 },
+        { words: ["Дівчинка", "читає", "цікаву", "казку."], sub: 0, pred: 1 }
+    ];
+
+    const t6Data = [
+        { prefix: "з", suffix: "мля", letter: "е", check: ["землі", "землю"] },
+        { prefix: "з", suffix: "ма", letter: "и", check: ["зими", "зиму"] },
+        { prefix: "в", suffix: "сна", letter: "е", check: ["весни", "весну"] },
+        { prefix: "л", suffix: "сток", letter: "и", check: ["листя", "лист"] }
+    ];
+
+    const t8Data = [
+        { num: 342, tens: "340", hundreds: "300" },
+        { num: 578, tens: "580", hundreds: "600" },
+        { num: 126, tens: "130", hundreds: "100" },
+        { num: 891, tens: "890", hundreds: "900" }
+    ];
+
+    const t9Data = [
+        { expr: "4 дм 5 см =", unit: "см", ans: "45" },
+        { expr: "70 см =", unit: "дм", ans: "7" },
+        { expr: "3 дм 2 см =", unit: "см", ans: "32" },
+        { expr: "84 см = ... дм ... см (впиши дм і см через пробіл, напр. 8 4)", unit: "", ans: "8 4", altAns: ["8 дм 4 см"] },
+        { expr: "2 дм + 15 см =", unit: "см", ans: "35" },
+        { expr: "5 дм 4 см - 20 см =", unit: "см", ans: "34" }
+    ];
+
+    const t10Data = [
+        { label: "1) Сторона квадрата дорівнює 6 см. Знайди периметр квадрата (P):", unit: "см", ans: "24" },
+        { label: "2) Сторони прямокутника дорівнюють 7 см і 3 см. Знайди периметр прямокутника (P):", unit: "см", ans: "20" },
+        { label: "3) Периметр прямокутника дорівнює 18 см, а одна його сторона — 5 см. Знайди іншу сторону прямокутника:", unit: "см", ans: "4" }
+    ];
+
+    const t11Data = [
+        { label: "1) Сторона квадрата дорівнює 5 см. Порахуй площу квадрата (S):", unit: "см²", ans: "25" },
+        { label: "2) Сторони прямокутника дорівнюють 6 см і 4 см. Порахуй площу прямокутника (S):", unit: "см²", ans: "24" }
+    ];
+
+    const t12Data = [
+        { eq: "14 + 5 = 19", labels: ["14 — це...", "5 — це...", "19 — це..."], ans: ["перший доданок", "другий доданок", "сума"], alt: [["доданок"], ["доданок"], ["сума"]] },
+        { eq: "27 - 12 = 15", labels: ["27 — це...", "12 — це...", "15 — це..."], ans: ["зменшуване", "від'ємник", "різниця"], alt: [["зменшуване"], ["відємник", "від'ємник"], ["різниця"]] },
+        { eq: "4 · 6 = 24", labels: ["4 — це...", "6 — це...", "24 — це..."], ans: ["перший множник", "другий множник", "добуток"], alt: [["множник"], ["множник"], ["добуток"]] },
+        { eq: "32 : 8 = 4", labels: ["32 — це...", "8 — це...", "4 — це..."], ans: ["ділене", "дільник", "частка"], alt: [["ділене"], ["дільник"], ["частка"]] }
+    ];
+
+    // Рендеринг завдань
+    function renderTasks() {
+        // Task 1
+        const t1Cont = document.getElementById('t1-container');
+        t1Data.forEach((item, idx) => {
+            t1Cont.innerHTML += `
+                <div class="item-box" id="t1-box-${idx}">
+                    <span class="word-label">${item.word}</span>
+                    <select id="t1-sel-${idx}">
+                        <option value="">-- Обери --</option>
+                        <option value="іменник">Іменник</option>
+                        <option value="прикметник">Прикметник</option>
+                        <option value="дієслово">Дієслово</option>
+                    </select>
+                    <div id="t1-note-${idx}"></div>
+                </div>
+            `;
+        });
+
+        // Task 2
+        const t2Cont = document.getElementById('t2-container');
+        t2Data.forEach((item, sIdx) => {
+            const wordsHtml = item.words.map((w, wIdx) =>
+                `<span class="word-chip" id="t2-w-${sIdx}-${wIdx}" data-s="${sIdx}" data-w="${wIdx}">${w}</span>`
+            ).join('');
+            t2Cont.innerHTML += `
+                <div class="sentence-block" id="t2-box-${sIdx}">
+                    <div class="sentence-hint">${item.hint}</div>
+                    <div class="clickable-words">${wordsHtml}</div>
+                </div>
+            `;
+        });
+
+        // Task 4
+        const t4Cont = document.getElementById('t4-container');
+        t4Data.forEach((item, idx) => {
+            t4Cont.innerHTML += `
+                <div class="item-box" id="t4-box-${idx}">
+                    <span class="word-label">${item.word}</span>
+                    <select id="t4-sel-${idx}">
+                        <option value="">-- Обери рід --</option>
+                        <option value="чоловічий">Чоловічий рід</option>
+                        <option value="жіночий">Жіночий рід</option>
+                        <option value="середній">Середній рід</option>
+                    </select>
+                    <div id="t4-note-${idx}"></div>
+                </div>
+            `;
+        });
+
+        // Task 5
+        const t5Cont = document.getElementById('t5-container');
+        t5Data.forEach((item, sIdx) => {
+            const wordsHtml = item.words.map((w, wIdx) =>
+                `<span class="word-chip" id="t5-w-${sIdx}-${wIdx}" data-s="${sIdx}" data-w="${wIdx}" data-role="none">${w}</span>`
+            ).join('');
+            t5Cont.innerHTML += `
+                <div class="sentence-block" id="t5-box-${sIdx}">
+                    <div class="clickable-words">${wordsHtml}</div>
+                    <div id="t5-note-${sIdx}"></div>
+                </div>
+            `;
+        });
+
+        // Task 6
+        const t6Cont = document.getElementById('t6-container');
+        t6Data.forEach((item, idx) => {
+            t6Cont.innerHTML += `
+                <div class="item-box" id="t6-box-${idx}">
+                    <div class="unstr-word">
+                        <span>${item.prefix}</span>
+                        <input type="text" maxlength="1" class="letter-input" id="t6-let-${idx}" placeholder="?">
+                        <span>${item.suffix}</span>
+                    </div>
+                    <input type="text" id="t6-chk-${idx}" placeholder="Перевірочне слово...">
+                    <div id="t6-note-${idx}"></div>
+                </div>
+            `;
+        });
+
+        // Task 8
+        const t8Cont = document.getElementById('t8-container');
+        t8Data.forEach((item, idx) => {
+            t8Cont.innerHTML += `
+                <div class="inline-row" id="t8-box-${idx}">
+                    <span class="math-expr">Число <b>${item.num}</b>:</span>
+                    <span>до десятків:</span>
+                    <input type="text" id="t8-ten-${idx}" placeholder="десятки">
+                    <span>до сотень:</span>
+                    <input type="text" id="t8-hun-${idx}" placeholder="сотні">
+                    <div id="t8-note-${idx}"></div>
+                </div>
+            `;
+        });
+
+        // Task 9
+        const t9Cont = document.getElementById('t9-container');
+        t9Data.forEach((item, idx) => {
+            t9Cont.innerHTML += `
+                <div class="inline-row" id="t9-box-${idx}">
+                    <span class="math-expr">${item.expr}</span>
+                    <input type="text" id="t9-inp-${idx}" placeholder="відповідь">
+                    <span><b>${item.unit}</b></span>
+                    <div id="t9-note-${idx}"></div>
+                </div>
+            `;
+        });
+
+        // Task 10
+        const t10Cont = document.getElementById('t10-container');
+        t10Data.forEach((item, idx) => {
+            t10Cont.innerHTML += `
+                <div class="item-box" style="margin-bottom: 12px;" id="t10-box-${idx}">
+                    <div style="font-weight: bold;">${item.label}</div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="text" id="t10-inp-${idx}" style="max-width: 140px;" placeholder="Число">
+                        <b>${item.unit}</b>
+                    </div>
+                    <div id="t10-note-${idx}"></div>
+                </div>
+            `;
+        });
+
+        // Task 11
+        const t11Cont = document.getElementById('t11-container');
+        t11Data.forEach((item, idx) => {
+            t11Cont.innerHTML += `
+                <div class="item-box" style="margin-bottom: 12px;" id="t11-box-${idx}">
+                    <div style="font-weight: bold;">${item.label}</div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="text" id="t11-inp-${idx}" style="max-width: 140px;" placeholder="Число">
+                        <b>${item.unit}</b>
+                    </div>
+                    <div id="t11-note-${idx}"></div>
+                </div>
+            `;
+        });
+
+        // Task 12
+        const t12Cont = document.getElementById('t12-container');
+        t12Data.forEach((item, idx) => {
+            const inputsHtml = item.labels.map((lbl, cIdx) => `
+                <div>
+                    <label>${lbl}</label>
+                    <input type="text" id="t12-inp-${idx}-${cIdx}" placeholder="Назва компонента">
+                    <div id="t12-note-${idx}-${cIdx}"></div>
+                </div>
+            `).join('');
+            t12Cont.innerHTML += `
+                <div class="comp-card" id="t12-box-${idx}">
+                    <div class="comp-eq">${item.eq}</div>
+                    <div class="comp-inputs">${inputsHtml}</div>
+                </div>
+            `;
+        });
+
+        attachWordListeners();
+    }
+
+    function attachWordListeners() {
+        // Task 2 word selection
+        document.querySelectorAll('#t2-container .word-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                if (isReviewMode) return;
+                const sIdx = chip.dataset.s;
+                document.querySelectorAll(`#t2-container .word-chip[data-s="${sIdx}"]`).forEach(c => c.classList.remove('selected'));
+                chip.classList.add('selected');
+            });
+        });
+
+        // Task 5 subject/predicate cycling
+        document.querySelectorAll('#t5-container .word-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                if (isReviewMode) return;
+                const role = chip.dataset.role;
+                chip.classList.remove('sub-selected', 'pred-selected');
+                if (role === 'none') {
+                    chip.dataset.role = 'sub';
+                    chip.classList.add('sub-selected');
+                } else if (role === 'sub') {
+                    chip.dataset.role = 'pred';
+                    chip.classList.add('pred-selected');
+                } else {
+                    chip.dataset.role = 'none';
+                }
+            });
+        });
+    }
+
+    // Авторизація або Режим перевірки
+    function initApp() {
+        renderTasks();
+
+        if (isReviewMode) {
+            studentName = decodeURIComponent(reportUser);
+            document.getElementById('display-student-name').textContent = `Учень: ${studentName}`;
+            const banner = document.getElementById('teacher-banner');
+            banner.style.display = 'block';
+            banner.textContent = `👀 Режим перевірки: Робота учня ${studentName}`;
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('tasks-wrapper').style.pointerEvents = 'none';
+            loadReportForReview(studentName, reportDate);
+            return;
+        }
+
+        const urlUser = urlParams.get('user');
+        const sessionUser = sessionStorage.getItem('homework_student_name');
+
+        if (urlUser && urlUser.trim() !== "") {
+            studentName = decodeURIComponent(urlUser.trim());
+            sessionStorage.setItem('homework_student_name', studentName);
+            document.getElementById('display-student-name').textContent = `Учень: ${studentName}`;
+        } else if (sessionUser && sessionUser.trim() !== "") {
+            studentName = sessionUser.trim();
+            document.getElementById('display-student-name').textContent = `Учень: ${studentName}`;
+        } else {
+            document.getElementById('auth-overlay').style.display = 'flex';
+        }
+    }
+
+    document.getElementById('start-game-btn').addEventListener('click', () => {
+        const val = document.getElementById('student-name-input').value.trim();
+        if (val) {
+            studentName = val;
+            sessionStorage.setItem('homework_student_name', studentName);
+            document.getElementById('display-student-name').textContent = `Учень: ${studentName}`;
+            document.getElementById('auth-overlay').style.display = 'none';
+        }
+    });
+
+    function norm(str) {
+        return (str || "").toString().trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    // Збір відповідей та підрахунок балів
+    function collectAndGrade() {
+        let correctCount = 0;
+        let totalCount = 0;
+        const rawAnswers = {
+            t1: [],
+            t2: [],
+            t3: "",
+            t4: [],
+            t5: [],
+            t6: [],
+            t7: "",
+            t8: [],
+            t9: [],
+            t10: [],
+            t11: [],
+            t12: []
+        };
+
+        // Task 1 (6 pts)
+        t1Data.forEach((item, idx) => {
+            totalCount++;
+            const val = document.getElementById(`t1-sel-${idx}`).value;
+            rawAnswers.t1.push(val);
+            if (val === item.ans) correctCount++;
+        });
+
+        // Task 2 (3 pts)
+        t2Data.forEach((item, sIdx) => {
+            totalCount++;
+            const sel = document.querySelector(`#t2-container .word-chip[data-s="${sIdx}"].selected`);
+            const chosenIdx = sel ? parseInt(sel.dataset.w, 10) : -1;
+            rawAnswers.t2.push(chosenIdx);
+            if (chosenIdx === item.ansIndex) correctCount++;
+        });
+
+        // Task 3 (1 pt)
+        totalCount++;
+        const t3Val = document.getElementById('t3-input').value;
+        rawAnswers.t3 = t3Val;
+        if (norm(t3Val) === "число") correctCount++;
+
+        // Task 4 (9 pts)
+        t4Data.forEach((item, idx) => {
+            totalCount++;
+            const val = document.getElementById(`t4-sel-${idx}`).value;
+            rawAnswers.t4.push(val);
+            if (val === item.ans) correctCount++;
+        });
+
+        // Task 5 (6 pts: 3 subjects + 3 predicates)
+        t5Data.forEach((item, sIdx) => {
+            totalCount += 2;
+            const subs = [];
+            const preds = [];
+            document.querySelectorAll(`#t5-container .word-chip[data-s="${sIdx}"]`).forEach(c => {
+                const wIdx = parseInt(c.dataset.w, 10);
+                if (c.dataset.role === 'sub') subs.push(wIdx);
+                if (c.dataset.role === 'pred') preds.push(wIdx);
+            });
+            rawAnswers.t5.push({ subs, preds });
+            if (subs.length === 1 && subs[0] === item.sub) correctCount++;
+            if (preds.length === 1 && preds[0] === item.pred) correctCount++;
+        });
+
+        // Task 6 (8 pts: 4 letters + 4 check words)
+        t6Data.forEach((item, idx) => {
+            totalCount += 2;
+            const letVal = document.getElementById(`t6-let-${idx}`).value;
+            const chkVal = document.getElementById(`t6-chk-${idx}`).value;
+            rawAnswers.t6.push({ letter: letVal, check: chkVal });
+            if (norm(letVal) === item.letter) correctCount++;
+            if (item.check.includes(norm(chkVal))) correctCount++;
+        });
+
+        // Task 7 (1 pt)
+        totalCount++;
+        const t7Val = document.getElementById('t7-input').value;
+        rawAnswers.t7 = t7Val;
+        if (norm(t7Val) === "червень") correctCount++;
+
+        // Task 8 (8 pts: 4 tens + 4 hundreds)
+        t8Data.forEach((item, idx) => {
+            totalCount += 2;
+            const tenVal = document.getElementById(`t8-ten-${idx}`).value;
+            const hunVal = document.getElementById(`t8-hun-${idx}`).value;
+            rawAnswers.t8.push({ ten: tenVal, hun: hunVal });
+            if (norm(tenVal) === item.tens) correctCount++;
+            if (norm(hunVal) === item.hundreds) correctCount++;
+        });
+
+        // Task 9 (6 pts)
+        t9Data.forEach((item, idx) => {
+            totalCount++;
+            const val = document.getElementById(`t9-inp-${idx}`).value;
+            rawAnswers.t9.push(val);
+            const nVal = norm(val);
+            const isMatch = nVal === item.ans || (item.altAns && item.altAns.includes(nVal));
+            if (isMatch) correctCount++;
+        });
+
+        // Task 10 (3 pts)
+        t10Data.forEach((item, idx) => {
+            totalCount++;
+            const val = document.getElementById(`t10-inp-${idx}`).value;
+            rawAnswers.t10.push(val);
+            if (norm(val) === item.ans) correctCount++;
+        });
+
+        // Task 11 (2 pts)
+        t11Data.forEach((item, idx) => {
+            totalCount++;
+            const val = document.getElementById(`t11-inp-${idx}`).value;
+            rawAnswers.t11.push(val);
+            if (norm(val) === item.ans) correctCount++;
+        });
+
+        // Task 12 (12 pts: 4 equations x 3 components)
+        t12Data.forEach((item, idx) => {
+            const eqAns = [];
+            item.ans.forEach((correctComp, cIdx) => {
+                totalCount++;
+                const val = document.getElementById(`t12-inp-${idx}-${cIdx}`).value;
+                eqAns.push(val);
+                const nVal = norm(val);
+                if (nVal === correctComp || (item.alt[cIdx] && item.alt[cIdx].includes(nVal))) {
+                    correctCount++;
+                }
+            });
+            rawAnswers.t12.push(eqAns);
+        });
+
+        return {
+            score: `Вірно ${correctCount} із ${totalCount}`,
+            rawAnswers
+        };
+    }
+
+    // Відправка звіту у Firebase
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.textContent = "Відправляємо...";
+
+        const result = collectAndGrade();
+
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yyyy = now.getFullYear();
+
+        const monthYear = `${mm}-${yyyy}`;
+        const fullDate = `${dd}-${mm}-${yyyy}`;
+        const safeUser = encodeURIComponent(studentName);
+        const safeGameId = encodeURIComponent(gameId);
+
+        const endpoint = `${DB_URL}/homework_reports/${monthYear}/${fullDate}/${safeGameId}/${safeUser}.json`;
+
+        const payload = {
+            studentName: studentName,
+            gameId: gameId,
+            date: fullDate,
+            timestamp: now.toISOString(),
+            score: result.score,
+            rawAnswers: result.rawAnswers
+        };
+
+        try {
+            await fetch(endpoint, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch (e) {
+            console.error(e);
+        }
+
+        // Не показуємо бали та підсвічування дитині
+        document.getElementById('tasks-wrapper').style.display = 'none';
+        document.getElementById('completion-screen').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Режим перевірки (Вчительський режим)
+    async function loadReportForReview(user, dateStr) {
+        // dateStr очікується у форматі DD-MM-YYYY
+        const parts = dateStr.split('-');
+        const monthYear = parts.length === 3 ? `${parts[1]}-${parts[2]}` : dateStr;
+        const safeUser = encodeURIComponent(user);
+        const safeGameId = encodeURIComponent(gameId);
+
+        const endpoint = `${DB_URL}/homework_reports/${monthYear}/${dateStr}/${safeGameId}/${safeUser}.json`;
+
+        try {
+            const res = await fetch(endpoint);
+            const data = await res.json();
+            if (!data || !data.rawAnswers) {
+                document.getElementById('teacher-banner').textContent += " (Дані звіту не знайдено)";
+                return;
+            }
+            applyReviewHighlights(data.rawAnswers);
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function applyReviewHighlights(raw) {
+        // Task 1
+        t1Data.forEach((item, idx) => {
+            const sel = document.getElementById(`t1-sel-${idx}`);
+            const userVal = (raw.t1 && raw.t1[idx]) || "";
+            sel.value = userVal;
+            if (userVal === item.ans) {
+                sel.classList.add('review-correct');
+            } else {
+                sel.classList.add('review-wrong');
+                document.getElementById(`t1-note-${idx}`).innerHTML = `<span class="teacher-note">Правильно: ${item.ans}</span>`;
+            }
+        });
+
+        // Task 2
+        t2Data.forEach((item, sIdx) => {
+            const chosenIdx = raw.t2 ? raw.t2[sIdx] : -1;
+            item.words.forEach((_, wIdx) => {
+                const chip = document.getElementById(`t2-w-${sIdx}-${wIdx}`);
+                if (wIdx === chosenIdx) {
+                    if (chosenIdx === item.ansIndex) {
+                        chip.classList.add('review-correct');
+                    } else {
+                        chip.classList.add('review-wrong');
+                    }
+                } else if (wIdx === item.ansIndex) {
+                    chip.classList.add('review-missed');
+                }
+            });
+        });
+
+        // Task 3
+        const t3Inp = document.getElementById('t3-input');
+        t3Inp.value = raw.t3 || "";
+        if (norm(t3Inp.value) === "число") {
+            t3Inp.classList.add('review-correct');
+        } else {
+            t3Inp.classList.add('review-wrong');
+            document.getElementById('t3-note').innerHTML = `<span class="teacher-note">Правильно: число</span>`;
+        }
+
+        // Task 4
+        t4Data.forEach((item, idx) => {
+            const sel = document.getElementById(`t4-sel-${idx}`);
+            const userVal = (raw.t4 && raw.t4[idx]) || "";
+            sel.value = userVal;
+            if (userVal === item.ans) {
+                sel.classList.add('review-correct');
+            } else {
+                sel.classList.add('review-wrong');
+                document.getElementById(`t4-note-${idx}`).innerHTML = `<span class="teacher-note">Правильно: ${item.ans}</span>`;
+            }
+        });
+
+        // Task 5
+        t5Data.forEach((item, sIdx) => {
+            const entry = (raw.t5 && raw.t5[sIdx]) || { subs: [], preds: [] };
+            item.words.forEach((_, wIdx) => {
+                const chip = document.getElementById(`t5-w-${sIdx}-${wIdx}`);
+                const isSub = entry.subs && entry.subs.includes(wIdx);
+                const isPred = entry.preds && entry.preds.includes(wIdx);
+
+                if (isSub) {
+                    chip.classList.add('sub-selected');
+                    chip.classList.add(wIdx === item.sub ? 'review-correct' : 'review-wrong');
+                }
+                if (isPred) {
+                    chip.classList.add('pred-selected');
+                    chip.classList.add(wIdx === item.pred ? 'review-correct' : 'review-wrong');
+                }
+                if (!isSub && wIdx === item.sub) {
+                    chip.classList.add('review-missed');
+                }
+                if (!isPred && wIdx === item.pred) {
+                    chip.classList.add('review-missed');
+                }
+            });
+            document.getElementById(`t5-note-${sIdx}`).innerHTML =
+                `<span class="teacher-note">Підмет: ${item.words[item.sub]} | Присудок: ${item.words[item.pred]}</span>`;
+        });
+
+        // Task 6
+        t6Data.forEach((item, idx) => {
+            const entry = (raw.t6 && raw.t6[idx]) || { letter: "", check: "" };
+            const letInp = document.getElementById(`t6-let-${idx}`);
+            const chkInp = document.getElementById(`t6-chk-${idx}`);
+            letInp.value = entry.letter || "";
+            chkInp.value = entry.check || "";
+
+            if (norm(letInp.value) === item.letter) {
+                letInp.classList.add('review-correct');
+            } else {
+                letInp.classList.add('review-wrong');
+            }
+
+            if (item.check.includes(norm(chkInp.value))) {
+                chkInp.classList.add('review-correct');
+            } else {
+                chkInp.classList.add('review-wrong');
+            }
+
+            if (norm(letInp.value) !== item.letter || !item.check.includes(norm(chkInp.value))) {
+                document.getElementById(`t6-note-${idx}`).innerHTML =
+                    `<span class="teacher-note">Правильно: літера «${item.letter}», перевірочне: ${item.check[0]}</span>`;
+            }
+        });
+
+        // Task 7
+        const t7Inp = document.getElementById('t7-input');
+        t7Inp.value = raw.t7 || "";
+        if (norm(t7Inp.value) === "червень") {
+            t7Inp.classList.add('review-correct');
+        } else {
+            t7Inp.classList.add('review-wrong');
+            document.getElementById('t7-note').innerHTML = `<span class="teacher-note">Правильно: червень</span>`;
+        }
+
+        // Task 8
+        t8Data.forEach((item, idx) => {
+            const entry = (raw.t8 && raw.t8[idx]) || { ten: "", hun: "" };
+            const tenInp = document.getElementById(`t8-ten-${idx}`);
+            const hunInp = document.getElementById(`t8-hun-${idx}`);
+            tenInp.value = entry.ten || "";
+            hunInp.value = entry.hun || "";
+
+            const tenOk = norm(tenInp.value) === item.tens;
+            const hunOk = norm(hunInp.value) === item.hundreds;
+
+            tenInp.classList.add(tenOk ? 'review-correct' : 'review-wrong');
+            hunInp.classList.add(hunOk ? 'review-correct' : 'review-wrong');
+
+            if (!tenOk || !hunOk) {
+                document.getElementById(`t8-note-${idx}`).innerHTML =
+                    `<span class="teacher-note">Правильно: десятки — ${item.tens}, сотні — ${item.hundreds}</span>`;
+            }
+        });
+
+        // Task 9
+        t9Data.forEach((item, idx) => {
+            const inp = document.getElementById(`t9-inp-${idx}`);
+            inp.value = (raw.t9 && raw.t9[idx]) || "";
+            const nVal = norm(inp.value);
+            const ok = nVal === item.ans || (item.altAns && item.altAns.includes(nVal));
+            inp.classList.add(ok ? 'review-correct' : 'review-wrong');
+            if (!ok) {
+                document.getElementById(`t9-note-${idx}`).innerHTML = `<span class="teacher-note">Правильно: ${item.ans}</span>`;
+            }
+        });
+
+        // Task 10
+        t10Data.forEach((item, idx) => {
+            const inp = document.getElementById(`t10-inp-${idx}`);
+            inp.value = (raw.t10 && raw.t10[idx]) || "";
+            const ok = norm(inp.value) === item.ans;
+            inp.classList.add(ok ? 'review-correct' : 'review-wrong');
+            if (!ok) {
+                document.getElementById(`t10-note-${idx}`).innerHTML = `<span class="teacher-note">Правильно: ${item.ans}</span>`;
+            }
+        });
+
+        // Task 11
+        t11Data.forEach((item, idx) => {
+            const inp = document.getElementById(`t11-inp-${idx}`);
+            inp.value = (raw.t11 && raw.t11[idx]) || "";
+            const ok = norm(inp.value) === item.ans;
+            inp.classList.add(ok ? 'review-correct' : 'review-wrong');
+            if (!ok) {
+                document.getElementById(`t11-note-${idx}`).innerHTML = `<span class="teacher-note">Правильно: ${item.ans}</span>`;
+            }
+        });
+
+        // Task 12
+        t12Data.forEach((item, idx) => {
+            const eqArr = (raw.t12 && raw.t12[idx]) || [];
+            item.ans.forEach((correctComp, cIdx) => {
+                const inp = document.getElementById(`t12-inp-${idx}-${cIdx}`);
+                inp.value = eqArr[cIdx] || "";
+                const nVal = norm(inp.value);
+                const ok = nVal === correctComp || (item.alt[cIdx] && item.alt[cIdx].includes(nVal));
+                inp.classList.add(ok ? 'review-correct' : 'review-wrong');
+                if (!ok) {
+                    document.getElementById(`t12-note-${idx}-${cIdx}`).innerHTML = `<span class="teacher-note">${correctComp}</span>`;
+                }
+            });
+        });
+    }
+
+    initApp();
+</script>
+</body>
+</html>
