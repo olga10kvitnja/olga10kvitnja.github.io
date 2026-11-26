@@ -3085,6 +3085,2303 @@
         if (activeSubTab === 'backup') renderBackupSubTab();
     }
 
+
+    // ========================================================================
+    // УНІВЕРСАЛЬНИЙ КОНСТРУКТОР ВИБІРКОВОГО ЕКСПОРТУ ДАНИХ ЖУРНАЛУ
+    // (JSON, Word .doc, PDF А4) — виключно реальні дані з журналу, без вигадок
+    // ========================================================================
+    const EXPORT_ITEMS = [
+        // --- 7 ключових підсумкових пунктів ---
+        {
+            key: 'hours_and_lessons',
+            group: 'core',
+            title: 'Загальна кількість проведених занять і фактичних навчальних годин за предметами та групами'
+        },
+        {
+            key: 'students_started_finished',
+            group: 'core',
+            title: 'Кількість дітей, які розпочали та завершили навчання'
+        },
+        {
+            key: 'attendance_summary',
+            group: 'core',
+            title: 'Узагальнені дані про відвідуваність'
+        },
+        {
+            key: 'assessments_results',
+            group: 'core',
+            title: 'Результати первинного, проміжного та підсумкового оцінювання'
+        },
+        {
+            key: 'competencies_progress',
+            group: 'core',
+            title: 'Опис прогресу учнів за основними навчальними компетентностями'
+        },
+        {
+            key: 'difficulties_and_incidents',
+            group: 'core',
+            title: 'Інформація про складнощі, пропущені або перенесені заняття та заходи реагування'
+        },
+        {
+            key: 'recommendations',
+            group: 'core',
+            title: 'Рекомендації щодо подальшого надолуження освітніх втрат'
+        },
+        // --- Додаткові дані журналу ---
+        {
+            key: 'lessons_detailed_log',
+            group: 'extra',
+            title: 'Детальний журнал проведених занять (дати, час, тривалість, теми, присутні)'
+        },
+        {
+            key: 'homework_summary',
+            group: 'extra',
+            title: 'Узагальнена статистика виконання ДЗ (інтерактивні ігри, бали, динаміка та борги)'
+        },
+        {
+            key: 'homework_detailed',
+            group: 'extra',
+            title: 'Детальна відомість усіх зданих робіт ДЗ (ігри, дати, оцінки, статус перевірки)'
+        },
+        {
+            key: 'games_and_assignments',
+            group: 'extra',
+            title: 'Каталог навчальних ігор та призначені обов’язкові ДЗ'
+        },
+        {
+            key: 'progress_cards_full',
+            group: 'extra',
+            title: 'Повні індивідуальні картки навчального прогресу учнів'
+        },
+        {
+            key: 'schedule_and_ktp',
+            group: 'extra',
+            title: 'Погоджений графік занять та Календарно-тематичний план (КТП)'
+        },
+        {
+            key: 'attendance_daily_matrix',
+            group: 'extra',
+            title: 'Поденний табель відвідуваності (матриця по датах)'
+        },
+        {
+            key: 'roster_and_codes',
+            group: 'extra',
+            title: 'Контингент учнів, класи/групи та реєстр анонімних кодів'
+        },
+        {
+            key: 'finance_summary',
+            group: 'extra',
+            title: 'Фінансовий підрахунок за фактичними годинами (за локальними параметрами)'
+        },
+        {
+            key: 'deleted_reports_trash',
+            group: 'extra',
+            title: 'Кошик (видалені роботи ДЗ)'
+        }
+    ];
+
+    let isExportDropdownOpen = false;
+    let cachedDeletedReportsForBadge = null;
+
+    function dash(v) {
+        if (v === null || v === undefined) return '-';
+        if (typeof v === 'string' && v.trim() === '') return '-';
+        if (Array.isArray(v) && v.length === 0) return '-';
+        return v;
+    }
+
+    function injectExporterStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .edu-export-btn-wrap {
+                position: relative;
+                margin-left: auto;
+                display: inline-flex;
+                align-items: center;
+            }
+            .edu-export-main-btn {
+                padding: 12px 17px;
+                background: linear-gradient(135deg, #3b82f6, #6366f1);
+                color: #ffffff;
+                border: 1px solid #818cf8;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: bold;
+                box-shadow: 0 0 15px rgba(99, 102, 241, 0.35);
+                transition: all 0.25s;
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                white-space: nowrap;
+            }
+            .edu-export-main-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 0 22px rgba(99, 102, 241, 0.6);
+                background: linear-gradient(135deg, #2563eb, #4f46e5);
+            }
+            .tabs .backup-main-btn.edu-has-sibling-export {
+                margin-left: 0 !important;
+            }
+            .edu-export-dropdown {
+                display: none;
+                position: fixed;
+                top: 72px;
+                right: 20px;
+                width: min(700px, calc(100vw - 28px));
+                max-height: calc(100vh - 96px);
+                background: #1e293b;
+                border: 1px solid #475569;
+                border-radius: 12px;
+                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.78);
+                z-index: 2500;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .edu-export-dropdown.open {
+                display: flex;
+            }
+            .edu-exp-header {
+                padding: 14px 18px 12px 18px;
+                background: #0f172a;
+                border-bottom: 1px solid #334155;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .edu-exp-header h3 {
+                margin: 0;
+                color: #38bdf8;
+                font-size: 17px;
+            }
+            .edu-exp-header p {
+                margin: 4px 0 0 0;
+                color: #94a3b8;
+                font-size: 12px;
+                line-height: 1.4;
+            }
+            .edu-exp-close {
+                background: transparent;
+                border: none;
+                color: #94a3b8;
+                font-size: 26px;
+                line-height: 1;
+                padding: 0 4px;
+                cursor: pointer;
+            }
+            .edu-exp-close:hover {
+                color: #f8fafc;
+                background: transparent;
+                box-shadow: none;
+            }
+            .edu-exp-filters {
+                padding: 10px 18px;
+                background: #162033;
+                border-bottom: 1px solid #334155;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+            }
+            .edu-exp-filters select, .edu-exp-filters input[type="month"], .edu-exp-filters input[type="date"] {
+                padding: 6px 10px;
+                font-size: 12px;
+                background: #0f172a;
+                border: 1px solid #475569;
+                color: #f8fafc;
+                border-radius: 6px;
+            }
+            .edu-exp-quickbar {
+                padding: 8px 18px;
+                background: #0f172a;
+                border-bottom: 1px solid #334155;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .edu-exp-quickbar button {
+                padding: 5px 10px;
+                font-size: 12px;
+                border-radius: 5px;
+            }
+            .edu-exp-list {
+                padding: 12px 18px;
+                overflow-y: auto;
+                flex: 1;
+            }
+            .edu-exp-section-lbl {
+                font-size: 11px;
+                font-weight: bold;
+                text-transform: uppercase;
+                letter-spacing: 0.7px;
+                color: #38bdf8;
+                margin: 4px 0 8px 0;
+                padding-bottom: 4px;
+                border-bottom: 1px solid #334155;
+            }
+            .edu-exp-section-lbl.extra-lbl {
+                color: #a78bfa;
+                margin-top: 14px;
+            }
+            .edu-exp-item {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 8px 10px;
+                margin-bottom: 5px;
+                background: #0f172a;
+                border: 1px solid #334155;
+                border-radius: 7px;
+                cursor: pointer;
+                transition: border-color 0.15s, background 0.15s;
+            }
+            .edu-exp-item:hover {
+                border-color: #38bdf8;
+                background: #17253d;
+            }
+            .edu-exp-item-left {
+                display: flex;
+                align-items: flex-start;
+                gap: 9px;
+                flex: 1;
+            }
+            .edu-exp-item input[type="checkbox"] {
+                width: 16px;
+                height: 16px;
+                margin: 2px 0 0 0;
+                cursor: pointer;
+                accent-color: #6366f1;
+                flex-shrink: 0;
+            }
+            .edu-exp-item-title {
+                font-size: 13px;
+                color: #f1f5f9;
+                line-height: 1.35;
+            }
+            .edu-exp-pill {
+                font-size: 11px;
+                padding: 2px 7px;
+                border-radius: 999px;
+                white-space: nowrap;
+                font-weight: bold;
+                flex-shrink: 0;
+            }
+            .edu-exp-pill.has-data {
+                background: rgba(16, 185, 129, 0.18);
+                color: #34d399;
+                border: 1px solid rgba(16, 185, 129, 0.35);
+            }
+            .edu-exp-pill.no-data {
+                background: rgba(100, 116, 139, 0.2);
+                color: #94a3b8;
+                border: 1px solid #334155;
+            }
+            .edu-exp-footer {
+                padding: 12px 18px;
+                background: #0f172a;
+                border-top: 1px solid #334155;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .edu-exp-format-row {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .edu-exp-format-btns {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .edu-exp-btn-json {
+                background: #0284c7;
+                color: #fff;
+                padding: 9px 15px;
+                font-size: 13px;
+                border-radius: 6px;
+            }
+            .edu-exp-btn-json:hover { background: #0369a1; }
+            .edu-exp-btn-word {
+                background: #2563eb;
+                color: #fff;
+                padding: 9px 15px;
+                font-size: 13px;
+                border-radius: 6px;
+            }
+            .edu-exp-btn-word:hover { background: #1d4ed8; }
+            .edu-exp-btn-pdf {
+                background: #7c3aed;
+                color: #fff;
+                padding: 9px 15px;
+                font-size: 13px;
+                border-radius: 6px;
+            }
+            .edu-exp-btn-pdf:hover { background: #6d28d9; }
+            @media print {
+                .edu-export-dropdown, .edu-export-btn-wrap { display: none !important; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function injectExporterDOM() {
+        const tabsBar = document.querySelector('.tabs');
+        if (!tabsBar) return;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'edu-export-btn-wrap';
+        wrap.id = 'edu-export-btn-wrap';
+        wrap.innerHTML = `
+            <button type="button" id="edu-export-toggle-btn" class="edu-export-main-btn" title="Обрати потрібні дані журналу та зберегти у JSON, Word або PDF">
+                📤 Експорт звіту ▾
+            </button>
+        `;
+
+        const backupBtn = tabsBar.querySelector('.backup-main-btn');
+        if (backupBtn) {
+            backupBtn.classList.add('edu-has-sibling-export');
+            tabsBar.insertBefore(wrap, backupBtn);
+        } else {
+            tabsBar.appendChild(wrap);
+        }
+
+        const coreItemsHtml = EXPORT_ITEMS.filter(it => it.group === 'core').map((it, idx) => `
+            <label class="edu-exp-item" data-exp-key="${it.key}">
+                <span class="edu-exp-item-left">
+                    <input type="checkbox" class="edu-exp-cb" value="${it.key}" checked>
+                    <span class="edu-exp-item-title"><b>${idx + 1}.</b> ${esc(it.title)}</span>
+                </span>
+                <span class="edu-exp-pill no-data" id="edu-exp-badge-${it.key}">…</span>
+            </label>
+        `).join('');
+
+        const extraItemsHtml = EXPORT_ITEMS.filter(it => it.group === 'extra').map((it, idx) => `
+            <label class="edu-exp-item" data-exp-key="${it.key}">
+                <span class="edu-exp-item-left">
+                    <input type="checkbox" class="edu-exp-cb" value="${it.key}" checked>
+                    <span class="edu-exp-item-title"><b>${idx + 8}.</b> ${esc(it.title)}</span>
+                </span>
+                <span class="edu-exp-pill no-data" id="edu-exp-badge-${it.key}">…</span>
+            </label>
+        `).join('');
+
+        const dropdown = document.createElement('div');
+        dropdown.id = 'edu-export-dropdown';
+        dropdown.className = 'edu-export-dropdown';
+        dropdown.innerHTML = `
+            <div class="edu-exp-header">
+                <div>
+                    <h3>📤 Що зберегти з даних журналу?</h3>
+                    <p>Поставте галочки на потрібних пунктах або оберіть усе. Усі цифри й тексти беруться строго з бази журналу; якщо чогось немає — ставиться <b>«-»</b>.</p>
+                </div>
+                <button type="button" class="edu-exp-close" id="edu-exp-close-btn" title="Закрити">&times;</button>
+            </div>
+
+            <div class="edu-exp-filters">
+                <select id="edu-exp-period-mode" title="Період вибірки">
+                    <option value="all">Період: Увесь час</option>
+                    <option value="month">За обраний місяць</option>
+                    <option value="range">Діапазон дат</option>
+                </select>
+                <input type="month" id="edu-exp-month" style="display:none;">
+                <input type="date" id="edu-exp-date-from" style="display:none;" title="Дата від">
+                <input type="date" id="edu-exp-date-to" style="display:none;" title="Дата до">
+                <select id="edu-exp-group" title="Фільтр за групою або класом" style="max-width:210px;">
+                    <option value="all">Усі групи та класи</option>
+                </select>
+                <label style="display:inline-flex; align-items:center; gap:5px; font-size:12px; color:#cbd5e1; cursor:pointer; margin-left:auto;">
+                    <input type="checkbox" id="edu-exp-anon" style="width:auto; padding:0;">
+                    Знеособити (коди)
+                </label>
+            </div>
+
+            <div class="edu-exp-quickbar">
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" class="btn-blue" id="edu-exp-sel-all">☑️ Обрати все</button>
+                    <button type="button" class="btn-purple" id="edu-exp-sel-core">⭐ Тільки 7 основних</button>
+                    <button type="button" class="btn-slate" id="edu-exp-sel-none">☐ Зняти все</button>
+                </div>
+                <span id="edu-exp-counter" style="font-size:12px; color:#94a3b8; font-weight:bold;">Обрано: 17 з 17</span>
+            </div>
+
+            <div class="edu-exp-list">
+                <div class="edu-exp-section-lbl">⭐ Основні підсумкові показники (7 ключових пунктів)</div>
+                ${coreItemsHtml}
+                <div class="edu-exp-section-lbl extra-lbl">📚 Усе інше з журналу (додаткові таблиці та деталі)</div>
+                ${extraItemsHtml}
+            </div>
+
+            <div class="edu-exp-footer">
+                <div class="edu-exp-format-row">
+                    <span id="edu-exp-status" style="font-size:12px; color:#94a3b8;">Оберіть формат збереження:</span>
+                    <div class="edu-exp-format-btns">
+                        <button type="button" class="edu-exp-btn-json" id="edu-exp-run-json">📄 JSON (.json)</button>
+                        <button type="button" class="edu-exp-btn-word" id="edu-exp-run-word">📝 Word (.doc)</button>
+                        <button type="button" class="edu-exp-btn-pdf" id="edu-exp-run-pdf">📕 PDF (А4)</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dropdown);
+    }
+
+    function positionExportDropdown() {
+        const btn = document.getElementById('edu-export-toggle-btn');
+        const dd = document.getElementById('edu-export-dropdown');
+        if (!btn || !dd) return;
+        const rect = btn.getBoundingClientRect();
+        const topPx = Math.min(window.innerHeight - 240, Math.max(12, rect.bottom + 8));
+        const rightPx = Math.max(14, window.innerWidth - rect.right);
+        dd.style.top = topPx + 'px';
+        dd.style.right = rightPx + 'px';
+        dd.style.maxHeight = Math.max(300, window.innerHeight - topPx - 14) + 'px';
+    }
+
+    function populateExportGroupDropdown(snapshotData) {
+        const sel = document.getElementById('edu-exp-group');
+        if (!sel) return;
+        const prev = sel.value || 'all';
+        const clsObj = (snapshotData && snapshotData.classes) || (typeof classesData !== 'undefined' ? classesData : {});
+        const repObj = (snapshotData && snapshotData.reporting) || repData || {};
+
+        const opts = [{ value: 'all', label: 'Усі групи та класи' }];
+        const seenLabels = new Set();
+
+        Object.keys(clsObj).sort((a, b) => (clsObj[a].name || '').localeCompare(clsObj[b].name || '')).forEach(cid => {
+            const name = clsObj[cid] && clsObj[cid].name ? clsObj[cid].name : cid;
+            opts.push({ value: `cls:${cid}`, label: `👥 ${name}` });
+            seenLabels.add(name);
+        });
+
+        opts.push({ value: 'individual', label: '👤 Індивідуальні учні' });
+
+        const extraGroups = new Set();
+        Object.values(repObj.lessons || {}).forEach(l => { if (l && l.group && !seenLabels.has(l.group)) extraGroups.add(l.group); });
+        Object.values(repObj.progressCards || {}).forEach(c => { if (c && c.groupLabel && !seenLabels.has(c.groupLabel)) extraGroups.add(c.groupLabel); });
+        Object.values(repObj.ktpItems || {}).forEach(k => { if (k && k.group && !seenLabels.has(k.group)) extraGroups.add(k.group); });
+
+        Array.from(extraGroups).sort((a, b) => a.localeCompare(b)).forEach(g => {
+            opts.push({ value: `grp:${g}`, label: `📘 ${g}` });
+        });
+
+        sel.innerHTML = opts.map(o => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join('');
+        if (opts.some(o => o.value === prev)) sel.value = prev;
+    }
+
+    function getExportFilterConfig() {
+        const periodMode = document.getElementById('edu-exp-period-mode').value;
+        const monthVal = document.getElementById('edu-exp-month').value;
+        const dateFrom = document.getElementById('edu-exp-date-from').value;
+        const dateTo = document.getElementById('edu-exp-date-to').value;
+        const groupVal = document.getElementById('edu-exp-group').value;
+        const anonymize = document.getElementById('edu-exp-anon').checked;
+
+        let periodLabel = 'Увесь час';
+        if (periodMode === 'month' && monthVal) periodLabel = `Місяць: ${monthVal}`;
+        else if (periodMode === 'range') {
+            if (dateFrom && dateTo) periodLabel = `${formatDMY(dateFrom)} — ${formatDMY(dateTo)}`;
+            else if (dateFrom) periodLabel = `Від ${formatDMY(dateFrom)}`;
+            else if (dateTo) periodLabel = `До ${formatDMY(dateTo)}`;
+        }
+
+        const grpSel = document.getElementById('edu-exp-group');
+        const groupLabel = grpSel && grpSel.selectedOptions[0] ? grpSel.selectedOptions[0].textContent : 'Усі групи та класи';
+
+        return { periodMode, monthVal, dateFrom, dateTo, periodLabel, groupVal, groupLabel, anonymize };
+    }
+
+    function expDateMatches(dateStr, cfg) {
+        if (cfg.periodMode === 'all') return true;
+        if (!dateStr || dateStr === '0000-00-00') return false;
+        const d = String(dateStr).slice(0, 10);
+        if (cfg.periodMode === 'month') {
+            return !cfg.monthVal || d.startsWith(cfg.monthVal);
+        }
+        if (cfg.periodMode === 'range') {
+            if (cfg.dateFrom && d < cfg.dateFrom) return false;
+            if (cfg.dateTo && d > cfg.dateTo) return false;
+            return true;
+        }
+        return true;
+    }
+
+    function expGroupMatches(catId, groupName, cfg, classesObj) {
+        if (!cfg.groupVal || cfg.groupVal === 'all') return true;
+        if (cfg.groupVal === 'individual') {
+            return catId === 'individual' || String(groupName || '').toLowerCase().includes('індивідуальн');
+        }
+        if (cfg.groupVal.startsWith('cls:')) {
+            const targetCid = cfg.groupVal.slice(4);
+            const targetName = (classesObj && classesObj[targetCid] && classesObj[targetCid].name) ? classesObj[targetCid].name : '';
+            if (catId && catId === targetCid) return true;
+            if (groupName && targetName && groupName === targetName) return true;
+            if (groupName && targetName && detectGroupKind(groupName) && detectGroupKind(groupName) === detectGroupKind(targetName)) return true;
+            return false;
+        }
+        if (cfg.groupVal.startsWith('grp:')) {
+            const targetGrp = cfg.groupVal.slice(4);
+            if (groupName && groupName === targetGrp) return true;
+            if (catId && classesObj && classesObj[catId] && classesObj[catId].name) {
+                const cName = classesObj[catId].name;
+                if (cName === targetGrp) return true;
+                if (detectGroupKind(cName) && detectGroupKind(cName) === detectGroupKind(targetGrp)) return true;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    function createStudentLabelResolver(allData, anonymize) {
+        const nameToCode = {};
+        const metaObj = (allData.reporting && allData.reporting.studentMeta) || {};
+        Object.values(metaObj).forEach(m => {
+            if (m && m.studentName && m.code) nameToCode[m.studentName] = m.code;
+        });
+        const cardsObj = (allData.reporting && allData.reporting.progressCards) || {};
+        Object.values(cardsObj).forEach(c => {
+            if (c && c.linkedStudent && c.code && !nameToCode[c.linkedStudent]) {
+                nameToCode[c.linkedStudent] = c.code;
+            }
+        });
+
+        const fallbackMap = {};
+        let fallbackCounter = 1;
+
+        return function resolveStudent(name, explicitCode) {
+            const cleanName = (name || '').trim();
+            const code = (explicitCode || '').trim() || (cleanName ? (nameToCode[cleanName] || '') : '');
+            if (anonymize) {
+                if (code) return code;
+                if (!cleanName) return '-';
+                if (!fallbackMap[cleanName]) {
+                    fallbackMap[cleanName] = `Учень-${String(fallbackCounter++).padStart(2, '0')}`;
+                }
+                return fallbackMap[cleanName];
+            }
+            if (cleanName && code) return `${cleanName} (${code})`;
+            if (cleanName) return cleanName;
+            if (code) return code;
+            return '-';
+        };
+    }
+
+    function calcPctSafe(scoreStr) {
+        if (typeof window.calculatePercentage === 'function') return window.calculatePercentage(scoreStr);
+        if (!scoreStr) return null;
+        const s = String(scoreStr);
+        const pm = s.match(/(\d+(?:\.\d+)?)%/);
+        if (pm) return Math.min(100, Math.max(0, Math.round(parseFloat(pm[1]))));
+        const fm = s.match(/(\d+(?:\.\d+)?)\s*(?:\/|з|із)\s*(\d+(?:\.\d+)?)/i);
+        if (fm) {
+            const tot = parseFloat(fm[2]);
+            return tot === 0 ? 0 : Math.min(100, Math.max(0, Math.round((parseFloat(fm[1]) / tot) * 100)));
+        }
+        return null;
+    }
+
+    function collectExportDataset(allData, cfg) {
+        const classesObj = allData.classes || {};
+        const studentsObj = allData.students || {};
+        const assignmentsObj = allData.assignments || {};
+        const catalogObj = allData.catalog || {};
+        const hwReportsObj = allData.homework || {};
+        const attObj = allData.attendance || {};
+        const deletedObj = allData.deleted || {};
+        const rep = allData.reporting || {};
+        const localSettings = getLocalSettings();
+        const resolveStu = createStudentLabelResolver(allData, cfg.anonymize);
+
+        const getClassName = (cid) => {
+            if (cid === 'individual') return 'Індивідуальні';
+            return (classesObj[cid] && classesObj[cid].name) ? classesObj[cid].name : cid;
+        };
+
+        // Спільний реєстр учнів журналу (з урахуванням фільтра групи)
+        const roster = [];
+        const studentNameToCat = {};
+        if (studentsObj.individual) {
+            Object.values(studentsObj.individual).sort((a, b) => a.localeCompare(b)).forEach(name => {
+                studentNameToCat[name] = { catId: 'individual', catName: 'Індивідуальні' };
+                if (expGroupMatches('individual', 'Індивідуальні', cfg, classesObj)) {
+                    roster.push({ name, catId: 'individual', catName: 'Індивідуальні' });
+                }
+            });
+        }
+        Object.keys(classesObj).sort((a, b) => (classesObj[a].name || '').localeCompare(classesObj[b].name || '')).forEach(cid => {
+            const cName = getClassName(cid);
+            if (studentsObj[cid]) {
+                Object.values(studentsObj[cid]).sort((a, b) => a.localeCompare(b)).forEach(name => {
+                    studentNameToCat[name] = { catId: cid, catName: cName };
+                    if (expGroupMatches(cid, cName, cfg, classesObj)) {
+                        roster.push({ name, catId: cid, catName: cName });
+                    }
+                });
+            }
+        });
+
+        // Відфільтровані заняття
+        const lessonsAll = Object.entries(rep.lessons || {})
+            .map(([id, l]) => Object.assign({ id }, l))
+            .filter(l => expDateMatches(l.date, cfg) && expGroupMatches(null, l.group, cfg, classesObj))
+            .sort((a, b) => ((a.date || '') + (a.startTime || '')).localeCompare((b.date || '') + (b.startTime || '')));
+
+        const billableLessons = lessonsAll.filter(l => isBillableStatus(l.status));
+
+        // Відфільтровані картки прогресу
+        const cardsFiltered = Object.entries(rep.progressCards || {})
+            .map(([id, c]) => Object.assign({ id }, c))
+            .filter(c => expGroupMatches(c.linkedCategory || null, c.groupLabel, cfg, classesObj))
+            .sort((a, b) => (a.groupLabel || '').localeCompare(b.groupLabel || '') || (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+
+        // Відфільтровані studentMeta
+        const metaFiltered = Object.values(rep.studentMeta || {})
+            .filter(m => m && expGroupMatches(m.categoryId, m.groupLabel || getClassName(m.categoryId), cfg, classesObj));
+
+        // Відфільтрована відвідуваність (поденні записи)
+        const attEntries = [];
+        for (const m in attObj) {
+            for (const d in (attObj[m] || {})) {
+                if (!expDateMatches(d, cfg)) continue;
+                for (const cid in (attObj[m][d] || {})) {
+                    const cName = getClassName(cid);
+                    if (!expGroupMatches(cid, cName, cfg, classesObj)) continue;
+                    for (const sName in (attObj[m][d][cid] || {})) {
+                        const status = attObj[m][d][cid][sName];
+                        if (!status) continue;
+                        attEntries.push({ month: m, date: d, catId: cid, group: cName, studentName: sName, status });
+                    }
+                }
+            }
+        }
+
+        // Відфільтровані ДЗ (ігри)
+        const hwEntries = [];
+        for (const m in hwReportsObj) {
+            for (const d in (hwReportsObj[m] || {})) {
+                if (!expDateMatches(d, cfg)) continue;
+                for (const gId in (hwReportsObj[m][d] || {})) {
+                    for (const sName in (hwReportsObj[m][d][gId] || {})) {
+                        const info = studentNameToCat[sName] || { catId: 'guest', catName: 'Поза списком / Гість' };
+                        if (cfg.groupVal !== 'all' && !expGroupMatches(info.catId, info.catName, cfg, classesObj)) continue;
+                        const r = hwReportsObj[m][d][gId][sName] || {};
+                        hwEntries.push({
+                            month: m,
+                            date: d,
+                            timestamp: r.timestamp || '-',
+                            gameId: gId,
+                            gameNote: (catalogObj[gId] && catalogObj[gId].note) ? catalogObj[gId].note : '-',
+                            studentName: sName,
+                            catId: info.catId,
+                            group: info.catName,
+                            score: dash(r.score),
+                            percent: calcPctSafe(r.score),
+                            checked: (typeof checkedReportsMap !== 'undefined') ? !!checkedReportsMap[`${d}|${gId}|${sName}`] : false
+                        });
+                    }
+                }
+            }
+        }
+        hwEntries.sort((a, b) => (a.date + a.timestamp).localeCompare(b.date + b.timestamp));
+
+        const sections = {};
+
+        // --------------------------------------------------------------------
+        // 1. Загальна кількість проведених занять і фактичних навчальних годин
+        // --------------------------------------------------------------------
+        {
+            let totalUaMin = 0, totalMathMin = 0, totalMin = 0;
+            const grpSubjMap = {};
+            const monthMap = {};
+
+            billableLessons.forEach(l => {
+                const br = getLessonSubjectBreakdown(l);
+                totalUaMin += br.uaMin;
+                totalMathMin += br.mathMin;
+                totalMin += (br.uaMin + br.mathMin) || (Number(l.durationMin) || 60);
+
+                const grp = l.group || 'Без групи';
+                if (br.uaMin > 0) {
+                    const k = `${grp}|||Українська мова`;
+                    if (!grpSubjMap[k]) grpSubjMap[k] = { group: grp, subject: 'Українська мова', lessonsCount: 0, minutes: 0 };
+                    grpSubjMap[k].lessonsCount++;
+                    grpSubjMap[k].minutes += br.uaMin;
+                }
+                if (br.mathMin > 0) {
+                    const k = `${grp}|||Математика`;
+                    if (!grpSubjMap[k]) grpSubjMap[k] = { group: grp, subject: 'Математика', lessonsCount: 0, minutes: 0 };
+                    grpSubjMap[k].lessonsCount++;
+                    grpSubjMap[k].minutes += br.mathMin;
+                }
+
+                const ym = (l.date || '').slice(0, 7) || '-';
+                if (!monthMap[ym]) monthMap[ym] = { month: ym, lessonsCount: 0, uaMin: 0, mathMin: 0, totalMin: 0 };
+                monthMap[ym].lessonsCount++;
+                monthMap[ym].uaMin += br.uaMin;
+                monthMap[ym].mathMin += br.mathMin;
+                monthMap[ym].totalMin += (br.uaMin + br.mathMin) || (Number(l.durationMin) || 60);
+            });
+
+            const hasData = billableLessons.length > 0;
+            const byGroupAndSubject = Object.values(grpSubjMap)
+                .sort((a, b) => a.group.localeCompare(b.group) || a.subject.localeCompare(b.subject))
+                .map(x => ({
+                    group: x.group,
+                    subject: x.subject,
+                    lessonsCount: x.lessonsCount,
+                    actualMinutes: x.minutes,
+                    actualHours: formatHrsClean(x.minutes / 60)
+                }));
+
+            const byMonth = Object.values(monthMap)
+                .sort((a, b) => a.month.localeCompare(b.month))
+                .map(x => ({
+                    month: x.month,
+                    lessonsCount: x.lessonsCount,
+                    uaHours: formatHrsClean(x.uaMin / 60),
+                    mathHours: formatHrsClean(x.mathMin / 60),
+                    totalHours: formatHrsClean(x.totalMin / 60)
+                }));
+
+            sections.hours_and_lessons = {
+                title: EXPORT_ITEMS[0].title,
+                hasData,
+                badgeText: hasData ? `${billableLessons.length} зан. / ${formatHrsClean(totalMin / 60)} год` : 'немає (буде "-")',
+                summary: {
+                    totalConductedLessons: hasData ? billableLessons.length : '-',
+                    totalActualHours: hasData ? formatHrsClean(totalMin / 60) : '-',
+                    totalActualMinutes: hasData ? totalMin : '-',
+                    ukrainianHours: hasData ? formatHrsClean(totalUaMin / 60) : '-',
+                    mathHours: hasData ? formatHrsClean(totalMathMin / 60) : '-',
+                    nonBillableRecords: lessonsAll.length - billableLessons.length > 0 ? (lessonsAll.length - billableLessons.length) : '-'
+                },
+                byGroupAndSubject: hasData ? byGroupAndSubject : '-',
+                byMonth: hasData ? byMonth : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 2. Кількість дітей, які розпочали та завершили навчання
+        // --------------------------------------------------------------------
+        {
+            const enrolledClasses = roster.filter(r => r.catId !== 'individual').length;
+            const enrolledIndividual = roster.filter(r => r.catId === 'individual').length;
+            const enrolledTotal = roster.length;
+
+            const enrolledByGroupMap = {};
+            roster.forEach(r => {
+                enrolledByGroupMap[r.catName] = (enrolledByGroupMap[r.catName] || 0) + 1;
+            });
+
+            const cardsByGroupMap = {};
+            cardsFiltered.forEach(c => {
+                const g = c.groupLabel || 'Без групи';
+                if (!cardsByGroupMap[g]) cardsByGroupMap[g] = { group: g, started: 0, finished: 0, inProgress: 0 };
+                cardsByGroupMap[g].started++;
+                if (c.finished) cardsByGroupMap[g].finished++;
+                else cardsByGroupMap[g].inProgress++;
+            });
+
+            const uniqueAttendedSet = new Set(attEntries.filter(e => e.status === 'present').map(e => `${e.catId}|${e.studentName}`));
+            const uniqueHwSet = new Set(hwEntries.map(e => e.studentName));
+
+            const hasCards = cardsFiltered.length > 0;
+            const hasAny = hasCards || enrolledTotal > 0 || uniqueAttendedSet.size > 0 || uniqueHwSet.size > 0;
+            const finishedCount = cardsFiltered.filter(c => c.finished).length;
+
+            sections.students_started_finished = {
+                title: EXPORT_ITEMS[1].title,
+                hasData: hasAny,
+                badgeText: hasCards
+                    ? `картки: ${cardsFiltered.length} / зав.: ${finishedCount}`
+                    : (enrolledTotal > 0 ? `у списку: ${enrolledTotal}` : 'немає (буде "-")'),
+                byProgressCards: {
+                    startedCount: hasCards ? cardsFiltered.length : '-',
+                    finishedCount: hasCards ? finishedCount : '-',
+                    inProgressCount: hasCards ? (cardsFiltered.length - finishedCount) : '-',
+                    byGroup: hasCards ? Object.values(cardsByGroupMap).sort((a, b) => a.group.localeCompare(b.group)) : '-'
+                },
+                byJournalRoster: {
+                    totalEnrolled: enrolledTotal > 0 ? enrolledTotal : '-',
+                    inClasses: enrolledClasses > 0 ? enrolledClasses : '-',
+                    individual: enrolledIndividual > 0 ? enrolledIndividual : '-',
+                    byGroup: enrolledTotal > 0 ? Object.entries(enrolledByGroupMap).map(([group, count]) => ({ group, count })) : '-'
+                },
+                actualActivityInPeriod: {
+                    uniqueAttendedAtLeastOnce: uniqueAttendedSet.size > 0 ? uniqueAttendedSet.size : '-',
+                    uniqueSubmittedHomework: uniqueHwSet.size > 0 ? uniqueHwSet.size : '-'
+                }
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 3. Узагальнені дані про відвідуваність
+        // --------------------------------------------------------------------
+        {
+            const hasData = attEntries.length > 0;
+            const uniqueDates = new Set(attEntries.map(e => e.date));
+            let pres = 0, abs = 0, exc = 0;
+            const byGroupMap = {};
+            const byMonthMap = {};
+            const byStudentMap = {};
+
+            attEntries.forEach(e => {
+                if (e.status === 'present') pres++;
+                else if (e.status === 'absent') abs++;
+                else if (e.status === 'excused') exc++;
+
+                if (!byGroupMap[e.group]) byGroupMap[e.group] = { group: e.group, days: new Set(), present: 0, absent: 0, excused: 0 };
+                byGroupMap[e.group].days.add(e.date);
+                if (e.status === 'present') byGroupMap[e.group].present++;
+                else if (e.status === 'absent') byGroupMap[e.group].absent++;
+                else if (e.status === 'excused') byGroupMap[e.group].excused++;
+
+                if (!byMonthMap[e.month]) byMonthMap[e.month] = { month: e.month, days: new Set(), present: 0, absent: 0, excused: 0 };
+                byMonthMap[e.month].days.add(e.date);
+                if (e.status === 'present') byMonthMap[e.month].present++;
+                else if (e.status === 'absent') byMonthMap[e.month].absent++;
+                else if (e.status === 'excused') byMonthMap[e.month].excused++;
+
+                const sk = `${e.catId}|||${e.studentName}`;
+                if (!byStudentMap[sk]) {
+                    const meta = findStudentMetaEntry(e.catId, e.studentName);
+                    byStudentMap[sk] = {
+                        student: resolveStu(e.studentName, meta && meta.code),
+                        group: e.group,
+                        present: 0,
+                        absent: 0,
+                        excused: 0,
+                        absenceNote: dash(meta && meta.absenceNote)
+                    };
+                }
+                if (e.status === 'present') byStudentMap[sk].present++;
+                else if (e.status === 'absent') byStudentMap[sk].absent++;
+                else if (e.status === 'excused') byStudentMap[sk].excused++;
+            });
+
+            const pctCalc = (p, a) => (p + a > 0 ? `${Math.round((p / (p + a)) * 100)}%` : '-');
+            const overallPct = pctCalc(pres, abs);
+
+            sections.attendance_summary = {
+                title: EXPORT_ITEMS[2].title,
+                hasData,
+                badgeText: hasData ? `${overallPct} (${attEntries.length} відм.)` : 'немає (буде "-")',
+                overall: hasData ? {
+                    lessonDaysRecorded: uniqueDates.size,
+                    presentMarks: pres,
+                    absentMarks: abs,
+                    excusedMarks: exc,
+                    averageAttendancePercent: overallPct
+                } : '-',
+                byGroup: hasData ? Object.values(byGroupMap).sort((a, b) => a.group.localeCompare(b.group)).map(g => ({
+                    group: g.group,
+                    lessonDays: g.days.size,
+                    present: g.present,
+                    absent: g.absent,
+                    excused: g.excused,
+                    attendancePercent: pctCalc(g.present, g.absent)
+                })) : '-',
+                byMonth: hasData ? Object.values(byMonthMap).sort((a, b) => a.month.localeCompare(b.month)).map(m => ({
+                    month: m.month,
+                    lessonDays: m.days.size,
+                    present: m.present,
+                    absent: m.absent,
+                    excused: m.excused,
+                    attendancePercent: pctCalc(m.present, m.absent)
+                })) : '-',
+                byStudent: hasData ? Object.values(byStudentMap).sort((a, b) => a.group.localeCompare(b.group) || a.student.localeCompare(b.student)).map(s => ({
+                    student: s.student,
+                    group: s.group,
+                    present: s.present,
+                    absent: s.absent,
+                    excused: s.excused,
+                    attendancePercent: pctCalc(s.present, s.absent),
+                    absenceNote: s.absenceNote
+                })) : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 4. Результати первинного, проміжного та підсумкового оцінювання
+        // --------------------------------------------------------------------
+        {
+            const byGroupSubj = {};
+            const perStudentRows = [];
+            let anyScoreFound = false;
+
+            cardsFiltered.forEach(c => {
+                const g = c.groupLabel || 'Без групи';
+                const ua1 = computeCardSubjectAvg(c.uaScores, UA_COMPETENCIES, 'init');
+                const ua2 = computeCardSubjectAvg(c.uaScores, UA_COMPETENCIES, 'mid');
+                const ua3 = computeCardSubjectAvg(c.uaScores, UA_COMPETENCIES, 'final');
+                const m1 = computeCardSubjectAvg(c.mathScores, MATH_COMPETENCIES, 'init');
+                const m2 = computeCardSubjectAvg(c.mathScores, MATH_COMPETENCIES, 'mid');
+                const m3 = computeCardSubjectAvg(c.mathScores, MATH_COMPETENCIES, 'final');
+
+                if ([ua1, ua2, ua3, m1, m2, m3].some(v => v !== null)) anyScoreFound = true;
+
+                const calcDiff = (a, b, f) => {
+                    const latest = f !== null ? f : b;
+                    if (a === null || latest === null) return '-';
+                    const d = Math.round((latest - a) * 10) / 10;
+                    return d > 0 ? `+${d}` : `${d}`;
+                };
+
+                perStudentRows.push({
+                    student: resolveStu(c.linkedStudent, c.code),
+                    group: g,
+                    grade: dash(c.grade),
+                    uaInit: ua1 !== null ? ua1 : '-',
+                    uaMid: ua2 !== null ? ua2 : '-',
+                    uaFinal: ua3 !== null ? ua3 : '-',
+                    uaDynamics: calcDiff(ua1, ua2, ua3),
+                    mathInit: m1 !== null ? m1 : '-',
+                    mathMid: m2 !== null ? m2 : '-',
+                    mathFinal: m3 !== null ? m3 : '-',
+                    mathDynamics: calcDiff(m1, m2, m3)
+                });
+
+                [
+                    { subj: 'Українська мова', a1: ua1, a2: ua2, a3: ua3 },
+                    { subj: 'Математика', a1: m1, a2: m2, a3: m3 }
+                ].forEach(cfgS => {
+                    const k = `${g}|||${cfgS.subj}`;
+                    if (!byGroupSubj[k]) byGroupSubj[k] = { group: g, subject: cfgS.subj, init: [], mid: [], fin: [], pos: 0, cmp: 0 };
+                    if (cfgS.a1 !== null) byGroupSubj[k].init.push(cfgS.a1);
+                    if (cfgS.a2 !== null) byGroupSubj[k].mid.push(cfgS.a2);
+                    if (cfgS.a3 !== null) byGroupSubj[k].fin.push(cfgS.a3);
+                    const latest = cfgS.a3 !== null ? cfgS.a3 : cfgS.a2;
+                    if (cfgS.a1 !== null && latest !== null) {
+                        byGroupSubj[k].cmp++;
+                        if (latest > cfgS.a1) byGroupSubj[k].pos++;
+                    }
+                });
+            });
+
+            const avgArr = arr => arr.length ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : null;
+            const aggregatedRows = Object.values(byGroupSubj)
+                .sort((a, b) => a.group.localeCompare(b.group) || a.subject.localeCompare(b.subject))
+                .map(r => {
+                    const a1 = avgArr(r.init), a2 = avgArr(r.mid), a3 = avgArr(r.fin);
+                    const latest = a3 !== null ? a3 : a2;
+                    const diff = (a1 !== null && latest !== null) ? Math.round((latest - a1) * 10) / 10 : null;
+                    return {
+                        group: r.group,
+                        subject: r.subject,
+                        initialAvg: a1 !== null ? a1 : '-',
+                        interimAvg: a2 !== null ? a2 : '-',
+                        finalAvg: a3 !== null ? a3 : '-',
+                        dynamics: diff !== null ? (diff > 0 ? `+${diff}` : `${diff}`) : '-',
+                        positiveDynamics: r.cmp > 0 ? `${r.pos} із ${r.cmp}` : '-'
+                    };
+                });
+
+            sections.assessments_results = {
+                title: EXPORT_ITEMS[3].title,
+                hasData: anyScoreFound,
+                badgeText: anyScoreFound ? `${cardsFiltered.length} карток з оцінками` : 'немає (буде "-")',
+                byGroupAndSubject: anyScoreFound ? aggregatedRows : '-',
+                byStudent: anyScoreFound ? perStudentRows : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 5. Опис прогресу учнів за основними навчальними компетентностями
+        // --------------------------------------------------------------------
+        {
+            const draftFinal = (rep.reportDrafts && rep.reportDrafts.final) || {};
+            const uaNarrative = dash(draftFinal.ua);
+            const mathNarrative = dash(draftFinal.math);
+
+            const calcCompTable = (comps, fieldName, subjName) => {
+                let foundAny = false;
+                const rows = comps.map(comp => {
+                    const initVals = [], midVals = [], finVals = [];
+                    cardsFiltered.forEach(c => {
+                        const sc = (c[fieldName] && c[fieldName][comp.key]) || {};
+                        const v1 = parseNum(sc.init), v2 = parseNum(sc.mid), v3 = parseNum(sc.final);
+                        if (v1 !== null) initVals.push(v1);
+                        if (v2 !== null) midVals.push(v2);
+                        if (v3 !== null) finVals.push(v3);
+                    });
+                    const a1 = initVals.length ? Math.round((initVals.reduce((a, b) => a + b, 0) / initVals.length) * 10) / 10 : null;
+                    const a2 = midVals.length ? Math.round((midVals.reduce((a, b) => a + b, 0) / midVals.length) * 10) / 10 : null;
+                    const a3 = finVals.length ? Math.round((finVals.reduce((a, b) => a + b, 0) / finVals.length) * 10) / 10 : null;
+                    if (a1 !== null || a2 !== null || a3 !== null) foundAny = true;
+                    const latest = a3 !== null ? a3 : a2;
+                    const diff = (a1 !== null && latest !== null) ? Math.round((latest - a1) * 10) / 10 : null;
+                    return {
+                        subject: subjName,
+                        competency: comp.label,
+                        initialAvg: a1 !== null ? a1 : '-',
+                        interimAvg: a2 !== null ? a2 : '-',
+                        finalAvg: a3 !== null ? a3 : '-',
+                        dynamics: diff !== null ? (diff > 0 ? `+${diff}` : `${diff}`) : '-'
+                    };
+                });
+                return { foundAny, rows };
+            };
+
+            const uaComp = calcCompTable(UA_COMPETENCIES, 'uaScores', 'Українська мова');
+            const mathComp = calcCompTable(MATH_COMPETENCIES, 'mathScores', 'Математика');
+
+            const studentNotes = cardsFiltered
+                .filter(c => (c.uaGaps && c.uaGaps.trim()) || (c.mathGaps && c.mathGaps.trim()) || (c.achievedGoals && c.achievedGoals.trim()) || (c.hardTopics && c.hardTopics.trim()))
+                .map(c => ({
+                    student: resolveStu(c.linkedStudent, c.code),
+                    group: dash(c.groupLabel),
+                    uaGaps: dash(c.uaGaps),
+                    mathGaps: dash(c.mathGaps),
+                    achievedGoals: dash(c.achievedGoals),
+                    hardTopics: dash(c.hardTopics)
+                }));
+
+            const hasData = uaNarrative !== '-' || mathNarrative !== '-' || uaComp.foundAny || mathComp.foundAny || studentNotes.length > 0;
+            sections.competencies_progress = {
+                title: EXPORT_ITEMS[4].title,
+                hasData,
+                badgeText: hasData ? 'є дані' : 'немає (буде "-")',
+                generalDescription: {
+                    ukrainianLanguage: uaNarrative,
+                    mathematics: mathNarrative
+                },
+                competencyAverages: (uaComp.foundAny || mathComp.foundAny) ? [...uaComp.rows, ...mathComp.rows] : '-',
+                studentProgressDetails: studentNotes.length > 0 ? studentNotes : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 6. Складнощі, пропущені або перенесені заняття та заходи реагування
+        // --------------------------------------------------------------------
+        {
+            const pausedLessons = lessonsAll.filter(l => l.status === 'paused');
+            const reschedLessons = lessonsAll.filter(l => l.status === 'rescheduled');
+            const cancelledLessons = lessonsAll.filter(l => l.status === 'cancelled');
+            const noshowLessons = lessonsAll.filter(l => l.status === 'noshow_paid');
+            const incidentLessons = lessonsAll.filter(l => l.status !== 'conducted' || (l.notes && l.notes.trim() !== ''));
+
+            const draftInt = (rep.reportDrafts && rep.reportDrafts.interim) || {};
+            const draftFin = (rep.reportDrafts && rep.reportDrafts.final) || {};
+
+            const absenceNotes = metaFiltered
+                .filter(m => m.absenceNote && m.absenceNote.trim() !== '')
+                .map(m => ({
+                    student: resolveStu(m.studentName, m.code),
+                    group: dash(m.groupLabel || getClassName(m.categoryId)),
+                    note: m.absenceNote.trim()
+                }));
+
+            const hardTopicsList = cardsFiltered
+                .filter(c => c.hardTopics && c.hardTopics.trim() !== '')
+                .map(c => ({
+                    student: resolveStu(c.linkedStudent, c.code),
+                    group: dash(c.groupLabel),
+                    hardTopics: c.hardTopics.trim()
+                }));
+
+            const hasText = !!(
+                (draftInt.diff && draftInt.diff.trim()) ||
+                (draftInt.adj && draftInt.adj.trim()) ||
+                (draftFin.issues && draftFin.issues.trim())
+            );
+            const hasData = incidentLessons.length > 0 || hasText || absenceNotes.length > 0 || hardTopicsList.length > 0;
+
+            sections.difficulties_and_incidents = {
+                title: EXPORT_ITEMS[5].title,
+                hasData,
+                badgeText: hasData ? `подій: ${incidentLessons.length}${hasText ? ' + нотатки' : ''}` : 'немає (буде "-")',
+                lessonIncidentsSummary: lessonsAll.length > 0 ? {
+                    safetyPausesCount: pausedLessons.length,
+                    rescheduledCount: reschedLessons.length,
+                    cancelledCount: cancelledLessons.length,
+                    noshowWithoutNoticeCount: noshowLessons.length
+                } : '-',
+                incidentLessonsList: incidentLessons.length > 0 ? incidentLessons.map(l => ({
+                    date: formatDMY(l.date),
+                    time: `${l.startTime || '-'}–${l.endTime || '-'}`,
+                    group: dash(l.group),
+                    subject: dash(l.subject),
+                    details: dash(getStatusPlainText(l))
+                })) : '-',
+                interimDifficulties: dash(draftInt.diff),
+                interimResponseMeasures: dash(draftInt.adj),
+                finalDifficultiesAndResponse: dash(draftFin.issues),
+                studentAbsenceNotes: absenceNotes.length > 0 ? absenceNotes : '-',
+                hardTopicsReported: hardTopicsList.length > 0 ? hardTopicsList : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 7. Рекомендації щодо подальшого надолуження освітніх втрат
+        // --------------------------------------------------------------------
+        {
+            const draftFin = (rep.reportDrafts && rep.reportDrafts.final) || {};
+            const generalRec = dash(draftFin.rec);
+
+            const studentRecs = cardsFiltered
+                .filter(c => c.recommendations && c.recommendations.trim() !== '')
+                .map(c => ({
+                    student: resolveStu(c.linkedStudent, c.code),
+                    group: dash(c.groupLabel),
+                    recommendations: c.recommendations.trim()
+                }));
+
+            const ktpGapsAndTargets = [];
+            Object.entries(rep.ktpMeta || {}).forEach(([k, meta]) => {
+                if (!meta) return;
+                const grpPart = k.split('__')[0] || '-';
+                const subjPart = k.split('__')[1] || '-';
+                if (cfg.groupVal !== 'all' && !expGroupMatches(null, grpPart, cfg, classesObj)) return;
+                if ((meta.gaps && meta.gaps.trim()) || (meta.target && meta.target.trim())) {
+                    ktpGapsAndTargets.push({
+                        group: grpPart,
+                        subject: subjPart,
+                        gaps: dash(meta.gaps),
+                        target: dash(meta.target)
+                    });
+                }
+            });
+
+            const hasData = generalRec !== '-' || studentRecs.length > 0 || ktpGapsAndTargets.length > 0;
+            sections.recommendations = {
+                title: EXPORT_ITEMS[6].title,
+                hasData,
+                badgeText: hasData ? 'є дані' : 'немає (буде "-")',
+                generalRecommendations: generalRec,
+                individualRecommendations: studentRecs.length > 0 ? studentRecs : '-',
+                ktpGapsAndTargets: ktpGapsAndTargets.length > 0 ? ktpGapsAndTargets : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 8. Детальний журнал проведених занять
+        // --------------------------------------------------------------------
+        {
+            const hasData = lessonsAll.length > 0;
+            sections.lessons_detailed_log = {
+                title: EXPORT_ITEMS[7].title,
+                hasData,
+                badgeText: hasData ? `${lessonsAll.length} записів` : 'немає (буде "-")',
+                rows: hasData ? lessonsAll.map((l, idx) => {
+                    const br = getLessonSubjectBreakdown(l);
+                    return {
+                        num: idx + 1,
+                        date: formatDMY(l.date),
+                        time: `${l.startTime || '-'}–${l.endTime || '-'}`,
+                        durationMin: l.durationMin || 60,
+                        hours: formatHrsClean(br.totalHrs),
+                        uaHours: formatHrsClean(br.uaHrs),
+                        mathHours: formatHrsClean(br.mathHrs),
+                        subject: dash(l.subject),
+                        group: dash(l.group),
+                        topic: dash(formatLessonTopicDisplay(l)),
+                        attendees: l.attendees ?? 0,
+                        statusAndNotes: dash(getStatusPlainText(l))
+                    };
+                }) : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 9. Узагальнена статистика виконання ДЗ (інтерактивні ігри)
+        // --------------------------------------------------------------------
+        {
+            const pctsAll = hwEntries.map(e => e.percent).filter(p => p !== null);
+            const overallAvg = pctsAll.length > 0 ? `${Math.round(pctsAll.reduce((a, b) => a + b, 0) / pctsAll.length)}%` : '-';
+            const overallDyn = (typeof window.computeDynamicsInfo === 'function' && pctsAll.length >= 2)
+                ? window.computeDynamicsInfo(pctsAll).text
+                : '-';
+
+            const studentRows = roster.map(st => {
+                const stSubs = hwEntries.filter(e => e.studentName === st.name);
+                const assigned = (assignmentsObj[st.catId] ? Object.keys(assignmentsObj[st.catId]) : []).sort();
+                const doneSet = new Set(stSubs.map(s => s.gameId));
+                const missing = assigned.filter(g => !doneSet.has(g));
+                const stPcts = stSubs.map(s => s.percent).filter(p => p !== null);
+                const stAvg = stPcts.length > 0 ? `${Math.round(stPcts.reduce((a, b) => a + b, 0) / stPcts.length)}%` : '-';
+                const stDyn = (typeof window.computeDynamicsInfo === 'function' && stPcts.length >= 2)
+                    ? window.computeDynamicsInfo(stPcts).shortText
+                    : '-';
+                const meta = findStudentMetaEntry(st.catId, st.name);
+                return {
+                    student: resolveStu(st.name, meta && meta.code),
+                    group: st.catName,
+                    completedWorks: stSubs.length,
+                    averageScore: stAvg,
+                    dynamics: stDyn,
+                    debtsCount: missing.length,
+                    missingGames: missing.length > 0 ? missing.join(', ') : '-'
+                };
+            });
+
+            const totalDebts = studentRows.reduce((acc, r) => acc + r.debtsCount, 0);
+            const hasData = hwEntries.length > 0 || totalDebts > 0;
+            sections.homework_summary = {
+                title: EXPORT_ITEMS[8].title,
+                hasData,
+                badgeText: hasData ? `${hwEntries.length} робіт / сер. ${overallAvg}` : 'немає (буде "-")',
+                overall: hasData ? {
+                    totalSubmittedWorks: hwEntries.length,
+                    uniqueActiveStudents: new Set(hwEntries.map(e => e.studentName)).size,
+                    averageScore: overallAvg,
+                    overallDynamics: overallDyn,
+                    totalMandatoryDebts: totalDebts
+                } : '-',
+                byStudent: hasData && studentRows.length > 0 ? studentRows : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 10. Детальна відомість зданих робіт ДЗ
+        // --------------------------------------------------------------------
+        {
+            const hasData = hwEntries.length > 0;
+            sections.homework_detailed = {
+                title: EXPORT_ITEMS[9].title,
+                hasData,
+                badgeText: hasData ? `${hwEntries.length} робіт` : 'немає (буде "-")',
+                rows: hasData ? hwEntries.map((e, idx) => {
+                    const meta = findStudentMetaEntry(e.catId, e.studentName);
+                    return {
+                        num: idx + 1,
+                        date: formatDMY(e.date),
+                        time: e.timestamp,
+                        group: e.group,
+                        student: resolveStu(e.studentName, meta && meta.code),
+                        gameId: e.gameId,
+                        gameNote: e.gameNote,
+                        score: e.score,
+                        percent: e.percent !== null ? `${e.percent}%` : '-',
+                        checkedStatus: e.checked ? 'Перевірено' : 'Не перевірено'
+                    };
+                }) : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 11. Каталог навчальних ігор та призначені обов'язкові ДЗ
+        // --------------------------------------------------------------------
+        {
+            const gamesMap = {};
+            const ensure = (gId) => {
+                if (!gamesMap[gId]) {
+                    gamesMap[gId] = {
+                        gameId: gId,
+                        note: dash(catalogObj[gId] && catalogObj[gId].note),
+                        assignedTo: [],
+                        completionsInPeriod: 0,
+                        lastDate: '-'
+                    };
+                }
+            };
+            Object.keys(catalogObj).forEach(ensure);
+            Object.keys(assignmentsObj).forEach(cid => {
+                const cName = getClassName(cid);
+                if (!expGroupMatches(cid, cName, cfg, classesObj)) return;
+                Object.keys(assignmentsObj[cid] || {}).forEach(gId => {
+                    ensure(gId);
+                    if (!gamesMap[gId].assignedTo.includes(cName)) gamesMap[gId].assignedTo.push(cName);
+                });
+            });
+            hwEntries.forEach(e => {
+                ensure(e.gameId);
+                gamesMap[e.gameId].completionsInPeriod++;
+                if (gamesMap[e.gameId].lastDate === '-' || e.date > gamesMap[e.gameId].lastDate) {
+                    gamesMap[e.gameId].lastDate = e.date;
+                }
+            });
+
+            const rows = Object.values(gamesMap)
+                .sort((a, b) => a.gameId.localeCompare(b.gameId, undefined, { numeric: true }))
+                .map(g => ({
+                    gameId: g.gameId,
+                    note: g.note,
+                    assignedTo: g.assignedTo.length > 0 ? g.assignedTo.join(', ') : '-',
+                    completions: g.completionsInPeriod,
+                    lastDate: g.lastDate !== '-' ? formatDMY(g.lastDate) : '-'
+                }));
+
+            const hasData = rows.length > 0;
+            sections.games_and_assignments = {
+                title: EXPORT_ITEMS[10].title,
+                hasData,
+                badgeText: hasData ? `${rows.length} ігор` : 'немає (буде "-")',
+                rows: hasData ? rows : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 12. Повні індивідуальні картки навчального прогресу
+        // --------------------------------------------------------------------
+        {
+            const hasData = cardsFiltered.length > 0;
+            sections.progress_cards_full = {
+                title: EXPORT_ITEMS[11].title,
+                hasData,
+                badgeText: hasData ? `${cardsFiltered.length} карток` : 'немає (буде "-")',
+                cards: hasData ? cardsFiltered.map(c => ({
+                    student: resolveStu(c.linkedStudent, c.code),
+                    code: dash(c.code),
+                    grade: dash(c.grade),
+                    group: dash(c.groupLabel),
+                    period: dash(c.period),
+                    langLevel: dash(c.langLevel),
+                    attendance: dash(c.attText),
+                    finished: c.finished ? 'Так' : 'Ні',
+                    uaGaps: dash(c.uaGaps),
+                    mathGaps: dash(c.mathGaps),
+                    uaCompetencies: UA_COMPETENCIES.map(comp => {
+                        const s = (c.uaScores && c.uaScores[comp.key]) || {};
+                        return { competency: comp.label, init: dash(s.init), mid: dash(s.mid), final: dash(s.final) };
+                    }),
+                    mathCompetencies: MATH_COMPETENCIES.map(comp => {
+                        const s = (c.mathScores && c.mathScores[comp.key]) || {};
+                        return { competency: comp.label, init: dash(s.init), mid: dash(s.mid), final: dash(s.final) };
+                    }),
+                    achievedGoals: dash(c.achievedGoals),
+                    hardTopics: dash(c.hardTopics),
+                    recommendations: dash(c.recommendations)
+                })) : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 13. Графік занять та КТП
+        // --------------------------------------------------------------------
+        {
+            const sch = rep.schedule && Array.isArray(rep.schedule.rows) && rep.schedule.rows.length > 0 ? rep.schedule : null;
+            const ktpItemsFiltered = Object.values(rep.ktpItems || {})
+                .filter(it => it && expGroupMatches(null, it.group, cfg, classesObj) && (!it.date || expDateMatches(it.date, cfg)))
+                .sort((a, b) => (a.group || '').localeCompare(b.group || '') || (a.subject || '').localeCompare(b.subject || '') || (Number(a.num) || 0) - (Number(b.num) || 0));
+
+            const ktpMetaList = [];
+            Object.entries(rep.ktpMeta || {}).forEach(([k, m]) => {
+                if (!m) return;
+                const grpPart = k.split('__')[0] || '-';
+                const subjPart = k.split('__')[1] || '-';
+                if (cfg.groupVal !== 'all' && !expGroupMatches(null, grpPart, cfg, classesObj)) return;
+                ktpMetaList.push({
+                    group: grpPart,
+                    subject: subjPart,
+                    gaps: dash(m.gaps),
+                    methodology: dash(m.methodology),
+                    target: dash(m.target)
+                });
+            });
+
+            const hasData = !!sch || ktpItemsFiltered.length > 0 || ktpMetaList.length > 0;
+            sections.schedule_and_ktp = {
+                title: EXPORT_ITEMS[12].title,
+                hasData,
+                badgeText: hasData ? `КТП: ${ktpItemsFiltered.length} тем` : 'немає (буде "-")',
+                schedule: sch ? {
+                    period: dash(sch.period),
+                    platform: dash(sch.platform),
+                    datesText: dash(sch.datesText),
+                    rows: sch.rows.map(r => ({
+                        group: dash(r.group),
+                        category: dash(r.category),
+                        subject: dash(r.subject),
+                        time: dash(r.time),
+                        perWeek: dash(r.perWeek),
+                        totalHrs: dash(r.totalHrs)
+                    }))
+                } : '-',
+                ktpMeta: ktpMetaList.length > 0 ? ktpMetaList : '-',
+                ktpItems: ktpItemsFiltered.length > 0 ? ktpItemsFiltered.map(it => ({
+                    group: dash(it.group),
+                    subject: dash(it.subject),
+                    num: dash(it.num),
+                    date: it.date ? formatDMY(it.date) : '-',
+                    hours: dash(it.hours),
+                    topic: dash(it.topic),
+                    outcomes: dash(it.outcomes),
+                    checkMethod: dash(it.checkMethod)
+                })) : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 14. Поденний табель відвідуваності (матриця по датах)
+        // --------------------------------------------------------------------
+        {
+            const byGroupMatrix = {};
+            attEntries.forEach(e => {
+                if (!byGroupMatrix[e.group]) {
+                    byGroupMatrix[e.group] = { group: e.group, catId: e.catId, datesSet: new Set(), studentsSet: new Set(), map: {} };
+                }
+                const g = byGroupMatrix[e.group];
+                g.datesSet.add(e.date);
+                g.studentsSet.add(e.studentName);
+                if (!g.map[e.studentName]) g.map[e.studentName] = {};
+                g.map[e.studentName][e.date] = e.status === 'present' ? 'П' : (e.status === 'absent' ? 'Н' : 'Н(п)');
+            });
+
+            const matrices = Object.values(byGroupMatrix)
+                .sort((a, b) => a.group.localeCompare(b.group))
+                .map(g => {
+                    const dates = Array.from(g.datesSet).sort();
+                    const stuNames = Array.from(g.studentsSet).sort((a, b) => a.localeCompare(b));
+                    const rows = stuNames.map(sName => {
+                        const meta = findStudentMetaEntry(g.catId, sName);
+                        const marks = {};
+                        let p = 0, a = 0;
+                        dates.forEach(d => {
+                            const val = (g.map[sName] && g.map[sName][d]) || '-';
+                            marks[d] = val;
+                            if (val === 'П') p++;
+                            else if (val === 'Н') a++;
+                        });
+                        return {
+                            student: resolveStu(sName, meta && meta.code),
+                            marks,
+                            presentCount: p,
+                            attendancePercent: (p + a > 0) ? `${Math.round((p / (p + a)) * 100)}%` : '-'
+                        };
+                    });
+                    return { group: g.group, dates, rows };
+                });
+
+            const hasData = matrices.length > 0;
+            sections.attendance_daily_matrix = {
+                title: EXPORT_ITEMS[13].title,
+                hasData,
+                badgeText: hasData ? `${matrices.length} груп(и)` : 'немає (буде "-")',
+                matrices: hasData ? matrices : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 15. Контингент учнів, класи/групи та коди
+        // --------------------------------------------------------------------
+        {
+            const rows = roster.map((r, idx) => {
+                const meta = findStudentMetaEntry(r.catId, r.name);
+                return {
+                    num: idx + 1,
+                    group: r.catName,
+                    student: resolveStu(r.name, meta && meta.code),
+                    code: dash(meta && meta.code),
+                    grade: dash(meta && meta.grade),
+                    absenceNote: dash(meta && meta.absenceNote)
+                };
+            });
+            const hasData = rows.length > 0;
+            sections.roster_and_codes = {
+                title: EXPORT_ITEMS[14].title,
+                hasData,
+                badgeText: hasData ? `${rows.length} учнів` : 'немає (буде "-")',
+                rows: hasData ? rows : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 16. Фінансовий підрахунок за фактичними годинами
+        // --------------------------------------------------------------------
+        {
+            const rate = Number(localSettings.hourlyRate) || 0;
+            const limit = Number(localSettings.budgetLimit) || 0;
+            const hasLessons = billableLessons.length > 0;
+            const hasData = hasLessons && rate > 0;
+
+            let totalHrs = 0;
+            const grpSubjMap = {};
+            billableLessons.forEach(l => {
+                const br = getLessonSubjectBreakdown(l);
+                totalHrs += br.totalHrs;
+                const grp = l.group || 'Без групи';
+                if (br.uaHrs > 0) {
+                    const k = `${grp}|||Українська мова`;
+                    if (!grpSubjMap[k]) grpSubjMap[k] = { group: grp, subject: 'Українська мова', hrs: 0 };
+                    grpSubjMap[k].hrs += br.uaHrs;
+                }
+                if (br.mathHrs > 0) {
+                    const k = `${grp}|||Математика`;
+                    if (!grpSubjMap[k]) grpSubjMap[k] = { group: grp, subject: 'Математика', hrs: 0 };
+                    grpSubjMap[k].hrs += br.mathHrs;
+                }
+            });
+
+            const totalSum = Math.round(totalHrs * rate * 100) / 100;
+            const rows = Object.values(grpSubjMap)
+                .sort((a, b) => a.group.localeCompare(b.group) || a.subject.localeCompare(b.subject))
+                .map(r => ({
+                    group: r.group,
+                    subject: r.subject,
+                    hours: formatHrsClean(r.hrs),
+                    rateUAH: rate,
+                    amountUAH: (Math.round(r.hrs * rate * 100) / 100).toFixed(2)
+                }));
+
+            sections.finance_summary = {
+                title: EXPORT_ITEMS[15].title,
+                hasData,
+                badgeText: hasData ? `${totalSum.toLocaleString('uk-UA')} грн` : 'немає (буде "-")',
+                summary: hasData ? {
+                    docBasis: dash(localSettings.docBasis),
+                    hourlyRateUAH: rate,
+                    totalBillableHours: formatHrsClean(totalHrs),
+                    totalAmountUAH: totalSum.toFixed(2),
+                    budgetLimitUAH: limit > 0 ? limit.toFixed(2) : '-',
+                    remainingBudgetUAH: limit > 0 ? Math.max(0, limit - totalSum).toFixed(2) : '-'
+                } : '-',
+                breakdown: hasData ? rows : '-'
+            };
+        }
+
+        // --------------------------------------------------------------------
+        // 17. Кошик (видалені роботи ДЗ)
+        // --------------------------------------------------------------------
+        {
+            const trashRows = Object.values(deletedObj || {})
+                .filter(it => it && (!it.date || expDateMatches(it.date, cfg)))
+                .sort((a, b) => new Date(b.deletedAt || 0) - new Date(a.deletedAt || 0))
+                .map((it, idx) => ({
+                    num: idx + 1,
+                    deletedAt: it.deletedAt ? new Date(it.deletedAt).toLocaleString('uk-UA') : '-',
+                    workDate: it.date ? formatDMY(it.date) : '-',
+                    gameId: dash(it.gameId),
+                    student: resolveStu(it.studentName, ''),
+                    score: dash(it.report && it.report.score)
+                }));
+            const hasData = trashRows.length > 0;
+            sections.deleted_reports_trash = {
+                title: EXPORT_ITEMS[16].title,
+                hasData,
+                badgeText: hasData ? `${trashRows.length} видал.` : 'порожній (буде "-")',
+                rows: hasData ? trashRows : '-'
+            };
+        }
+
+        return {
+            meta: {
+                exportedAt: new Date().toLocaleString('uk-UA'),
+                exportedAtISO: new Date().toISOString(),
+                period: cfg.periodLabel,
+                groupFilter: cfg.groupLabel,
+                anonymized: cfg.anonymize,
+                docBasis: dash(localSettings.docBasis),
+                executor: dash(localSettings.executorTitle),
+                client: dash(localSettings.clientTitle),
+                executorSigner: dash(localSettings.executorSigner)
+            },
+            sections
+        };
+    }
+
+    function updateExporterBadges() {
+        const cfg = getExportFilterConfig();
+        const liveData = {
+            classes: typeof classesData !== 'undefined' ? classesData : {},
+            students: typeof studentsData !== 'undefined' ? studentsData : {},
+            assignments: typeof assignmentsData !== 'undefined' ? assignmentsData : {},
+            catalog: typeof catalogGamesData !== 'undefined' ? catalogGamesData : {},
+            homework: typeof cachedReportsData !== 'undefined' ? cachedReportsData : {},
+            attendance: typeof attendanceData !== 'undefined' ? attendanceData : {},
+            deleted: cachedDeletedReportsForBadge || {},
+            reporting: repData || {}
+        };
+        const dataset = collectExportDataset(liveData, cfg);
+        EXPORT_ITEMS.forEach(it => {
+            const badge = document.getElementById(`edu-exp-badge-${it.key}`);
+            const sec = dataset.sections[it.key];
+            if (!badge || !sec) return;
+            badge.textContent = sec.badgeText || (sec.hasData ? 'є дані' : 'немає (буде "-")');
+            badge.className = `edu-exp-pill ${sec.hasData ? 'has-data' : 'no-data'}`;
+        });
+        updateExporterCounter();
+    }
+
+    function updateExporterCounter() {
+        const allCbs = document.querySelectorAll('.edu-exp-cb');
+        const checkedCount = document.querySelectorAll('.edu-exp-cb:checked').length;
+        const cntEl = document.getElementById('edu-exp-counter');
+        if (cntEl) cntEl.textContent = `Обрано: ${checkedCount} з ${allCbs.length}`;
+    }
+
+    function getSelectedExportKeys() {
+        return Array.from(document.querySelectorAll('.edu-exp-cb:checked')).map(cb => cb.value);
+    }
+
+    function buildHtmlTableFromRows(headers, rows) {
+        if (!Array.isArray(rows) || rows.length === 0) return '<p style="margin:4px 0 8px 0;">-</p>';
+        const ths = headers.map(h => `<th style="background:#e2e8f0; color:#0f172a; border:1px solid #94a3b8; padding:5px 7px; font-weight:bold; text-align:${h.align || 'left'};">${esc(h.label)}</th>`).join('');
+        const trs = rows.map(r => {
+            const tds = headers.map(h => {
+                const rawVal = typeof h.get === 'function' ? h.get(r) : r[h.key];
+                const val = dash(rawVal);
+                return `<td style="border:1px solid #94a3b8; padding:5px 7px; text-align:${h.align || 'left'}; vertical-align:top;">${esc(String(val))}</td>`;
+            }).join('');
+            return `<tr>${tds}</tr>`;
+        }).join('');
+        return `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse:collapse; margin:6px 0 12px 0; font-size:10pt;"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+    }
+
+    function buildKeyValueHtmlTable(pairs) {
+        const trs = pairs.map(([k, v]) => `
+            <tr>
+                <td style="border:1px solid #94a3b8; padding:5px 8px; background:#f8fafc; font-weight:bold; width:46%;">${esc(k)}</td>
+                <td style="border:1px solid #94a3b8; padding:5px 8px;">${esc(String(dash(v)))}</td>
+            </tr>
+        `).join('');
+        return `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse:collapse; margin:6px 0 12px 0; font-size:10pt;"><tbody>${trs}</tbody></table>`;
+    }
+
+    function buildExportDocumentBodyHtml(dataset, selectedKeys) {
+        const m = dataset.meta;
+        let secNum = 0;
+        let body = `
+            <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:10px; margin-bottom:14px;">
+                <h1 style="margin:0; font-size:16pt; color:#0f172a;">ЗВЕДЕНИЙ ЕКСПОРТ ДАНИХ ЖУРНАЛУ ВЧИТЕЛЯ</h1>
+                <div style="font-size:10pt; color:#334155; margin-top:4px;">
+                    Період: <b>${esc(m.period)}</b> | Вибірка: <b>${esc(m.groupFilter)}</b> | Дата формування: <b>${esc(m.exportedAt)}</b>
+                </div>
+                ${m.docBasis !== '-' ? `<div style="font-size:9.5pt; color:#475569; margin-top:3px;">Підстава: ${esc(m.docBasis)}</div>` : ''}
+            </div>
+        `;
+
+        if (m.executor !== '-' || m.client !== '-') {
+            body += `<div style="margin-bottom:10px; font-size:10pt;">
+                ${m.executor !== '-' ? `<div><b>Виконавець:</b> ${esc(m.executor)}</div>` : ''}
+                ${m.client !== '-' ? `<div><b>Замовник:</b> ${esc(m.client)}</div>` : ''}
+                ${m.anonymized ? `<div><i>Примітка: персональні імена учнів знеособлено (використано коди).</i></div>` : ''}
+            </div>`;
+        }
+
+        const secTitle = (title) => {
+            secNum++;
+            return `<h2 style="font-size:12.5pt; color:#1e3a8a; border-bottom:1.5px solid #cbd5e1; padding-bottom:3px; margin:16px 0 8px 0;">${secNum}. ${esc(title)}</h2>`;
+        };
+
+        selectedKeys.forEach(key => {
+            const s = dataset.sections[key];
+            if (!s) return;
+            body += secTitle(s.title);
+
+            if (key === 'hours_and_lessons') {
+                body += buildKeyValueHtmlTable([
+                    ['Загальна кількість проведених (зарахованих) занять', s.summary.totalConductedLessons],
+                    ['Загальна кількість фактичних навчальних годин (60 хв)', s.summary.totalActualHours !== '-' ? `${s.summary.totalActualHours} год. (${s.summary.totalActualMinutes} хв)` : '-'],
+                    ['Українська мова (фактичних годин)', s.summary.ukrainianHours !== '-' ? `${s.summary.ukrainianHours} год.` : '-'],
+                    ['Математика (фактичних годин)', s.summary.mathHours !== '-' ? `${s.summary.mathHours} год.` : '-'],
+                    ['Перенесені / скасовані записи (не входять у години)', s.summary.nonBillableRecords]
+                ]);
+                if (Array.isArray(s.byGroupAndSubject)) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Розподіл за групами та предметами</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Група', key: 'group' },
+                        { label: 'Предмет', key: 'subject' },
+                        { label: 'К-сть занять', key: 'lessonsCount', align: 'center' },
+                        { label: 'Хвилин', key: 'actualMinutes', align: 'center' },
+                        { label: 'Фактичних годин', key: 'actualHours', align: 'center' }
+                    ], s.byGroupAndSubject);
+                }
+                if (Array.isArray(s.byMonth) && s.byMonth.length > 1) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Розподіл за місяцями</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Місяць', key: 'month', align: 'center' },
+                        { label: 'Занять', key: 'lessonsCount', align: 'center' },
+                        { label: 'Укр. мова (год)', key: 'uaHours', align: 'center' },
+                        { label: 'Математика (год)', key: 'mathHours', align: 'center' },
+                        { label: 'Разом (год)', key: 'totalHours', align: 'center' }
+                    ], s.byMonth);
+                }
+            } else if (key === 'students_started_finished') {
+                body += buildKeyValueHtmlTable([
+                    ['Розпочали навчання (оформлено карток прогресу)', s.byProgressCards.startedCount],
+                    ['Завершили навчання (пройшли підсумкове оцінювання)', s.byProgressCards.finishedCount],
+                    ['У процесі навчання (за картками)', s.byProgressCards.inProgressCount],
+                    ['Зараховано в журналі «Учні та Класи» (всього)', s.byJournalRoster.totalEnrolled],
+                    ['З них: у класах / індивідуально', (s.byJournalRoster.inClasses !== '-' || s.byJournalRoster.individual !== '-') ? `${s.byJournalRoster.inClasses} / ${s.byJournalRoster.individual}` : '-'],
+                    ['Фактично відвідали хоча б 1 заняття (за табелем)', s.actualActivityInPeriod.uniqueAttendedAtLeastOnce],
+                    ['Фактично виконали хоча б 1 ДЗ (ігри)', s.actualActivityInPeriod.uniqueSubmittedHomework]
+                ]);
+                if (Array.isArray(s.byProgressCards.byGroup)) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">По групах (за картками прогресу)</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Група', key: 'group' },
+                        { label: 'Розпочали', key: 'started', align: 'center' },
+                        { label: 'Завершили', key: 'finished', align: 'center' },
+                        { label: 'У процесі', key: 'inProgress', align: 'center' }
+                    ], s.byProgressCards.byGroup);
+                }
+                if (Array.isArray(s.byJournalRoster.byGroup)) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">По класах / категоріях (список журналу)</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Клас / Категорія', key: 'group' },
+                        { label: 'Кількість учнів', key: 'count', align: 'center' }
+                    ], s.byJournalRoster.byGroup);
+                }
+            } else if (key === 'attendance_summary') {
+                if (!s.hasData) {
+                    body += `<p>-</p>`;
+                } else {
+                    body += buildKeyValueHtmlTable([
+                        ['Середня відвідуваність (загальна)', s.overall.averageAttendancePercent],
+                        ['Зафіксовано днів із заняттями', s.overall.lessonDaysRecorded],
+                        ['Присутність (П)', s.overall.presentMarks],
+                        ['Пропуски без поважної (Н)', s.overall.absentMarks],
+                        ['Поважна причина (Н(п))', s.overall.excusedMarks]
+                    ]);
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Узагальнення по групах / класах</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Група / Клас', key: 'group' },
+                        { label: 'Днів', key: 'lessonDays', align: 'center' },
+                        { label: 'П', key: 'present', align: 'center' },
+                        { label: 'Н', key: 'absent', align: 'center' },
+                        { label: 'Н(п)', key: 'excused', align: 'center' },
+                        { label: 'Відвідуваність', key: 'attendancePercent', align: 'center' }
+                    ], s.byGroup);
+                    if (Array.isArray(s.byMonth) && s.byMonth.length > 1) {
+                        body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">По місяцях</h3>`;
+                        body += buildHtmlTableFromRows([
+                            { label: 'Місяць', key: 'month', align: 'center' },
+                            { label: 'Днів', key: 'lessonDays', align: 'center' },
+                            { label: 'П', key: 'present', align: 'center' },
+                            { label: 'Н', key: 'absent', align: 'center' },
+                            { label: 'Н(п)', key: 'excused', align: 'center' },
+                            { label: 'Відвідуваність', key: 'attendancePercent', align: 'center' }
+                        ], s.byMonth);
+                    }
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Відвідуваність по учнях</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Учень / Код', key: 'student' },
+                        { label: 'Група', key: 'group' },
+                        { label: 'П', key: 'present', align: 'center' },
+                        { label: 'Н', key: 'absent', align: 'center' },
+                        { label: 'Н(п)', key: 'excused', align: 'center' },
+                        { label: '%', key: 'attendancePercent', align: 'center' },
+                        { label: 'Примітка', key: 'absenceNote' }
+                    ], s.byStudent);
+                }
+            } else if (key === 'assessments_results') {
+                if (!s.hasData) {
+                    body += `<p>-</p>`;
+                } else {
+                    body += `<h3 style="font-size:10.5pt; margin:6px 0 4px 0;">Узагальнено по групах і предметах</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Група', key: 'group' },
+                        { label: 'Предмет', key: 'subject' },
+                        { label: 'Первинне (сер.)', key: 'initialAvg', align: 'center' },
+                        { label: 'Проміжне (сер.)', key: 'interimAvg', align: 'center' },
+                        { label: 'Підсумкове (сер.)', key: 'finalAvg', align: 'center' },
+                        { label: 'Динаміка', key: 'dynamics', align: 'center' },
+                        { label: 'Позитивна динаміка', key: 'positiveDynamics', align: 'center' }
+                    ], s.byGroupAndSubject);
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Індивідуальні підсумки оцінювання</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Учень / Код', key: 'student' },
+                        { label: 'Група', key: 'group' },
+                        { label: 'Мова (Перв/Пром/Підс)', get: r => `${r.uaInit} / ${r.uaMid} / ${r.uaFinal}`, align: 'center' },
+                        { label: 'Динам. мова', key: 'uaDynamics', align: 'center' },
+                        { label: 'Мат. (Перв/Пром/Підс)', get: r => `${r.mathInit} / ${r.mathMid} / ${r.mathFinal}`, align: 'center' },
+                        { label: 'Динам. мат.', key: 'mathDynamics', align: 'center' }
+                    ], s.byStudent);
+                }
+            } else if (key === 'competencies_progress') {
+                body += buildKeyValueHtmlTable([
+                    ['Загальний опис прогресу з української мови', s.generalDescription.ukrainianLanguage],
+                    ['Загальний опис прогресу з математики', s.generalDescription.mathematics]
+                ]);
+                if (Array.isArray(s.competencyAverages)) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Середні показники за основними компетентностями</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Предмет', key: 'subject' },
+                        { label: 'Компетентність', key: 'competency' },
+                        { label: 'Первинне', key: 'initialAvg', align: 'center' },
+                        { label: 'Проміжне', key: 'interimAvg', align: 'center' },
+                        { label: 'Підсумкове', key: 'finalAvg', align: 'center' },
+                        { label: 'Динаміка', key: 'dynamics', align: 'center' }
+                    ], s.competencyAverages);
+                }
+                if (Array.isArray(s.studentProgressDetails)) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Зафіксовані прогалини та досягнення з карток учнів</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Учень / Код', key: 'student' },
+                        { label: 'Група', key: 'group' },
+                        { label: 'Прогалини (мова)', key: 'uaGaps' },
+                        { label: 'Прогалини (мат.)', key: 'mathGaps' },
+                        { label: 'Досягнуті цілі', key: 'achievedGoals' },
+                        { label: 'Складні теми', key: 'hardTopics' }
+                    ], s.studentProgressDetails);
+                }
+            } else if (key === 'difficulties_and_incidents') {
+                body += buildKeyValueHtmlTable([
+                    ['Безпекові паузи (тривоги)', s.lessonIncidentsSummary !== '-' ? s.lessonIncidentsSummary.safetyPausesCount : '-'],
+                    ['Перенесені заняття', s.lessonIncidentsSummary !== '-' ? s.lessonIncidentsSummary.rescheduledCount : '-'],
+                    ['Скасовані заняття', s.lessonIncidentsSummary !== '-' ? s.lessonIncidentsSummary.cancelledCount : '-'],
+                    ['Неявки без попередження', s.lessonIncidentsSummary !== '-' ? s.lessonIncidentsSummary.noshowWithoutNoticeCount : '-'],
+                    ['Виявлені труднощі (проміжний звіт)', s.interimDifficulties],
+                    ['Вжиті заходи та коригування (проміжний звіт)', s.interimResponseMeasures],
+                    ['Складнощі та заходи реагування (підсумковий звіт)', s.finalDifficultiesAndResponse]
+                ]);
+                if (Array.isArray(s.incidentLessonsList)) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Перелік занять із паузами, перенесеннями, скасуваннями або примітками</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Дата', key: 'date', align: 'center' },
+                        { label: 'Час', key: 'time', align: 'center' },
+                        { label: 'Група', key: 'group' },
+                        { label: 'Предмет', key: 'subject' },
+                        { label: 'Статус та деталі', key: 'details' }
+                    ], s.incidentLessonsList);
+                }
+                if (Array.isArray(s.studentAbsenceNotes)) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Примітки щодо пропусків учнів</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Учень / Код', key: 'student' },
+                        { label: 'Група', key: 'group' },
+                        { label: 'Примітка', key: 'note' }
+                    ], s.studentAbsenceNotes);
+                }
+                if (Array.isArray(s.hardTopicsReported)) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Зафіксовані складні теми</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Учень / Код', key: 'student' },
+                        { label: 'Група', key: 'group' },
+                        { label: 'Теми, що залишаються складними', key: 'hardTopics' }
+                    ], s.hardTopicsReported);
+                }
+            } else if (key === 'recommendations') {
+                body += buildKeyValueHtmlTable([
+                    ['Загальні рекомендації (підсумковий звіт)', s.generalRecommendations]
+                ]);
+                if (Array.isArray(s.individualRecommendations)) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Індивідуальні рекомендації з карток учнів</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Учень / Код', key: 'student' },
+                        { label: 'Група', key: 'group' },
+                        { label: 'Рекомендації', key: 'recommendations' }
+                    ], s.individualRecommendations);
+                }
+                if (Array.isArray(s.ktpGapsAndTargets)) {
+                    body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Зафіксовані прогалини та цільові орієнтири (КТП)</h3>`;
+                    body += buildHtmlTableFromRows([
+                        { label: 'Група', key: 'group' },
+                        { label: 'Предмет', key: 'subject' },
+                        { label: 'Виявлені прогалини', key: 'gaps' },
+                        { label: 'Цільові показники', key: 'target' }
+                    ], s.ktpGapsAndTargets);
+                }
+            } else if (key === 'lessons_detailed_log') {
+                body += buildHtmlTableFromRows([
+                    { label: '№', key: 'num', align: 'center' },
+                    { label: 'Дата', key: 'date', align: 'center' },
+                    { label: 'Час', key: 'time', align: 'center' },
+                    { label: 'Год.', key: 'hours', align: 'center' },
+                    { label: 'Предмет', key: 'subject' },
+                    { label: 'Група', key: 'group' },
+                    { label: 'Тема та зміст', key: 'topic' },
+                    { label: 'Учнів', key: 'attendees', align: 'center' },
+                    { label: 'Статус / Примітки', key: 'statusAndNotes' }
+                ], s.rows);
+            } else if (key === 'homework_summary') {
+                if (!s.hasData) {
+                    body += `<p>-</p>`;
+                } else {
+                    body += buildKeyValueHtmlTable([
+                        ['Усього зданих робіт ДЗ', s.overall.totalSubmittedWorks],
+                        ['Унікальних активних учнів', s.overall.uniqueActiveStudents],
+                        ['Середній бал виконання', s.overall.averageScore],
+                        ['Загальна динаміка', s.overall.overallDynamics],
+                        ['Кількість невиконаних обов’язкових ДЗ (боргів)', s.overall.totalMandatoryDebts]
+                    ]);
+                    if (Array.isArray(s.byStudent)) {
+                        body += buildHtmlTableFromRows([
+                            { label: 'Учень / Код', key: 'student' },
+                            { label: 'Клас / Група', key: 'group' },
+                            { label: 'Виконано', key: 'completedWorks', align: 'center' },
+                            { label: 'Сер. бал', key: 'averageScore', align: 'center' },
+                            { label: 'Динаміка', key: 'dynamics', align: 'center' },
+                            { label: 'Боргів', key: 'debtsCount', align: 'center' },
+                            { label: 'Невиконані ігри', key: 'missingGames' }
+                        ], s.byStudent);
+                    }
+                }
+            } else if (key === 'homework_detailed') {
+                body += buildHtmlTableFromRows([
+                    { label: '№', key: 'num', align: 'center' },
+                    { label: 'Дата', key: 'date', align: 'center' },
+                    { label: 'Час', key: 'time', align: 'center' },
+                    { label: 'Клас', key: 'group' },
+                    { label: 'Учень / Код', key: 'student' },
+                    { label: 'Гра (ID)', key: 'gameId' },
+                    { label: 'Тема', key: 'gameNote' },
+                    { label: 'Результат', key: 'score', align: 'center' },
+                    { label: '%', key: 'percent', align: 'center' },
+                    { label: 'Статус', key: 'checkedStatus', align: 'center' }
+                ], s.rows);
+            } else if (key === 'games_and_assignments') {
+                body += buildHtmlTableFromRows([
+                    { label: 'Гра (ID)', key: 'gameId' },
+                    { label: 'Опис / Тема', key: 'note' },
+                    { label: 'Призначено для', key: 'assignedTo' },
+                    { label: 'Виконань', key: 'completions', align: 'center' },
+                    { label: 'Остання дата', key: 'lastDate', align: 'center' }
+                ], s.rows);
+            } else if (key === 'progress_cards_full') {
+                if (!Array.isArray(s.cards)) {
+                    body += `<p>-</p>`;
+                } else {
+                    s.cards.forEach((c, idx) => {
+                        body += `<h3 style="font-size:11pt; margin:10px 0 4px 0;">Картка ${idx + 1}: ${esc(c.student)} (${esc(c.group)}, клас: ${esc(c.grade)})</h3>`;
+                        body += buildKeyValueHtmlTable([
+                            ['Період навчання', c.period],
+                            ['Відвідуваність', c.attendance],
+                            ['Мовна підтримка', c.langLevel],
+                            ['Завершив(ла) курс', c.finished],
+                            ['Прогалини (Українська мова)', c.uaGaps],
+                            ['Прогалини (Математика)', c.mathGaps],
+                            ['Досягнуті навчальні цілі', c.achievedGoals],
+                            ['Складні теми', c.hardTopics],
+                            ['Рекомендації', c.recommendations]
+                        ]);
+                        body += buildHtmlTableFromRows([
+                            { label: 'Компетентність (Українська мова)', key: 'competency' },
+                            { label: 'Первинне', key: 'init', align: 'center' },
+                            { label: 'Проміжне', key: 'mid', align: 'center' },
+                            { label: 'Підсумкове', key: 'final', align: 'center' }
+                        ], c.uaCompetencies);
+                        body += buildHtmlTableFromRows([
+                            { label: 'Компетентність (Математика)', key: 'competency' },
+                            { label: 'Первинне', key: 'init', align: 'center' },
+                            { label: 'Проміжне', key: 'mid', align: 'center' },
+                            { label: 'Підсумкове', key: 'final', align: 'center' }
+                        ], c.mathCompetencies);
+                    });
+                }
+            } else if (key === 'schedule_and_ktp') {
+                if (!s.hasData) {
+                    body += `<p>-</p>`;
+                } else {
+                    if (s.schedule !== '-') {
+                        body += `<h3 style="font-size:10.5pt; margin:6px 0 4px 0;">Погоджений графік занять</h3>`;
+                        body += buildKeyValueHtmlTable([
+                            ['Період', s.schedule.period],
+                            ['Платформа / Формат', s.schedule.platform],
+                            ['Перелік дат', s.schedule.datesText]
+                        ]);
+                        body += buildHtmlTableFromRows([
+                            { label: 'Група', key: 'group' },
+                            { label: 'Категорія', key: 'category' },
+                            { label: 'Предмет', key: 'subject' },
+                            { label: 'Дні та час', key: 'time' },
+                            { label: 'Год/тиж', key: 'perWeek', align: 'center' },
+                            { label: 'План год.', key: 'totalHrs', align: 'center' }
+                        ], s.schedule.rows);
+                    }
+                    if (Array.isArray(s.ktpMeta)) {
+                        body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Методика та параметри КТП</h3>`;
+                        body += buildHtmlTableFromRows([
+                            { label: 'Група', key: 'group' },
+                            { label: 'Предмет', key: 'subject' },
+                            { label: 'Прогалини', key: 'gaps' },
+                            { label: 'Методика оцінювання', key: 'methodology' },
+                            { label: 'Цільові показники', key: 'target' }
+                        ], s.ktpMeta);
+                    }
+                    if (Array.isArray(s.ktpItems)) {
+                        body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Тематичний план (КТП)</h3>`;
+                        body += buildHtmlTableFromRows([
+                            { label: 'Група', key: 'group' },
+                            { label: 'Предмет', key: 'subject' },
+                            { label: '№', key: 'num', align: 'center' },
+                            { label: 'Дата', key: 'date', align: 'center' },
+                            { label: 'Год.', key: 'hours', align: 'center' },
+                            { label: 'Тема', key: 'topic' },
+                            { label: 'Очікувані результати', key: 'outcomes' },
+                            { label: 'Перевірка', key: 'checkMethod' }
+                        ], s.ktpItems);
+                    }
+                }
+            } else if (key === 'attendance_daily_matrix') {
+                if (!Array.isArray(s.matrices)) {
+                    body += `<p>-</p>`;
+                } else {
+                    s.matrices.forEach(mat => {
+                        body += `<h3 style="font-size:10.5pt; margin:8px 0 4px 0;">Група / Клас: ${esc(mat.group)}</h3>`;
+                        const headers = [
+                            { label: 'Учень / Код', key: 'student' },
+                            ...mat.dates.map(d => ({ label: `${d.slice(8, 10)}.${d.slice(5, 7)}`, get: r => (r.marks && r.marks[d]) || '-', align: 'center' })),
+                            { label: 'П', key: 'presentCount', align: 'center' },
+                            { label: '%', key: 'attendancePercent', align: 'center' }
+                        ];
+                        body += buildHtmlTableFromRows(headers, mat.rows);
+                    });
+                }
+            } else if (key === 'roster_and_codes') {
+                body += buildHtmlTableFromRows([
+                    { label: '№', key: 'num', align: 'center' },
+                    { label: 'Клас / Група', key: 'group' },
+                    { label: 'Учень / Код', key: 'student' },
+                    { label: 'Анонімний код', key: 'code', align: 'center' },
+                    { label: 'Клас (1–4)', key: 'grade', align: 'center' },
+                    { label: 'Примітка', key: 'absenceNote' }
+                ], s.rows);
+            } else if (key === 'finance_summary') {
+                if (!s.hasData) {
+                    body += `<p>-</p>`;
+                } else {
+                    body += buildKeyValueHtmlTable([
+                        ['Підстава', s.summary.docBasis],
+                        ['Ставка за 1 навч. годину', `${s.summary.hourlyRateUAH} грн`],
+                        ['Загальна кількість зарахованих годин', `${s.summary.totalBillableHours} год.`],
+                        ['Нарахована сума (без ПДВ)', `${s.summary.totalAmountUAH} грн`],
+                        ['Граничний ліміт', s.summary.budgetLimitUAH !== '-' ? `${s.summary.budgetLimitUAH} грн` : '-'],
+                        ['Залишок ліміту', s.summary.remainingBudgetUAH !== '-' ? `${s.summary.remainingBudgetUAH} грн` : '-']
+                    ]);
+                    body += buildHtmlTableFromRows([
+                        { label: 'Група', key: 'group' },
+                        { label: 'Предмет', key: 'subject' },
+                        { label: 'Годин', key: 'hours', align: 'center' },
+                        { label: 'Ставка, грн', key: 'rateUAH', align: 'right' },
+                        { label: 'Сума, грн', key: 'amountUAH', align: 'right' }
+                    ], s.breakdown);
+                }
+            } else if (key === 'deleted_reports_trash') {
+                body += buildHtmlTableFromRows([
+                    { label: '№', key: 'num', align: 'center' },
+                    { label: 'Дата видалення', key: 'deletedAt' },
+                    { label: 'Дата роботи', key: 'workDate', align: 'center' },
+                    { label: 'Гра (ID)', key: 'gameId' },
+                    { label: 'Учень / Код', key: 'student' },
+                    { label: 'Оцінка', key: 'score', align: 'center' }
+                ], s.rows);
+            }
+        });
+
+        body += `
+            <table border="0" cellspacing="0" cellpadding="0" style="width:100%; border:none; margin-top:24px; font-size:10pt;">
+                <tr>
+                    <td style="border:none; padding:0;">Виконавець: ___________________________ ${m.executorSigner !== '-' ? esc(m.executorSigner) : ''}</td>
+                    <td style="border:none; padding:0; text-align:right;">Дата: ${new Date().toLocaleDateString('uk-UA')}</td>
+                </tr>
+            </table>
+        `;
+        return body;
+    }
+
+    function runUniversalExport(format) {
+        const selectedKeys = getSelectedExportKeys();
+        if (selectedKeys.length === 0) {
+            return alert('Оберіть хоча б один пункт у списку (поставте галочку), щоб зберегти дані.');
+        }
+
+        const statusEl = document.getElementById('edu-exp-status');
+        if (statusEl) statusEl.textContent = '⏳ Завантаження актуальних даних із бази...';
+
+        Promise.all([
+            db.ref('journal_classes').once('value'),
+            db.ref('journal_students').once('value'),
+            db.ref('journal_assignments').once('value'),
+            db.ref('journal_games_catalog').once('value'),
+            db.ref('homework_reports').once('value'),
+            db.ref('journal_attendance').once('value'),
+            db.ref('deleted_reports').once('value'),
+            db.ref(REPORTING_DB_ROOT).once('value')
+        ]).then(([clsSnap, stuSnap, asgSnap, catSnap, hwSnap, attSnap, delSnap, repSnap]) => {
+            const freshData = {
+                classes: clsSnap.val() || {},
+                students: stuSnap.val() || {},
+                assignments: asgSnap.val() || {},
+                catalog: catSnap.val() || {},
+                homework: hwSnap.val() || {},
+                attendance: attSnap.val() || {},
+                deleted: delSnap.val() || {},
+                reporting: repSnap.val() || {}
+            };
+            cachedDeletedReportsForBadge = freshData.deleted;
+
+            const cfg = getExportFilterConfig();
+            const dataset = collectExportDataset(freshData, cfg);
+            const dateStamp = todayYYYYMMDD();
+            const fileBase = `zvit_zhurnalu_${dateStamp}`;
+
+            if (format === 'json') {
+                const jsonOut = {
+                    meta: Object.assign({}, dataset.meta, {
+                        selectedCount: selectedKeys.length,
+                        selectedSections: selectedKeys
+                    }),
+                    sections: {}
+                };
+                selectedKeys.forEach(k => {
+                    const sec = Object.assign({}, dataset.sections[k]);
+                    delete sec.badgeText;
+                    jsonOut.sections[k] = sec;
+                });
+
+                const blob = new Blob([JSON.stringify(jsonOut, null, 2)], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileBase}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else if (format === 'word') {
+                const docBodyHtml = buildExportDocumentBodyHtml(dataset, selectedKeys);
+                const wordHtml = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>${esc(fileBase)}</title>
+<!--[if gte mso 9]>
+<xml>
+  <w:WordDocument>
+    <w:View>Print</w:View>
+    <w:Zoom>100</w:Zoom>
+    <w:DoNotOptimizeForBrowser/>
+  </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  @page Section1 { size: 21cm 29.7cm; margin: 1.5cm; mso-header-margin: 1cm; mso-footer-margin: 1cm; }
+  div.Section1 { page: Section1; }
+  body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 10.5pt; color: #0f172a; line-height: 1.4; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #94a3b8; padding: 5px 7px; }
+  th { background-color: #e2e8f0; font-weight: bold; }
+</style>
+</head>
+<body><div class="Section1">${docBodyHtml}</div></body>
+</html>`;
+                const blob = new Blob(['\uFEFF' + wordHtml], { type: 'application/msword;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileBase}.doc`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else if (format === 'pdf') {
+                const docBodyHtml = buildExportDocumentBodyHtml(dataset, selectedKeys);
+                toggleExportDropdown(false);
+                const origTitle = document.title;
+                document.title = fileBase;
+                const restoreTitle = () => {
+                    document.title = origTitle;
+                    window.removeEventListener('afterprint', restoreTitle);
+                };
+                window.addEventListener('afterprint', restoreTitle);
+                printHtmlA4(docBodyHtml);
+                setTimeout(() => { document.title = origTitle; }, 4000);
+            }
+
+            if (statusEl) statusEl.textContent = '✅ Готово! Оберіть формат збереження:';
+        }).catch(err => {
+            console.error('Export error:', err);
+            if (statusEl) statusEl.textContent = '❌ Помилка читання бази даних.';
+            alert('Не вдалося зчитати дані з Firebase. Перевірте підключення до інтернету.');
+        });
+    }
+
+    function toggleExportDropdown(forceState) {
+        const dd = document.getElementById('edu-export-dropdown');
+        if (!dd) return;
+        isExportDropdownOpen = typeof forceState === 'boolean' ? forceState : !isExportDropdownOpen;
+        dd.classList.toggle('open', isExportDropdownOpen);
+        if (isExportDropdownOpen) {
+            positionExportDropdown();
+            populateExportGroupDropdown();
+            updateExporterBadges();
+            // Підтягуємо актуальний кошик для точного бейджа
+            db.ref('deleted_reports').once('value').then(snap => {
+                cachedDeletedReportsForBadge = snap.val() || {};
+                if (isExportDropdownOpen) updateExporterBadges();
+            });
+        }
+    }
+
+    function bindExporterEvents() {
+        const toggleBtn = document.getElementById('edu-export-toggle-btn');
+        const closeBtn = document.getElementById('edu-exp-close-btn');
+        const dd = document.getElementById('edu-export-dropdown');
+        if (!toggleBtn || !dd) return;
+
+        const curMonth = todayYYYYMMDD().slice(0, 7);
+        document.getElementById('edu-exp-month').value = curMonth;
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleExportDropdown();
+        });
+        closeBtn.addEventListener('click', () => toggleExportDropdown(false));
+
+        document.addEventListener('click', (e) => {
+            if (!isExportDropdownOpen) return;
+            if (!dd.contains(e.target) && !toggleBtn.contains(e.target)) {
+                toggleExportDropdown(false);
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isExportDropdownOpen) {
+                toggleExportDropdown(false);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (isExportDropdownOpen) positionExportDropdown();
+        });
+
+        const periodModeEl = document.getElementById('edu-exp-period-mode');
+        const monthEl = document.getElementById('edu-exp-month');
+        const fromEl = document.getElementById('edu-exp-date-from');
+        const toEl = document.getElementById('edu-exp-date-to');
+        const grpEl = document.getElementById('edu-exp-group');
+        const anonEl = document.getElementById('edu-exp-anon');
+
+        periodModeEl.addEventListener('change', () => {
+            const m = periodModeEl.value;
+            monthEl.style.display = m === 'month' ? 'inline-block' : 'none';
+            fromEl.style.display = m === 'range' ? 'inline-block' : 'none';
+            toEl.style.display = m === 'range' ? 'inline-block' : 'none';
+            updateExporterBadges();
+        });
+
+        [monthEl, fromEl, toEl, grpEl, anonEl].forEach(el => {
+            el.addEventListener('change', updateExporterBadges);
+        });
+
+        document.querySelectorAll('.edu-exp-cb').forEach(cb => {
+            cb.addEventListener('change', updateExporterCounter);
+        });
+
+        document.getElementById('edu-exp-sel-all').addEventListener('click', () => {
+            document.querySelectorAll('.edu-exp-cb').forEach(cb => { cb.checked = true; });
+            updateExporterCounter();
+        });
+        document.getElementById('edu-exp-sel-core').addEventListener('click', () => {
+            const coreKeys = new Set(EXPORT_ITEMS.filter(it => it.group === 'core').map(it => it.key));
+            document.querySelectorAll('.edu-exp-cb').forEach(cb => { cb.checked = coreKeys.has(cb.value); });
+            updateExporterCounter();
+        });
+        document.getElementById('edu-exp-sel-none').addEventListener('click', () => {
+            document.querySelectorAll('.edu-exp-cb').forEach(cb => { cb.checked = false; });
+            updateExporterCounter();
+        });
+
+        document.getElementById('edu-exp-run-json').addEventListener('click', () => runUniversalExport('json'));
+        document.getElementById('edu-exp-run-word').addEventListener('click', () => runUniversalExport('word'));
+        document.getElementById('edu-exp-run-pdf').addEventListener('click', () => runUniversalExport('pdf'));
+    }
+
+    function initUniversalExporter() {
+        injectExporterStyles();
+        injectExporterDOM();
+        bindExporterEvents();
+    }
+
     function init() {
         if (typeof db === 'undefined') {
             console.error('Reporting module: Firebase db не знайдено.');
@@ -3094,6 +5391,7 @@
         injectDOM();
         hookExistingFunctions();
         bindEvents();
+        initUniversalExporter();
 
         db.ref(REPORTING_DB_ROOT).on('value', snap => {
             const val = snap.val() || {};
